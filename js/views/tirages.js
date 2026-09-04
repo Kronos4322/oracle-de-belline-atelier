@@ -41,7 +41,7 @@ BELLINE.Views.tirages = function (root) {
     }
     if (!natural || !avail) return;
 
-    var scale = Math.min(1.2, avail / natural);
+    var scale = Math.min(2, avail / natural);
     board.style.transform = 'scale(' + scale + ')';
     board.style.marginLeft = Math.max(0, (avail - natural * scale) / 2) + 'px';
     wrap.style.height = Math.ceil(board.offsetHeight * scale) + 'px';
@@ -233,8 +233,8 @@ BELLINE.Views.tirages = function (root) {
       '</div>' +
 
       '<div class="sp-layout">' +
-        '<div class="sp-board-wrap">' + boardHTML() + '</div>' +
         '<aside class="sp-panel" id="spPanel">' + panelHTML() + '</aside>' +
+        '<div class="sp-board-wrap">' + boardHTML() + '</div>' +
       '</div>' +
 
       '<label class="field sp-notes"><span>Notes de lecture</span>' +

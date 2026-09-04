@@ -1,6 +1,10 @@
 /* ---------------------------------------------------------------------------
  * Vue « Tirages » — pour l'instant : le Tirage d'Hécate.
  * Structure du modèle : js/data/spreads.js
+ *
+ * On touche une position du plateau -> une fenêtre s'ouvre (par-dessus, pas
+ * en bas de page) : rôle de la position + recherche pour placer / changer /
+ * retirer la carte, avec passage direct à la position suivante.
  * ------------------------------------------------------------------------- */
 window.BELLINE = window.BELLINE || {};
 BELLINE.Views = BELLINE.Views || {};
@@ -16,53 +20,12 @@ BELLINE.Views.tirages = function (root) {
   if (!draft.cards) draft.cards = {};
 
   var selected = null;
-  var pickerOpen = false;
-  var panelClosed = false;
+  var modalOpen = false;
   var boardRO = null;
-  var onScroll = null;
+  var onKey = null;
 
   function persist() { S.saveDraft(spread.id, draft); }
 
-  /* Le plateau est large : on le met à l'échelle pour qu'il tienne toujours
-     en entier dans la largeur disponible (jamais de défilement horizontal).
-     On mesure la largeur sur le conteneur .sp-layout (dont la taille ne
-     dépend pas du plateau), pour éviter toute boucle de redimensionnement. */
-  function fitBoard(tries) {
-    var wrap = root.querySelector('.sp-board-wrap');
-    var board = wrap && wrap.querySelector('.spread');
-    if (!board) return;
-
-    board.style.transform = 'none';
-    board.style.marginLeft = '0';
-    var natural = board.offsetWidth;
-    var avail = wrap.clientWidth;
-
-    if ((!natural || !avail) && (tries || 0) < 10) {
-      setTimeout(function () { fitBoard((tries || 0) + 1); }, 60);
-      return;
-    }
-    if (!natural || !avail) return;
-
-    var scale = Math.min(2, avail / natural);
-    board.style.transform = 'scale(' + scale + ')';
-    board.style.marginLeft = Math.max(0, (avail - natural * scale) / 2) + 'px';
-    wrap.style.height = Math.ceil(board.offsetHeight * scale) + 'px';
-  }
-
-  function observeBoard() {
-    var layout = root.querySelector('.sp-layout');
-    if (boardRO) boardRO.disconnect();
-    if (!layout || typeof ResizeObserver === 'undefined') return;
-    var last = 0;
-    boardRO = new ResizeObserver(function () {
-      if (!root.contains(layout)) { boardRO.disconnect(); return; }
-      var w = layout.clientWidth;
-      if (Math.abs(w - last) < 2) return;
-      last = w;
-      requestAnimationFrame(function () { fitBoard(0); positionPop(); });
-    });
-    boardRO.observe(layout);
-  }
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (m) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
@@ -85,10 +48,8 @@ BELLINE.Views.tirages = function (root) {
     if (p.id.indexOf('eclair_pos') === 0) return 'Éclair. +';
     return p.label;
   }
-  function usedAt(n) {
-    var ids = [];
-    Object.keys(draft.cards).forEach(function (k) { if (draft.cards[k] === n) ids.push(k); });
-    return ids;
+  function usedElsewhere(n) {
+    return Object.keys(draft.cards).filter(function (k) { return draft.cards[k] === n && k !== selected; });
   }
   function nextEmpty() {
     for (var i = 0; i < spread.positions.length; i++) {
@@ -96,7 +57,49 @@ BELLINE.Views.tirages = function (root) {
     }
     return null;
   }
+  function stepPos(dir) {
+    var i = spread.positions.findIndex(function (p) { return p.id === selected; });
+    if (i === -1) return;
+    var j = Math.max(0, Math.min(spread.positions.length - 1, i + dir));
+    selected = spread.positions[j].id;
+  }
   function filledCount() { return Object.keys(draft.cards).filter(function (k) { return draft.cards[k]; }).length; }
+
+  /* ---------- mise à l'échelle du plateau ---------- */
+
+  function fitBoard(tries) {
+    var wrap = root.querySelector('.sp-board-wrap');
+    var board = wrap && wrap.querySelector('.spread');
+    if (!board) return;
+    board.style.transform = 'none';
+    board.style.marginLeft = '0';
+    var natural = board.offsetWidth;
+    var avail = wrap.clientWidth;
+    if ((!natural || !avail) && (tries || 0) < 10) {
+      setTimeout(function () { fitBoard((tries || 0) + 1); }, 60);
+      return;
+    }
+    if (!natural || !avail) return;
+    var scale = Math.min(2, avail / natural);
+    board.style.transform = 'scale(' + scale + ')';
+    board.style.marginLeft = Math.max(0, (avail - natural * scale) / 2) + 'px';
+    wrap.style.height = Math.ceil(board.offsetHeight * scale) + 'px';
+  }
+
+  function observeBoard() {
+    var layout = root.querySelector('.sp-layout');
+    if (boardRO) boardRO.disconnect();
+    if (!layout || typeof ResizeObserver === 'undefined') return;
+    var last = 0;
+    boardRO = new ResizeObserver(function () {
+      if (!root.contains(layout)) { boardRO.disconnect(); return; }
+      var w = layout.clientWidth;
+      if (Math.abs(w - last) < 2) return;
+      last = w;
+      requestAnimationFrame(function () { fitBoard(0); });
+    });
+    boardRO.observe(layout);
+  }
 
   /* ---------- slots & plateau ---------- */
 
@@ -151,72 +154,6 @@ BELLINE.Views.tirages = function (root) {
       '</div>';
   }
 
-  /* ---------- infobulle mobile : suit la position cliquée ---------- */
-
-  function popHTML() {
-    var p = posById[selected];
-    if (!p) return '';
-    var n = draft.cards[selected];
-    var c = n ? S.getCard(n) : null;
-    var parent = p.parent ? posById[p.parent] : null;
-
-    var cardBlock = '';
-    if (c) {
-      cardBlock =
-        '<div class="sp-panel-card">' +
-          '<div class="sp-panel-card-head">' +
-            '<strong>' + c.number + ' · ' + esc(c.name) + '</strong>' +
-            (BELLINE.imageFor(n) ? '<button type="button" class="btn-link" id="spZoom">agrandir</button>' : '') +
-          '</div>' +
-          ((c.keywords && c.keywords.length)
-            ? '<p class="sp-panel-kw">' + c.keywords.map(esc).join(' · ') + '</p>' : '') +
-          (c.sens && c.sens.general ? '<p>' + esc(c.sens.general) + '</p>' : '') +
-        '</div>';
-    }
-
-    return '<button type="button" class="sp-pop-close" id="spPopClose" aria-label="Fermer">×</button>' +
-      '<div class="sp-panel-role">' +
-        '<span class="sp-kind sp-kind-' + p.kind + '">' + (p.kind === 'substantif' ? 'substantif' : 'adjectif') + '</span>' +
-        '<h3>' + esc(p.label) + '</h3>' +
-      '</div>' +
-      '<p class="sp-panel-logic">' + esc(p.logic) + '</p>' +
-      (parent ? '<p class="muted small">Éclaire : ' + esc(parent.label) + '</p>' : '') +
-      cardBlock +
-      '<div class="sp-panel-actions">' +
-        '<button type="button" class="btn-primary btn-sm" id="spChoose">' + (n ? 'Changer la carte' : 'Placer une carte') + '</button>' +
-        (n ? '<button type="button" class="btn-ghost btn-sm" id="spClear">Retirer</button>' : '') +
-      '</div>';
-  }
-
-  function showPop() {
-    var pop = root.querySelector('#spPop');
-    if (!pop) return;
-    if (!selected || panelClosed || pickerOpen) { pop.hidden = true; pop.innerHTML = ''; return; }
-    pop.innerHTML = popHTML();
-    pop.hidden = false;
-    wirePanel();
-    positionPop();
-  }
-
-  function positionPop() {
-    var pop = root.querySelector('#spPop');
-    if (!pop || pop.hidden || !selected) return;
-    var slot = root.querySelector('.sp-slot[data-pos="' + selected + '"]');
-    if (!slot) return;
-    var sr = slot.getBoundingClientRect();
-    var pw = pop.offsetWidth, ph = pop.offsetHeight;
-    var vw = window.innerWidth, vh = window.innerHeight;
-    var m = 10, topSafe = 62, bottomSafe = vh - 78;
-    var left = sr.left + sr.width / 2 - pw / 2;
-    left = Math.max(m, Math.min(left, vw - pw - m));
-    var below = sr.bottom + 8;
-    var above = sr.top - ph - 8;
-    var top = (below + ph <= bottomSafe || above < topSafe) ? below : above;
-    top = Math.max(topSafe, Math.min(top, Math.max(topSafe, bottomSafe - ph)));
-    pop.style.left = left + 'px';
-    pop.style.top = top + 'px';
-  }
-
   function readingHTML() {
     var ex = draft.example ? spread.example : null;
     return '<details class="sp-reading"' + (draft.example ? ' open' : '') + '>' +
@@ -236,6 +173,114 @@ BELLINE.Views.tirages = function (root) {
           '</div>'
         : '') +
       '</details>';
+  }
+
+  /* ---------- fenêtre : rôle de la position + choix de la carte ---------- */
+
+  function openModal(posId) {
+    if (posId) selected = posId;
+    if (!selected) selected = nextEmpty() || spread.positions[0].id;
+    modalOpen = true;
+    renderModal();
+  }
+  function closeModal() {
+    modalOpen = false;
+    var m = root.querySelector('#spModal');
+    if (m) { m.hidden = true; m.innerHTML = ''; }
+    refreshBoardSel();
+  }
+
+  function renderModal() {
+    var box = root.querySelector('#spModal');
+    if (!box) return;
+    if (!modalOpen || !selected) { box.hidden = true; box.innerHTML = ''; return; }
+
+    var p = posById[selected];
+    var n = draft.cards[selected];
+    var c = n ? S.getCard(n) : null;
+    var parent = p.parent ? posById[p.parent] : null;
+    var idx = spread.positions.findIndex(function (x) { return x.id === selected; });
+
+    var current = '';
+    if (c) {
+      current =
+        '<div class="sp-modal-current">' +
+          '<div><span class="muted small">Carte placée</span><br><strong>' + c.number + ' · ' + esc(c.name) + '</strong>' +
+            ((c.keywords && c.keywords.length) ? ' <span class="muted small">— ' + c.keywords.slice(0, 4).map(esc).join(' · ') + '</span>' : '') +
+          '</div>' +
+          '<div class="sp-modal-current-btns">' +
+            (BELLINE.imageFor(n) ? '<button type="button" class="btn-link" id="spZoom">agrandir</button>' : '') +
+            '<button type="button" class="btn-ghost btn-sm" id="spClear">Retirer</button>' +
+          '</div>' +
+        '</div>';
+    }
+
+    box.innerHTML =
+      '<div class="sp-modal-panel">' +
+        '<button type="button" class="sp-modal-close" id="spModalClose" aria-label="Fermer">×</button>' +
+        '<div class="sp-modal-head">' +
+          '<span class="sp-kind sp-kind-' + p.kind + '">' + (p.kind === 'substantif' ? 'substantif' : 'adjectif') + '</span>' +
+          '<h3>' + esc(p.label) + '</h3>' +
+        '</div>' +
+        '<p class="sp-modal-logic">' + esc(p.logic) + '</p>' +
+        (parent ? '<p class="muted small">Éclaire : ' + esc(parent.label) + '</p>' : '') +
+        current +
+        '<input type="search" id="spModalSearch" placeholder="' + (c ? 'Changer' : 'Choisir') + ' la carte : nom ou numéro…" autocomplete="off">' +
+        '<div class="sp-modal-grid" id="spModalGrid"></div>' +
+        '<div class="sp-modal-foot">' +
+          '<button type="button" class="btn-ghost btn-sm" id="spPrev"' + (idx <= 0 ? ' disabled' : '') + '>← Précédente</button>' +
+          '<span class="muted small">' + (idx + 1) + ' / ' + spread.count + '</span>' +
+          '<button type="button" class="btn-ghost btn-sm" id="spNext"' + (idx >= spread.count - 1 ? ' disabled' : '') + '>Suivante →</button>' +
+          '<button type="button" class="btn-primary btn-sm" id="spDone">Terminé</button>' +
+        '</div>' +
+      '</div>';
+    box.hidden = false;
+
+    var grid = box.querySelector('#spModalGrid');
+    var search = box.querySelector('#spModalSearch');
+
+    function drawGrid() {
+      var f = (search.value || '').trim().toLowerCase();
+      grid.innerHTML = BELLINE.SEED_CARDS.filter(function (x) {
+        if (!f) return true;
+        return x.name.toLowerCase().indexOf(f) !== -1 || String(x.number) === f;
+      }).map(function (x) {
+        var here = draft.cards[selected] === x.number;
+        var elsw = usedElsewhere(x.number);
+        return '<button type="button" class="sp-pick' + (here ? ' on' : '') + (elsw.length ? ' used' : '') +
+          '" data-n="' + x.number + '"' + (elsw.length ? ' title="déjà placée ailleurs"' : '') + '>' +
+          x.number + '. ' + esc(x.name) + '</button>';
+      }).join('');
+      grid.querySelectorAll('.sp-pick').forEach(function (b) {
+        b.addEventListener('click', function () {
+          var wasEmpty = !draft.cards[selected];
+          draft.cards[selected] = Number(b.dataset.n);
+          draft.example = false;
+          persist();
+          renderBoardOnly();
+          if (wasEmpty) { var nx = nextEmpty(); if (nx) selected = nx; }
+          renderModal();
+        });
+      });
+    }
+    search.addEventListener('input', drawGrid);
+    drawGrid();
+    setTimeout(function () { try { search.focus(); } catch (e) {} }, 30);
+
+    var q = function (id) { return box.querySelector(id); };
+    q('#spModalClose').addEventListener('click', closeModal);
+    q('#spDone').addEventListener('click', closeModal);
+    q('#spPrev').addEventListener('click', function () { stepPos(-1); renderBoardOnly(); renderModal(); });
+    q('#spNext').addEventListener('click', function () { stepPos(1); renderBoardOnly(); renderModal(); });
+    if (q('#spClear')) q('#spClear').addEventListener('click', function () {
+      delete draft.cards[selected]; draft.example = false; persist();
+      renderBoardOnly(); renderModal();
+    });
+    if (q('#spZoom')) q('#spZoom').addEventListener('click', function () {
+      BELLINE.lightbox(BELLINE.imageFor(draft.cards[selected]), draft.cards[selected] + ' · ' + cardName(draft.cards[selected]));
+    });
+    box.onclick = function (e) { if (e.target === box) closeModal(); };
+    refreshBoardSel();
   }
 
   /* ---------- rendu global ---------- */
@@ -267,41 +312,42 @@ BELLINE.Views.tirages = function (root) {
         '<textarea id="spNotes" rows="4" placeholder="Ce que dit le tirage, les phrases qui se dégagent…">' + esc(draft.notes) + '</textarea></label>' +
 
       readingHTML() +
-      '<div id="spPicker"></div>' +
-      '<div class="sp-pop" id="spPop" hidden></div>';
+      '<div class="sp-modal" id="spModal" hidden></div>';
 
-    root.querySelectorAll('.sp-slot').forEach(function (b) {
-      b.addEventListener('click', function () {
-        selected = b.dataset.pos;
-        panelClosed = false;
-        refreshBoardSel();
-        showPop();
-      });
-    });
-
+    bindSlots();
     wireToolbar();
-    if (pickerOpen) renderPicker();
-    showPop();
+    if (modalOpen) renderModal();
     observeBoard();
     setTimeout(function () { fitBoard(0); }, 0);
 
-    if (onScroll) { window.removeEventListener('scroll', onScroll); window.removeEventListener('resize', onScroll); }
-    onScroll = function () {
-      if (!document.getElementById('spPop')) {
-        window.removeEventListener('scroll', onScroll);
-        window.removeEventListener('resize', onScroll);
-        return;
-      }
-      positionPop();
+    if (onKey) document.removeEventListener('keydown', onKey);
+    onKey = function (e) {
+      if (!document.getElementById('spModal')) { document.removeEventListener('keydown', onKey); return; }
+      if (e.key === 'Escape' && modalOpen) closeModal();
     };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onScroll, { passive: true });
+    document.addEventListener('keydown', onKey);
+  }
+
+  function bindSlots() {
+    root.querySelectorAll('.sp-slot').forEach(function (b) {
+      b.addEventListener('click', function () { openModal(b.dataset.pos); });
+    });
   }
 
   function refreshBoardSel() {
     root.querySelectorAll('.sp-slot').forEach(function (b) {
-      b.classList.toggle('is-sel', b.dataset.pos === selected);
+      b.classList.toggle('is-sel', b.dataset.pos === selected && modalOpen);
     });
+  }
+
+  function renderBoardOnly() {
+    root.querySelector('.sp-board-wrap .spread').outerHTML = boardHTML();
+    bindSlots();
+    refreshBoardSel();
+    var count = root.querySelector('#spCount');
+    if (count) count.textContent = filledCount() + ' / ' + spread.count +
+      ' cartes placées · touche une position pour la lire et y placer une carte';
+    setTimeout(function () { fitBoard(0); }, 0);
   }
 
   function wireToolbar() {
@@ -313,13 +359,13 @@ BELLINE.Views.tirages = function (root) {
     });
     root.querySelector('#spRandom').addEventListener('click', function () {
       var pool = [];
-      for (var i = 1; i <= 53; i++) if (i !== 53) pool.push(i); // 1..52 (on garde la carte bleue à part)
+      for (var i = 1; i <= 52; i++) pool.push(i);
       Object.keys(draft.cards).forEach(function (k) {
-        var used = draft.cards[k]; var j = pool.indexOf(used); if (j !== -1) pool.splice(j, 1);
+        var j = pool.indexOf(draft.cards[k]); if (j !== -1) pool.splice(j, 1);
       });
       for (var s = pool.length - 1; s > 0; s--) { var r = Math.floor(Math.random() * (s + 1)); var t = pool[s]; pool[s] = pool[r]; pool[r] = t; }
       spread.positions.forEach(function (p) { if (!draft.cards[p.id] && pool.length) draft.cards[p.id] = pool.shift(); });
-      draft.example = false; persist(); render();
+      draft.example = false; modalOpen = false; persist(); render();
     });
     root.querySelector('#spExample').addEventListener('click', function () {
       if (draft.example) { draft.example = false; }
@@ -329,12 +375,12 @@ BELLINE.Views.tirages = function (root) {
         draft.question = 'Exemple des planches de référence';
         draft.example = true;
       }
-      selected = null; persist(); render();
+      selected = null; modalOpen = false; persist(); render();
     });
     root.querySelector('#spClearAll').addEventListener('click', function () {
       if (!confirm('Effacer toutes les cartes placées ?')) return;
       draft = { question: '', cards: {}, notes: '', example: false };
-      selected = null; pickerOpen = false; persist(); render();
+      selected = null; modalOpen = false; persist(); render();
     });
     root.querySelector('#spSave').addEventListener('click', function () {
       if (!filledCount()) { alert('Place au moins une carte avant d’enregistrer.'); return; }
@@ -348,96 +394,6 @@ BELLINE.Views.tirages = function (root) {
       b.textContent = 'Enregistré ✓';
       setTimeout(function () { if (b) b.textContent = 'Enregistrer'; }, 2000);
     });
-  }
-
-  function wirePanel() {
-    var close = root.querySelector('#spPopClose');
-    if (close) close.addEventListener('click', function () { panelClosed = true; showPop(); });
-    var choose = root.querySelector('#spChoose');
-    if (choose) choose.addEventListener('click', openPicker);
-    var clear = root.querySelector('#spClear');
-    if (clear) clear.addEventListener('click', function () {
-      delete draft.cards[selected]; draft.example = false; persist();
-      renderBoardOnly(); showPop();
-    });
-    var zoom = root.querySelector('#spZoom');
-    if (zoom) zoom.addEventListener('click', function () {
-      var n = draft.cards[selected];
-      BELLINE.lightbox(BELLINE.imageFor(n), n + ' · ' + cardName(n));
-    });
-  }
-
-  /* ---------- sélecteur de carte ---------- */
-
-  function openPicker() {
-    if (!selected) selected = nextEmpty() || spread.positions[0].id;
-    pickerOpen = true;
-    showPop();
-    renderPicker();
-    root.querySelector('#spPicker').scrollIntoView({ block: 'nearest' });
-  }
-
-  function renderPicker() {
-    var box = root.querySelector('#spPicker');
-    var p = posById[selected];
-    box.innerHTML =
-      '<div class="sp-picker">' +
-        '<div class="sp-picker-head">' +
-          '<span>Carte pour <strong>' + esc(p.label) + '</strong></span>' +
-          '<button type="button" class="btn-ghost btn-sm" id="spPickDone">Terminé</button>' +
-        '</div>' +
-        '<input type="search" id="spPickSearch" placeholder="Filtrer : nom ou numéro…" autocomplete="off">' +
-        '<div class="sp-picker-grid" id="spPickGrid"></div>' +
-      '</div>';
-
-    var grid = box.querySelector('#spPickGrid');
-    var search = box.querySelector('#spPickSearch');
-
-    function draw() {
-      var f = (search.value || '').trim().toLowerCase();
-      grid.innerHTML = BELLINE.SEED_CARDS.filter(function (c) {
-        if (!f) return true;
-        return c.name.toLowerCase().indexOf(f) !== -1 || String(c.number) === f;
-      }).map(function (c) {
-        var here = draft.cards[selected] === c.number;
-        var elsewhere = usedAt(c.number).filter(function (id) { return id !== selected; });
-        return '<button type="button" class="sp-pick' + (here ? ' on' : '') + (elsewhere.length ? ' used' : '') +
-          '" data-n="' + c.number + '" title="' + (elsewhere.length ? 'déjà placée' : '') + '">' +
-          c.number + '. ' + esc(c.name) + '</button>';
-      }).join('');
-      grid.querySelectorAll('.sp-pick').forEach(function (b) {
-        b.addEventListener('click', function () {
-          draft.cards[selected] = Number(b.dataset.n);
-          draft.example = false;
-          var nxt = nextEmpty();
-          persist();
-          if (nxt) { selected = nxt; renderBoardOnly(); renderPicker(); }
-          else { pickerOpen = false; render(); }
-        });
-      });
-    }
-    search.addEventListener('input', draw);
-    draw();
-    box.querySelector('#spPickDone').addEventListener('click', function () {
-      pickerOpen = false; render();
-    });
-  }
-
-  function renderBoardOnly() {
-    root.querySelector('.sp-board-wrap .spread').outerHTML = boardHTML();
-    root.querySelectorAll('.sp-slot').forEach(function (b) {
-      b.addEventListener('click', function () {
-        selected = b.dataset.pos;
-        panelClosed = false;
-        refreshBoardSel();
-        showPop();
-      });
-    });
-    refreshBoardSel();
-    var count = root.querySelector('#spCount');
-    if (count) count.textContent = filledCount() + ' / ' + spread.count +
-      ' cartes placées · touche une position pour la lire et y placer une carte';
-    setTimeout(function () { fitBoard(0); }, 0);
   }
 
   render();

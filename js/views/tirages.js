@@ -11,18 +11,29 @@ BELLINE.Views = BELLINE.Views || {};
 
 BELLINE.Views.tirages = function (root) {
   var S = BELLINE.Storage;
-  var spread = BELLINE.SPREADS.hecate;
+  var SPREAD_IDS = ['hecate', 'miroir', 'verdict', 'flambeau'];
 
-  var posById = {};
-  spread.positions.forEach(function (p) { posById[p.id] = p; });
+  var spreadId = S.read('tirage.current', 'hecate');
+  if (SPREAD_IDS.indexOf(spreadId) === -1) spreadId = 'hecate';
 
-  var draft = S.getDraft(spread.id) || { question: '', cards: {}, notes: '', example: false };
-  if (!draft.cards) draft.cards = {};
-
+  var spread, posById, draft;
   var selected = null;
   var modalOpen = false;
   var boardRO = null;
   var onKey = null;
+
+  function loadSpread(id) {
+    spreadId = id;
+    S.write('tirage.current', id);
+    spread = BELLINE.SPREADS[id];
+    posById = {};
+    spread.positions.forEach(function (p) { posById[p.id] = p; });
+    draft = S.getDraft(id) || { question: '', cards: {}, notes: '', example: false };
+    if (!draft.cards) draft.cards = {};
+    selected = null;
+    modalOpen = false;
+  }
+  loadSpread(spreadId);
 
   function persist() { S.saveDraft(spread.id, draft); }
 
@@ -80,7 +91,7 @@ BELLINE.Views.tirages = function (root) {
       return;
     }
     if (!natural || !avail) return;
-    var scale = Math.min(2, avail / natural);
+    var scale = Math.min(spread.layout ? 1.5 : 2, avail / natural);
     board.style.transform = 'scale(' + scale + ')';
     board.style.marginLeft = Math.max(0, (avail - natural * scale) / 2) + 'px';
     wrap.style.height = Math.ceil(board.offsetHeight * scale) + 'px';
@@ -141,7 +152,7 @@ BELLINE.Views.tirages = function (root) {
       '</div>';
   }
 
-  function boardHTML() {
+  function hecateBoardHTML() {
     return '<div class="spread">' +
       '<div class="sp-guide-row">' + slotHTML('guide') + '</div>' +
       '<div class="sp-axis">' +
@@ -157,16 +168,36 @@ BELLINE.Views.tirages = function (root) {
       '</div>';
   }
 
+  function genericBoardHTML() {
+    return '<div class="spread spread-rows">' +
+      spread.layout.map(function (row, i) {
+        var isCoupe = row.length && posById[row[0]] && posById[row[0]].branch === 'coupe';
+        return '<div class="sp-rrow' + (isCoupe ? ' is-coupe' : '') + '">' +
+          (isCoupe ? '<span class="sp-coupe-label">La Coupe</span>' : '') +
+          '<div class="sp-rrow-cards">' + row.map(slotHTML).join('') + '</div>' +
+          '</div>';
+      }).join('') +
+      '</div>';
+  }
+
+  function boardHTML() {
+    return spread.layout ? genericBoardHTML() : hecateBoardHTML();
+  }
+
   function readingHTML() {
-    var ex = draft.example ? spread.example : null;
+    var ex = (draft.example && spread.example) ? spread.example : null;
+    var t = spread.typologie;
     return '<details class="sp-reading"' + (draft.example ? ' open' : '') + '>' +
       '<summary>Comment lire ce tirage</summary>' +
+      (t ? '<p class="muted small">Objet : ' + esc(t.objet) + ' · Question : ' + esc(t.question) +
+        ' · Réversible : ' + (t.reversible ? 'oui' : 'non') + ' · Mesure : ' + esc(t.mesure) + '</p>' : '') +
       '<ul class="sp-rules">' + spread.rules.map(function (r) { return '<li>' + esc(r) + '</li>'; }).join('') + '</ul>' +
-      '<div class="sp-senses">' +
-        spread.senses.map(function (s) {
-          return '<div><strong>' + esc(s.label) + '</strong><br><span class="muted">' + esc(s.desc) + '</span></div>';
-        }).join('') +
-      '</div>' +
+      (spread.senses && spread.senses.length
+        ? '<h4>Sens de lecture</h4><div class="sp-senses">' +
+          spread.senses.map(function (s) {
+            return '<div><strong>' + esc(s.label) + '</strong><br><span class="muted">' + esc(s.desc) + '</span></div>';
+          }).join('') + '</div>'
+        : '') +
       (spread.axes
         ? '<h4>Les axes</h4><ul class="sp-rules">' +
             spread.axes.map(function (a) { return '<li>' + esc(a) + '</li>'; }).join('') + '</ul>'
@@ -310,7 +341,14 @@ BELLINE.Views.tirages = function (root) {
   function render() {
     root.innerHTML =
       '<div class="view-head">' +
-        '<h1>' + esc(spread.name) + '</h1>' +
+        '<h1>Tirages</h1>' +
+        '<div class="sp-picker-tabs">' +
+          SPREAD_IDS.map(function (id) {
+            return '<button type="button" class="sp-tab' + (id === spreadId ? ' is-active' : '') +
+              '" data-spread="' + id + '">' + esc(BELLINE.SPREADS[id].name) + '</button>';
+          }).join('') +
+        '</div>' +
+        '<h2 class="sp-name">' + esc(spread.name) + '</h2>' +
         '<p class="muted">' + esc(spread.subtitle) + ' — ' + spread.count + ' cartes. ' + esc(spread.intro) + '</p>' +
       '</div>' +
 
@@ -318,7 +356,8 @@ BELLINE.Views.tirages = function (root) {
         '<input type="text" id="spQuestion" placeholder="Question du tirage…" value="' + esc(draft.question) + '">' +
         '<div class="sp-toolbar-btns">' +
           '<button type="button" class="btn-ghost btn-sm" id="spRandom">Tirer au sort</button>' +
-          '<button type="button" class="btn-ghost btn-sm" id="spExample">' + (draft.example ? 'Masquer l’exemple' : 'Charger l’exemple') + '</button>' +
+          (spread.example
+            ? '<button type="button" class="btn-ghost btn-sm" id="spExample">' + (draft.example ? 'Masquer l’exemple' : 'Charger l’exemple') + '</button>' : '') +
           '<button type="button" class="btn-ghost btn-sm" id="spClearAll">Tout effacer</button>' +
           '<button type="button" class="btn-primary btn-sm" id="spSave">Enregistrer</button>' +
         '</div>' +
@@ -351,6 +390,13 @@ BELLINE.Views.tirages = function (root) {
   }
 
   function bindSlots() {
+    root.querySelectorAll('.sp-tab').forEach(function (b) {
+      b.addEventListener('click', function () {
+        if (b.dataset.spread === spreadId) return;
+        loadSpread(b.dataset.spread);
+        render();
+      });
+    });
     root.querySelectorAll('.sp-slot').forEach(function (b) {
       b.addEventListener('click', function () { openModal(b.dataset.pos); });
     });
@@ -400,12 +446,13 @@ BELLINE.Views.tirages = function (root) {
       spread.positions.forEach(function (p) { if (!draft.cards[p.id] && pool.length) draft.cards[p.id] = pool.shift(); });
       draft.example = false; modalOpen = false; persist(); render();
     });
-    root.querySelector('#spExample').addEventListener('click', function () {
+    var exBtn = root.querySelector('#spExample');
+    if (exBtn) exBtn.addEventListener('click', function () {
       if (draft.example) { draft.example = false; }
       else {
         draft.cards = {};
         Object.keys(spread.example.cards).forEach(function (k) { draft.cards[k] = spread.example.cards[k]; });
-        draft.question = 'Exemple des planches de référence';
+        draft.question = spread.example.title;
         draft.example = true;
       }
       selected = null; modalOpen = false; persist(); render();

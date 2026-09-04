@@ -98,6 +98,8 @@ window.BELLINE = window.BELLINE || {};
           logic: "Climat général : positif ou négatif, lieu, ambiance, contexte. Remise au jeu avant l'étalement." }
       ],
 
+      typologie: { objet: "une situation", question: "que va-t-il advenir ?", reversible: true, mesure: "test de concordance" },
+
       // Tirage transcrit des planches de référence (Camille, 8 août 2026).
       example: {
         title: "Exemple — 8 août 2026",
@@ -122,6 +124,134 @@ window.BELLINE = window.BELLINE || {};
           "Coupe : Trafic + Pensée-Amitié — un lien pensé et affectueux qui subsiste, mais mal acheminé."
         ]
       }
+    },
+
+    /* ===================== Le Miroir du Cœur ===================== */
+    miroir: {
+      id: 'miroir',
+      name: "Le Miroir du Cœur",
+      subtitle: "L'état psychique d'une personne",
+      count: 11,
+      intro: "Neuf positions fonctionnelles, sans polarité ni Guide. Aucune mesure n'est " +
+             "disponible : c'est un instrument d'explicitation, non de vérification. Il porte " +
+             "sur l'intériorité d'un tiers absent — le représenter, ce n'est pas y accéder.",
+      typologie: { objet: "une personne", question: "comment vit-elle cela ?", reversible: false, mesure: "aucune" },
+      rules: [
+        "Chaque position reçoit un substantif et un ou deux adjectifs.",
+        "Aucune polarité : le test de concordance ne s'y applique pas.",
+        "Consigner d'emblée ce qui est déjà connu de la personne — sinon toute justesse est indécidable.",
+        "Registre à déclarer (affectif ou circonstanciel), valable pour tout le tirage."
+      ],
+      senses: [],
+      axes: [
+        "Verticale : Le Cœur, La Mémoire, Le Verrou, Le Non-dit, Le Miroir — une mécanique intérieure, du sentiment dominant à la synthèse.",
+        "Horizontale : Le Conscient contre L'Enfoui — la pensée et l'affect ne racontent pas la même chose.",
+        "Horizontale : Le Désir contre Le Masque — l'écart entre ce qui est voulu et ce qui est montré. C'est l'axe qui justifie le nom du dispositif.",
+        "Dedans / milieu / dehors : Le Désir, Le Verrou, Le Masque — le blocage du milieu explique pourquoi le fond ne se traduit pas au dehors."
+      ],
+      layout: [
+        ['coupe_1', 'coupe_2'],
+        ['coeur'],
+        ['conscient', 'enfoui'],
+        ['memoire'],
+        ['verrou'],
+        ['desir', 'masque'],
+        ['nondit'],
+        ['miroir_syn']
+      ],
+      positions: [
+        { id: 'coupe_1', label: "La Coupe", kind: 'adjectif', branch: 'coupe', polarity: null, logic: "Climat, contexte. Hors positions, remise au jeu avant l'étalement." },
+        { id: 'coupe_2', label: "La Coupe", kind: 'adjectif', branch: 'coupe', polarity: null, logic: "Climat, contexte. Hors positions, remise au jeu avant l'étalement." },
+        { id: 'coeur', label: "Le Cœur", kind: 'substantif', branch: 'axe', polarity: null, logic: "Le sentiment dominant." },
+        { id: 'conscient', label: "Le Conscient", kind: 'substantif', branch: 'axe', polarity: null, logic: "Ce qui est su et reconnu." },
+        { id: 'enfoui', label: "L'Enfoui", kind: 'substantif', branch: 'axe', polarity: null, logic: "Ce qui agit sans se dire." },
+        { id: 'memoire', label: "La Mémoire", kind: 'substantif', branch: 'axe', polarity: null, logic: "Ce qui demeure de l'histoire." },
+        { id: 'verrou', label: "Le Verrou", kind: 'substantif', branch: 'axe', polarity: null, logic: "Ce qui bloque : peur, blessure, contradiction." },
+        { id: 'desir', label: "Le Désir", kind: 'substantif', branch: 'axe', polarity: null, logic: "Ce qui est voulu au fond." },
+        { id: 'masque', label: "Le Masque", kind: 'substantif', branch: 'axe', polarity: null, logic: "Ce qui est montré au dehors." },
+        { id: 'nondit', label: "Le Non-dit", kind: 'substantif', branch: 'axe', polarity: null, logic: "Ce qui ne parvient pas à s'exprimer." },
+        { id: 'miroir_syn', label: "Le Miroir", kind: 'substantif', branch: 'axe', polarity: null, logic: "Synthèse du rapport entre les positions précédentes." }
+      ]
+    },
+
+    /* ===================== Le Verdict ===================== */
+    verdict: {
+      id: 'verdict',
+      name: "Le Verdict",
+      subtitle: "Une question fermée",
+      count: 7,
+      intro: "Une Coupe et cinq positions, dont deux polaires. Le dispositif le plus contraint " +
+             "et le plus exposé : une question fermée sur un sujet sensible est celle où le " +
+             "lecteur risque le plus de produire la réponse qu'il attend.",
+      typologie: { objet: "une question fermée", question: "oui ou non ?", reversible: false, mesure: "test de concordance (positions Pour / Contre)" },
+      rules: [
+        "La polarité de la carte du Verdict est établie avant le tirage, depuis la table de valence, et jamais ajustée après.",
+        "Une carte neutre au Verdict donne une réponse neutre. Elle ne s'interprète pas dans le sens de ce qui est espéré.",
+        "La position 5 (Précision) explique et n'annule jamais. Si elle semble contredire le Verdict, c'est la lecture qu'il faut reprendre.",
+        "Registre à déclarer, valable pour tout le tirage."
+      ],
+      senses: [],
+      axes: [
+        "Pour contre Contre : la seule horizontale mesurable, parce qu'elle est polaire.",
+        "Le Pivot fait basculer ; le Verdict tranche ; la Précision éclaire sans renverser."
+      ],
+      layout: [
+        ['coupe_1', 'coupe_2'],
+        ['pour', 'contre'],
+        ['pivot'],
+        ['verdict_pos'],
+        ['precision']
+      ],
+      positions: [
+        { id: 'coupe_1', label: "La Coupe", kind: 'adjectif', branch: 'coupe', polarity: null, logic: "Climat général. Ne tranche pas la question." },
+        { id: 'coupe_2', label: "La Coupe", kind: 'adjectif', branch: 'coupe', polarity: null, logic: "Climat général. Ne tranche pas la question." },
+        { id: 'pour', label: "Pour", kind: 'substantif', branch: 'pos', polarity: 'favorable', logic: "Ce qui pousse vers le oui." },
+        { id: 'contre', label: "Contre", kind: 'substantif', branch: 'neg', polarity: 'defavorable', logic: "Ce qui pousse vers le non." },
+        { id: 'pivot', label: "Pivot", kind: 'fonctionnelle', branch: 'axe', polarity: null, logic: "Ce qui fera basculer." },
+        { id: 'verdict_pos', label: "Verdict", kind: 'substantif', branch: 'axe', polarity: null, logic: "La réponse principale. Se lit selon la grille oui / neutre / non établie hors de tout tirage." },
+        { id: 'precision', label: "Précision", kind: 'adjectif', branch: 'axe', polarity: null, logic: "Explique le verdict sans le renverser." }
+      ]
+    },
+
+    /* ===================== Le Flambeau ===================== */
+    flambeau: {
+      id: 'flambeau',
+      name: "Le Flambeau",
+      subtitle: "La journée à venir — tiré la veille",
+      count: 9,
+      intro: "Une Coupe et sept positions en flamme. Le seul tirage répétable, donc le seul " +
+             "par lequel la méthode peut être évaluée : il porte sur des faits, il est daté " +
+             "d'avance, il permet d'accumuler.",
+      typologie: { objet: "une journée", question: "que sera demain ?", reversible: false, mesure: "vérification événementielle (registre circonstanciel, sans exception)" },
+      rules: [
+        "Registre circonstanciel, sans exception. Une lecture affective se note à part, jamais comme confirmation.",
+        "La veille : substantifs, adjectifs, relevés, contexte déjà connu, et trois à six énoncés vérifiables.",
+        "Le lendemain : cocher chaque énoncé, sans en ajouter, sans en retirer, sans reformuler.",
+        "Ne jamais compter comme réussite une correspondance qui figurait déjà dans le contexte connu."
+      ],
+      senses: [],
+      axes: [
+        "L'ordre de lecture suit la forme : la Flamme, puis les deux flancs, puis le Foyer, puis les deux bases, puis la Lueur."
+      ],
+      layout: [
+        ['coupe_1', 'coupe_2'],
+        ['flamme'],
+        ['braise', 'vent'],
+        ['foyer'],
+        ['ombre', 'geste'],
+        ['lueur']
+      ],
+      positions: [
+        { id: 'coupe_1', label: "La Coupe", kind: 'adjectif', branch: 'coupe', polarity: null, logic: "Fond de journée." },
+        { id: 'coupe_2', label: "La Coupe", kind: 'adjectif', branch: 'coupe', polarity: null, logic: "Fond de journée." },
+        { id: 'flamme', label: "Flamme", kind: 'substantif', branch: 'axe', polarity: null, logic: "L'énergie dominante du jour." },
+        { id: 'braise', label: "Braise", kind: 'substantif', branch: 'axe', polarity: null, logic: "Ce qui vient de la veille et brûle encore." },
+        { id: 'vent', label: "Vent", kind: 'substantif', branch: 'axe', polarity: null, logic: "Ce qui influence ou déstabilise." },
+        { id: 'foyer', label: "Foyer", kind: 'substantif', branch: 'axe', polarity: null, logic: "Le cœur concret de la journée." },
+        { id: 'ombre', label: "Ombre", kind: 'substantif', branch: 'axe', polarity: null, logic: "Le risque à surveiller." },
+        { id: 'geste', label: "Geste", kind: 'substantif', branch: 'axe', polarity: null, logic: "Ce qu'il faut faire ou favoriser." },
+        { id: 'lueur', label: "Lueur", kind: 'substantif', branch: 'axe', polarity: null, logic: "L'issue du soir, la leçon du jour." }
+      ]
     }
 
   };

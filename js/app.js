@@ -10,7 +10,8 @@ window.BELLINE = window.BELLINE || {};
     entrainement: { label: 'Entraînement', icon: '🎴' },
     tirages:      { label: 'Tirages',      icon: '🔮' },
     journal:      { label: 'Journal',      icon: '📓' },
-    progression:  { label: 'Progression',  icon: '📈' }
+    progression:  { label: 'Progression',  icon: '📈' },
+    methode:      { label: 'Méthode',      icon: '📐' }
   };
   var DEFAULT_ROUTE = 'grimoire';
 

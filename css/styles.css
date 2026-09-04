@@ -79,11 +79,13 @@ em { font-style: italic; }
   position: fixed; bottom: 0; left: 0; right: 0; z-index: 30;
   display: flex; background: var(--bg-2); border-top: 1px solid var(--line);
   padding-bottom: env(safe-area-inset-bottom);
+  overflow-x: auto; scrollbar-width: none;
 }
+.nav::-webkit-scrollbar { display: none; }
 .nav-item {
-  flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  flex: 1 0 auto; min-width: 3.05rem; display: flex; flex-direction: column; align-items: center; gap: 2px;
   padding: 8px 2px 7px; text-decoration: none; color: var(--muted);
-  font-size: 10px; letter-spacing: -.01em; border-top: 2px solid transparent;
+  font-size: 10px; letter-spacing: -.02em; border-top: 2px solid transparent;
 }
 .nav-item.is-active { color: var(--gold-soft); border-top-color: var(--gold); }
 .nav-label { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -279,6 +281,24 @@ button.planet-sym:hover { color: var(--gold-soft); text-shadow: 0 0 10px current
 .bar { height: 6px; border-radius: 999px; background: var(--bg-2); margin-top: 10px; overflow: hidden; }
 .bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold-soft)); }
 
+/* ---------- Méthode ---------- */
+
+.method { display: grid; gap: 16px; }
+@media (min-width: 780px) { .method { grid-template-columns: 1fr 1fr; align-items: start; } }
+.method-card {
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px;
+}
+.method-card h2 { margin: 0 0 10px; font-size: 1.05rem; color: var(--gold-soft); }
+.method-card ul, .method-card ol { margin: 8px 0; padding-left: 20px; }
+.method-card li { margin: 6px 0; }
+.method-card p { margin: 8px 0; font-size: .92rem; }
+.method-steps { list-style: decimal; }
+.method-steps li { margin: 10px 0; }
+.method-table { width: 100%; border-collapse: collapse; font-size: .9rem; margin: 8px 0; }
+.method-table td { padding: 6px 8px; border-top: 1px solid var(--line); vertical-align: top; }
+.method-table tr:first-child td { border-top: none; }
+.method-idx { color: var(--gold-soft); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
 /* ---------- Zoom / lightbox ---------- */
 
 .is-zoom { cursor: zoom-in; }
@@ -363,6 +383,26 @@ button.planet-sym:hover { color: var(--gold-soft); text-shadow: 0 0 10px current
 .assoc-tog.on { background: var(--gold); color: #241c0c; border-color: var(--gold); font-weight: 600; }
 
 /* ---------- Tirages : plateau ---------- */
+
+.sp-picker-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0 4px; }
+.sp-tab {
+  padding: 6px 12px; border-radius: 999px; font-size: .85rem;
+  background: var(--panel); border: 1px solid var(--line); color: var(--muted);
+}
+.sp-tab:hover { border-color: var(--gold-soft); color: var(--ink); }
+.sp-tab.is-active { background: var(--panel-2); border-color: var(--gold); color: var(--gold-soft); }
+.sp-name { margin: 8px 0 2px; font-size: 1.15rem; }
+
+.sp-rrow { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.sp-rrow-cards { display: flex; gap: 14px; justify-content: center; }
+.sp-rrow.is-coupe {
+  padding: 8px 16px 10px; border: 1px dashed var(--line); border-radius: 12px; margin-bottom: 6px;
+}
+.spread-rows { gap: 12px; }
+.spread-rows .sp-slot { width: 96px; }
+.spread-rows .sp-card { width: 84px; height: 124px; }
+.spread-rows .sp-card-name { max-width: 96px; }
+.spread-rows .sp-slot-label { font-size: 10.5px; }
 
 .sp-toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 18px; }
 .sp-toolbar #spQuestion {

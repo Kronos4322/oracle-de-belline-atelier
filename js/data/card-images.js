@@ -1,5 +1,6 @@
 /* Genere par tools/scan-cartes.ps1 - ne pas editer a la main.
-   Numero de carte -> nom du fichier image dans assets/cartes/. */
+   CARD_IMAGES  : numero de carte  -> fichier image dans assets/cartes/
+   PLANET_IMAGES: cle de planete   -> fichier symbole dans assets/cartes/ */
 window.BELLINE = window.BELLINE || {};
 window.BELLINE.CARD_IMAGES = {
   "53": "00 CARTE BLEUE.jpg",
@@ -23,8 +24,45 @@ window.BELLINE.CARD_IMAGES = {
   "18": "18. CHANGEMENT.jpg",
   "19": "19. ARGENT.jpg",
   "20": "20. INTELLIGENCE.jpg",
-  "21": "21. VOL PERTE.jpf.webp",
+  "21": "21. VOL PERTE.jpg",
   "22": "22. ENTREPRISES.jpg",
   "23": "23. TRAFIC.jpg",
-  "24": "24. NOUVELLE.jpg"
+  "24": "24. NOUVELLE.jpg",
+  "25": "25. PLAISIRS.jpg",
+  "26": "26. LA PAIX.jpg",
+  "27": "27. UNION.jpg",
+  "28": "28. FAMILLE.jpg",
+  "29": "29. AMOR.jpg",
+  "30": "30. LA TABLE.jpg",
+  "31": "31. PASSIONS.jpg",
+  "32": "32. MECHANCETE.jpg",
+  "33": "33. PROCES.jpg",
+  "34": "34. DESPOTISME.jpg",
+  "35": "35. ENNEMIS.jpg",
+  "36": "36. POURPARLERS.jpg",
+  "37": "37. FEU.jpg",
+  "38": "38. ACCIDENT.jpg",
+  "39": "39. APPUI.jpg",
+  "40": "40. BEAUTE.jpg",
+  "41": "41. HERITAGE.jpg",
+  "42": "42. SAGESSE.jpg",
+  "43": "43. LA RENOMEE.jpg",
+  "44": "44. LE HASARD.jpg",
+  "45": "45. LE BONHEUR.jpg",
+  "46": "46. INFORTUNE.jpg",
+  "47": "47. STERILITE.jpg",
+  "48": "48. FATALITE.jpg",
+  "49": "49. GRACE.jpg",
+  "50": "50. RUINE.jpg",
+  "51": "51. RETARD.jpg",
+  "52": "52. CLOITRE.jpg"
+};
+window.BELLINE.PLANET_IMAGES = {
+  "jupiter": "JUPITER.jpg",
+  "lune": "LUNE.jpg",
+  "mars": "MARS.jpg",
+  "mercure": "MERCURE.jpg",
+  "saturne": "SATURNE.jpg",
+  "soleil": "SOLEIL.jpg",
+  "venus": "VENUS.jpg"
 };

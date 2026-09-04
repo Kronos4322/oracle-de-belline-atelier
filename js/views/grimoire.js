@@ -58,8 +58,12 @@ BELLINE.Views.grimoire = function (root) {
                planet.name.toLowerCase().indexOf(f) !== -1;
       });
       if (!items.length) return '';
+      var pImg = BELLINE.planetImageFor(pk);
+      var pIco = pImg
+        ? '<img class="planet-ico" src="' + pImg + '" alt="" onerror="this.remove()">'
+        : '<span>' + planet.symbol + '</span>';
       return '<div class="planet-group">' +
-        '<h3 class="planet-title" style="--hue:' + planet.hue + '"><span>' + planet.symbol + '</span> ' + planet.name + '</h3>' +
+        '<h3 class="planet-title" style="--hue:' + planet.hue + '">' + pIco + ' ' + planet.name + '</h3>' +
         '<ul>' + items.map(function (c) {
           var img = BELLINE.imageFor(c.number);
           return '<li><button class="card-row' +
@@ -103,6 +107,10 @@ BELLINE.Views.grimoire = function (root) {
     var c = S.getCard(num);
     var planet = P[c.planet];
     var img = BELLINE.imageFor(c.number);
+    var pImg = BELLINE.planetImageFor(c.planet);
+    var pIco = pImg
+      ? '<img class="planet-ico" src="' + pImg + '" alt="" onerror="this.remove()">'
+      : planet.symbol;
 
     detailEl.classList.add('is-open');
     detailEl.innerHTML =
@@ -114,7 +122,7 @@ BELLINE.Views.grimoire = function (root) {
         '</div>' +
         '<div class="fiche-head-txt">' +
           '<h2>' + esc(c.name) + '</h2>' +
-          '<p class="muted">' + planet.symbol + ' Série ' + planet.name + '</p>' +
+          '<p class="muted">' + pIco + ' Série ' + planet.name + '</p>' +
           '<p class="muted small">' + planet.desc + '</p>' +
         '</div>' +
       '</header>' +

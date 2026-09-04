@@ -155,6 +155,13 @@ em { font-style: italic; }
 .planet-title span { font-size: 1rem; }
 .planet-group ul { list-style: none; margin: 0; padding: 0; }
 
+.planet-ico {
+  width: 20px; height: 20px; object-fit: contain; vertical-align: -5px;
+  border-radius: 4px; background: rgba(236, 231, 220, .08); padding: 1px;
+}
+.planet-title .planet-ico { width: 22px; height: 22px; }
+.fiche-head-txt .planet-ico { width: 18px; height: 18px; vertical-align: -4px; }
+
 .card-row {
   width: 100%; display: flex; align-items: center; gap: 10px;
   padding: 6px 10px; margin-bottom: 3px; border-radius: 9px;

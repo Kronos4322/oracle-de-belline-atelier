@@ -106,3 +106,9 @@ BELLINE.imageFor = function (number) {
   var file = map[number] || map[String(number)];
   return file ? 'assets/cartes/' + encodeURIComponent(file) : null;
 };
+
+/* Chemin de l'image du symbole d'une planète ('soleil', 'lune'…), ou null. */
+BELLINE.planetImageFor = function (key) {
+  var file = (BELLINE.PLANET_IMAGES || {})[key];
+  return file ? 'assets/cartes/' + encodeURIComponent(file) : null;
+};

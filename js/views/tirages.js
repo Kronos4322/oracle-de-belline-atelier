@@ -205,13 +205,12 @@ BELLINE.Views.tirages = function (root) {
     if (c) {
       current =
         '<div class="sp-modal-current">' +
+          '<button type="button" class="sp-current-remove" id="spClear" aria-label="Retirer la carte" title="Retirer la carte">×</button>' +
           '<div><span class="muted small">Carte placée</span><br><strong>' + c.number + ' · ' + esc(c.name) + '</strong>' +
             ((c.keywords && c.keywords.length) ? ' <span class="muted small">— ' + c.keywords.slice(0, 4).map(esc).join(' · ') + '</span>' : '') +
           '</div>' +
-          '<div class="sp-modal-current-btns">' +
-            (BELLINE.imageFor(n) ? '<button type="button" class="btn-link" id="spZoom">agrandir</button>' : '') +
-            '<button type="button" class="btn-ghost btn-sm" id="spClear">Retirer</button>' +
-          '</div>' +
+          (BELLINE.imageFor(n)
+            ? '<div class="sp-modal-current-btns"><button type="button" class="btn-link" id="spZoom">agrandir</button></div>' : '') +
         '</div>';
     }
 

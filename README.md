@@ -13,9 +13,12 @@ dans ses lectures.
 | **Journal** | ossature — décrit ce qui est prévu |
 | **Progression** | ossature — 2 indicateurs déjà branchés |
 
-Le contenu des cartes (mots-clés, symbolisme, significations) se remplit **carte par
-carte** dans le Grimoire — l'application ne fournit que la structure : numéro, nom, série
-planétaire.
+Chaque fiche affiche une section **« Repères de lecture »** (lecture seule,
+`js/data/card-reference.js`) : une synthèse de plusieurs sources publiques, avec des
+boutons pour la recopier dans tes champs. Ton grimoire, lui, se remplit **carte par
+carte**, avec tes propres mots.
+
+Un **clic sur l'image** d'une carte (fiche ou flashcard) l'affiche en grand.
 
 ## Technique
 

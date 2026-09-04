@@ -138,7 +138,26 @@ BELLINE.CLASSIC_COMBOS = [
   { cards: [49, 18], note: "Évolution spirituelle : les croyances se transforment, ouvrent de nouvelles dimensions de foi et de compréhension intérieure.", sens: "précise" }, // + audit
   { cards: [49, 29], note: "Rencontre d'âmes sœurs : une rencontre qui semble destinée, bénie.", sens: "renforce" }, // + audit
   { cards: [49, 40], note: "Miracle régénérateur : transformation harmonieuse de l'apparence, ou guérison qui restaure l'éclat naturel.", sens: "renforce" }, // + audit
-  { cards: [2, 4],   note: "Renouveau, nouveau départ inspiré par une influence masculine bienveillante.", sens: "précise" } // + audit
+  { cards: [2, 4],   note: "Renouveau, nouveau départ inspiré par une influence masculine bienveillante.", sens: "précise" }, // + audit
+  // --- audit continu, 2e vague (sept. 2026) : Pensée — Amitié et Appui
+  // n'avaient encore aucune paire attestée ; sourcé sur oracle-de-belline.
+  // com (série « associations-oracle-belline/<paire> », lecture propre à
+  // chaque couple, pas un texte générique) et kartomanta.com. ---
+  { cards: [8, 10],  note: "Période douce et chaleureuse marquée par des échanges affectifs sincères, des attentions touchantes et des gestes bienveillants.", sens: "renforce" }, // + audit
+  { cards: [8, 6],   note: "Relation sincère et bienveillante qui joue un rôle essentiel dans un cheminement vers le progrès, la reconnaissance ou le développement personnel.", sens: "renforce" }, // + audit
+  { cards: [8, 2],   note: "Pensées sincères, affectueuses ou protectrices venant d'un homme, ou dirigées vers une figure masculine — ami fidèle, allié, frère ou partenaire.", sens: "précise" }, // + audit
+  { cards: [8, 1],   note: "Relation amicale ou affective profondément liée au chemin de vie : un lien sincère, non le fruit du hasard.", sens: "précise" }, // + audit
+  { cards: [8, 16],  note: "Relation sincère et profondément enracinée dans le cadre intime, familial ou domestique.", sens: "renforce" }, // + audit
+  { cards: [39, 4],  note: "Nouveau départ ou projet soutenu par des aides précieuses et des soutiens solides.", sens: "renforce" }, // + audit
+  { cards: [39, 53], note: "Signe extrêmement positif : protection solide et soutien important dans les projets ou la situation en cours.", sens: "renforce" }, // + audit
+  { cards: [39, 5],  note: "Succès certain, soutenu par des aides précieuses, des alliances solides ou des relations bienveillantes.", sens: "renforce" }, // + audit
+  { cards: [39, 1],  note: "Tournant majeur qui sera soutenu par des aides providentielles ou des alliés fiables.", sens: "précise" }, // + audit
+  { cards: [39, 9],  note: "Période de repos, de récupération ou de recentrage personnel, soutenue par une aide extérieure bienveillante.", sens: "renforce" }, // + audit
+  { cards: [38, 49], note: "On ressort indemne de l'épreuve grâce à une protection inattendue.", sens: "retourne" }, // + audit
+  { cards: [38, 18], note: "La rupture devient le moteur d'une mutation positive.", sens: "retourne" }, // + audit
+  { cards: [38, 50], note: "L'usure destructrice entraîne l'effondrement de ce qui n'était déjà plus tenable.", sens: "renforce" }, // + audit
+  { cards: [46, 19], note: "Restrictions ou pertes financières : gestion rigoureuse requise, mise en garde sérieuse contre tout investissement risqué pour l'instant.", sens: "retourne" }, // + audit
+  { cards: [46, 18], note: "L'épreuve touche à sa fin : la transformation qui suit ouvre sur un nouveau départ.", sens: "retourne" } // + audit
 ];
 
 (function () {

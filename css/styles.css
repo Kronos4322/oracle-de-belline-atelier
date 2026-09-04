@@ -365,19 +365,17 @@ button.planet-sym:hover { color: var(--gold-soft); text-shadow: 0 0 10px current
 .sp-layout { display: grid; gap: 20px; grid-template-columns: 1fr; }
 @media (min-width: 980px) { .sp-layout { grid-template-columns: 1fr 300px; align-items: start; } }
 
-.sp-board-wrap { overflow-x: auto; padding: 6px 2px 14px; }
-.sp-scroll-hint { text-align: center; margin: 0 0 6px; }
-@media (min-width: 820px) { .sp-scroll-hint { display: none; } }
+.sp-board-wrap { overflow: hidden; padding: 6px 0 4px; }
 .spread {
   display: flex; flex-direction: column; align-items: center; gap: 4px;
-  min-width: 720px; margin: 0 auto;
+  width: max-content; transform-origin: top left;
 }
 
 /* --- un emplacement --- */
 .sp-slot {
   --tint: var(--line); --tint-bg: var(--panel);
   display: flex; flex-direction: column; align-items: center; gap: 3px;
-  width: 82px; padding: 0; background: none; border: none; color: var(--muted);
+  width: 76px; padding: 0; background: none; border: none; color: var(--muted);
 }
 .sp-slot[data-branch="neg"] { --tint: hsl(212 24% 52%); --tint-bg: hsl(212 26% 16%); }
 .sp-slot[data-branch="pos"] { --tint: hsl(40 42% 52%);  --tint-bg: hsl(40 34% 15%); }
@@ -415,7 +413,7 @@ button.planet-sym:hover { color: var(--gold-soft); text-shadow: 0 0 10px current
   background: var(--line); margin: 3px auto 0;
 }
 .sp-axis {
-  display: flex; justify-content: center; align-items: flex-start; gap: 16px;
+  display: flex; justify-content: center; align-items: flex-start; gap: 12px;
   padding-bottom: 6px;
 }
 .sp-axis-side { display: flex; flex-direction: column; gap: 8px; }
@@ -425,7 +423,7 @@ button.planet-sym:hover { color: var(--gold-soft); text-shadow: 0 0 10px current
 }
 
 .sp-branches {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 22px; width: 100%;
+  display: grid; grid-template-columns: auto auto; gap: 26px; justify-content: center;
   padding-top: 16px; position: relative;
 }
 .sp-branches::before {
@@ -442,10 +440,10 @@ button.planet-sym:hover { color: var(--gold-soft); text-shadow: 0 0 10px current
   content: ''; position: absolute; left: 50%; top: -16px; width: 1px; height: 12px; background: var(--line);
 }
 .sp-voie::after { content: ''; display: block; width: 1px; height: 14px; background: var(--line); margin: 3px auto 0; }
-.sp-noeuds { display: flex; gap: 16px; justify-content: center; }
+.sp-noeuds { display: flex; gap: 14px; justify-content: center; }
 .sp-noeud-col { display: flex; flex-direction: column; align-items: center; gap: 5px; position: relative; }
 .sp-noeud-col::before { content: ''; position: absolute; top: -13px; left: 50%; width: 1px; height: 13px; background: var(--line); }
-.sp-eclairs { display: flex; gap: 6px; }
+.sp-eclairs { display: flex; gap: 5px; }
 
 .sp-coupe {
   margin-top: 20px; padding: 12px 16px; border: 1px dashed var(--line); border-radius: 12px;
@@ -516,9 +514,3 @@ button.planet-sym:hover { color: var(--gold-soft); text-shadow: 0 0 10px current
 .sp-example ul { margin: 4px 0; padding-left: 20px; }
 .sp-example li { margin: 3px 0; font-size: .9rem; }
 .sp-notes { margin-top: 18px; }
-
-@media (max-width: 560px) {
-  .sp-slot { width: 70px; }
-  .sp-card { width: 58px; height: 86px; }
-  .sp-card-name { max-width: 70px; }
-}

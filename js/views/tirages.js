@@ -17,8 +17,50 @@ BELLINE.Views.tirages = function (root) {
 
   var selected = null;
   var pickerOpen = false;
+  var boardRO = null;
 
   function persist() { S.saveDraft(spread.id, draft); }
+
+  /* Le plateau est large : on le met à l'échelle pour qu'il tienne toujours
+     en entier dans la largeur disponible (jamais de défilement horizontal).
+     On mesure la largeur sur le conteneur .sp-layout (dont la taille ne
+     dépend pas du plateau), pour éviter toute boucle de redimensionnement. */
+  function fitBoard(tries) {
+    var wrap = root.querySelector('.sp-board-wrap');
+    var board = wrap && wrap.querySelector('.spread');
+    if (!board) return;
+
+    board.style.transform = 'none';
+    board.style.marginLeft = '0';
+    var natural = board.offsetWidth;
+    var avail = wrap.clientWidth;
+
+    if ((!natural || !avail) && (tries || 0) < 10) {
+      setTimeout(function () { fitBoard((tries || 0) + 1); }, 60);
+      return;
+    }
+    if (!natural || !avail) return;
+
+    var scale = Math.min(1.2, avail / natural);
+    board.style.transform = 'scale(' + scale + ')';
+    board.style.marginLeft = Math.max(0, (avail - natural * scale) / 2) + 'px';
+    wrap.style.height = Math.ceil(board.offsetHeight * scale) + 'px';
+  }
+
+  function observeBoard() {
+    var layout = root.querySelector('.sp-layout');
+    if (boardRO) boardRO.disconnect();
+    if (!layout || typeof ResizeObserver === 'undefined') return;
+    var last = 0;
+    boardRO = new ResizeObserver(function () {
+      if (!root.contains(layout)) { boardRO.disconnect(); return; }
+      var w = layout.clientWidth;
+      if (Math.abs(w - last) < 2) return;
+      last = w;
+      fitBoard(0);
+    });
+    boardRO.observe(layout);
+  }
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (m) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
@@ -191,7 +233,7 @@ BELLINE.Views.tirages = function (root) {
       '</div>' +
 
       '<div class="sp-layout">' +
-        '<div class="sp-board-wrap"><p class="muted small sp-scroll-hint">Plateau large : fais-le glisser latéralement si besoin.</p>' + boardHTML() + '</div>' +
+        '<div class="sp-board-wrap">' + boardHTML() + '</div>' +
         '<aside class="sp-panel" id="spPanel">' + panelHTML() + '</aside>' +
       '</div>' +
 
@@ -216,6 +258,8 @@ BELLINE.Views.tirages = function (root) {
     wireToolbar();
     wirePanel();
     if (pickerOpen) renderPicker();
+    observeBoard();
+    setTimeout(function () { fitBoard(0); }, 0);
   }
 
   function refreshBoardSel() {
@@ -350,6 +394,7 @@ BELLINE.Views.tirages = function (root) {
     root.querySelector('#spPanel').innerHTML = panelHTML();
     wirePanel();
     root.querySelector('#spCount').textContent = filledCount() + ' / ' + spread.count + ' cartes placées';
+    setTimeout(function () { fitBoard(0); }, 0);
   }
 
   render();

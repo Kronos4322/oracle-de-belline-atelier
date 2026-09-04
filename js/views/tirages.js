@@ -107,18 +107,21 @@ BELLINE.Views.tirages = function (root) {
     var p = posById[posId];
     var n = draft.cards[posId];
     var img = n ? BELLINE.imageFor(n) : null;
-    return '<button type="button" class="sp-slot' +
-      (selected === posId ? ' is-sel' : '') + (n ? ' is-filled' : '') +
-      '" data-pos="' + posId + '" data-branch="' + p.branch + '" data-kind="' + p.kind + '">' +
-      '<span class="sp-slot-label">' + esc(shortLabel(p)) + '</span>' +
-      '<span class="sp-card">' +
-        (n
-          ? (img ? '<img src="' + img + '" alt="" loading="lazy" onerror="this.remove()">' : '') +
-            '<span class="sp-card-num">' + n + '</span>'
-          : '<span class="sp-card-empty">+</span>') +
-      '</span>' +
-      '<span class="sp-card-name">' + (n ? esc(cardName(n)) : '&nbsp;') + '</span>' +
-      '</button>';
+    return '<div class="sp-slot-wrap">' +
+      '<button type="button" class="sp-slot' +
+        (selected === posId ? ' is-sel' : '') + (n ? ' is-filled' : '') +
+        '" data-pos="' + posId + '" data-branch="' + p.branch + '" data-kind="' + p.kind + '">' +
+        '<span class="sp-slot-label">' + esc(shortLabel(p)) + '</span>' +
+        '<span class="sp-card">' +
+          (n
+            ? (img ? '<img src="' + img + '" alt="" loading="lazy" onerror="this.remove()">' : '') +
+              '<span class="sp-card-num">' + n + '</span>'
+            : '<span class="sp-card-empty">+</span>') +
+        '</span>' +
+        '<span class="sp-card-name">' + (n ? esc(cardName(n)) : '&nbsp;') + '</span>' +
+      '</button>' +
+      (n ? '<button type="button" class="sp-slot-remove" data-remove="' + posId + '" aria-label="Retirer la carte" title="Retirer la carte">×</button>' : '') +
+      '</div>';
   }
 
   function noeudCol(b, i) {
@@ -330,6 +333,17 @@ BELLINE.Views.tirages = function (root) {
   function bindSlots() {
     root.querySelectorAll('.sp-slot').forEach(function (b) {
       b.addEventListener('click', function () { openModal(b.dataset.pos); });
+    });
+    root.querySelectorAll('.sp-slot-remove').forEach(function (b) {
+      b.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var id = b.dataset.remove;
+        delete draft.cards[id];
+        draft.example = false;
+        persist();
+        renderBoardOnly();
+        if (modalOpen && selected === id) renderModal();
+      });
     });
   }
 

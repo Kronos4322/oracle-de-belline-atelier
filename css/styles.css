@@ -372,6 +372,16 @@ button.planet-sym:hover { color: var(--gold-soft); text-shadow: 0 0 10px current
 }
 
 /* --- un emplacement --- */
+.sp-slot-wrap { position: relative; display: inline-flex; }
+.sp-slot-remove {
+  position: absolute; top: 10px; right: 1px; z-index: 4;
+  width: 21px; height: 21px; padding: 0; border-radius: 50%;
+  display: grid; place-items: center; font-size: 14px; line-height: 1;
+  background: var(--bg); color: var(--danger); border: 1.5px solid var(--danger);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .4);
+}
+.sp-slot-remove:hover { background: var(--danger); color: #1c0f0f; }
+
 .sp-slot {
   --tint: var(--line); --tint-bg: var(--panel);
   display: flex; flex-direction: column; align-items: center; gap: 3px;

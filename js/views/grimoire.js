@@ -83,7 +83,7 @@ BELLINE.Views.grimoire = function (root) {
         ? '<button type="button" class="planet-sym" data-planet="' + pk + '" title="Voir la carte planétaire">' + planet.symbol + '</button>'
         : '<span class="planet-sym">' + planet.symbol + '</span>';
       return '<div class="planet-group">' +
-        '<h3 class="planet-title" style="--hue:' + planet.hue + '">' + pSym + ' ' + planet.name + '</h3>' +
+        '<h3 class="planet-title" style="--hue:' + planet.hue + '" data-glyph="' + planet.symbol + '">' + pSym + ' Série ' + planet.name + '</h3>' +
         '<ul>' + items.map(function (c) {
           var img = BELLINE.imageFor(c.number);
           var edited = S.isCardEdited(c.number);

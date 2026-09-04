@@ -99,113 +99,135 @@ BELLINE.Views.methode = function (root) {
   function li(arr) { return '<ul>' + arr.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul>'; }
   function ol(arr) { return '<ol>' + arr.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ol>'; }
 
+  /* Chaque carte porte le(s) livre(s) auquel elle appartient — sert au filtre
+     par onglet. « tout » n'est jamais un livre réel, c'est l'onglet neutre. */
+  var BOOKS = [
+    ['tout', '✦ Tout'],
+    ['principes', 'I · Principes'],
+    ['grammaire', 'II · Grammaire'],
+    ['dispositifs', 'III · Dispositifs'],
+    ['mesure', 'IV · Mesure'],
+    ['discipline', 'V · Discipline']
+  ];
+
+  function card(book, title, bodyHtml) {
+    return '<section class="method-card" data-book="' + book + '"><h2>' + title + '</h2>' + bodyHtml + '</section>';
+  }
+
+  var CARDS =
+    card('principes', 'Les six principes', ol(PRINCIPES)) +
+
+    card('principes', "La règle d'or — du littéral au symbolique",
+      '<p class="muted">Ne pas chercher d\'abord ce que la carte cache. Regarder d\'abord ce qu\'elle montre.</p>' +
+      '<ol class="method-steps">' +
+        PROGRESSION.map(function (s) { return '<li><strong>' + s[0] + '</strong><br><span class="muted">' + s[1] + '</span></li>'; }).join('') +
+      '</ol>') +
+
+    card('principes', 'Cartes-personnes &amp; carte focus', li(REFERENT)) +
+
+    card('grammaire', "L'ordre canonique de lecture", ol(ORDRE)) +
+
+    card('grammaire', 'Le test de valence contraire',
+      '<ul>' +
+        '<li><strong>Carte favorable en position défavorable</strong> → chercher son ombre, son excès, son blocage.</li>' +
+        '<li><strong>Carte défavorable en position favorable</strong> → chercher sa fonction constructive.</li>' +
+        '<li><strong>Borne stricte</strong> : une carte favorable en position favorable n\'en relève pas.</li>' +
+      '</ul>' +
+      '<p>« Une lame difficile en bonne position ne devient pas douce : elle devient utile. »</p>' +
+      '<p class="muted small">Le test se conduit par énumération écrite, avant l\'interprétation, sur toutes les cartes concernées sans exception.</p>') +
+
+    card('grammaire', 'La grammaire temporelle (réversibilité)',
+      '<p><strong>Le passé se nomme, l\'avenir se conjugue.</strong></p>' +
+      '<ul>' +
+        '<li><strong>Vers le bas</strong> — l\'avenir comme possibilité, qu\'on attend. Le nœud d\'action est un verbe, ses éclaircisseurs des adverbes (comment l\'acte se ferait).</li>' +
+        '<li><strong>Vers le haut</strong> — le passé comme fait, qu\'on peut savoir. Le nœud d\'action devient un nom d\'événement advenu, ses éclaircisseurs des compléments du nom. On remonte du plus récent au plus ancien.</li>' +
+        '<li>Les deux sens ne se mêlent jamais dans une même phrase.</li>' +
+      '</ul>') +
+
+    card('dispositifs', 'Les couples élémentaires',
+      '<div class="tbl-scroll"><table class="method-table"><tbody>' +
+        COUPLES.map(function (c) { return '<tr><td><strong>' + c[0] + '</strong></td><td class="muted">' + c[1] + '</td><td>' + c[2] + '</td></tr>'; }).join('') +
+      '</tbody></table></div>') +
+
+    card('dispositifs', 'Concevoir un tirage nouveau',
+      '<p class="muted">Quatre exigences (ch. 16). L\'éditeur de la vue Tirages les applique.</p>' + ol(CONCEVOIR)) +
+
+    card('dispositifs', 'Les sept désaccords, tranchés',
+      '<p class="muted small">D\'après <em>L\'Oracle et la grille</em>, ch. 14 — arbitrages sur des points qui, sinon, se décideraient au cas par cas selon la commodité.</p>' +
+      '<div class="tbl-scroll"><table class="method-table"><tbody>' +
+        DESACCORDS.map(function (d) { return '<tr><td><strong>' + d[0] + '</strong></td><td>' + d[1] + '</td></tr>'; }).join('') +
+      '</tbody></table></div>') +
+
+    card('mesure', 'Les cartes fortes',
+      '<p><strong>11 Trahison · 34 Despotisme · 38 Accident · 42 Sagesse · 48 Fatalité</strong></p>' +
+      '<p>Elles dominent leur voisinage et fournissent le seul opérateur d\'intensité du jeu. Ne jamais en inventer un autre.</p>' +
+      '<p class="muted small">Espérance : 1,6 sur un tirage de 17 cartes · 2,1 sur 22 · 2,7 sur 29. Trois cartes fortes sur 22 surviennent dans un tiers des cas.</p>') +
+
+    card('mesure', "L'orientation des familles",
+      '<p class="muted small">L\'indice rapporte l\'écart entre lames positives et négatives au nombre de lames de la famille.</p>' +
+      '<div class="tbl-scroll"><table class="method-table"><tbody>' +
+        FAMILLES.map(function (f) { return '<tr><td><strong>' + f[0] + '</strong></td><td class="method-idx">' + f[1] + '</td><td class="muted">' + f[2] + '</td></tr>'; }).join('') +
+      '</tbody></table></div>' +
+      '<p class="muted small">Un tirage riche en Mars ou en Saturne est mécaniquement sombre, sans que cela constitue une information. La distribution planétaire se lit comme un contexte, jamais comme un présage.</p>') +
+
+    card('mesure', 'Les classements fragiles',
+      '<p>Trois lames à valence forte sont contestées par les répertoires publiés (marqueur † de la table) : ' +
+      '<strong>37 Feu</strong> (le classement le plus fragile), <strong>41 Héritage</strong>, <strong>48 Fatalité</strong>.</p>' +
+      '<p>Toute concordance qui repose sur elles se donne en deux versions : tranchée, et recalculée en les neutralisant. ' +
+      'Reclasser une seule peut faire varier un résultat du simple au triple. La Progression et le Journal affichent les deux.</p>' +
+      '<p class="muted small">Trois autres se classent mal mais sont déjà neutres, donc sans effet sur la mesure : 36 Pourparlers, 28 Famille, 31 Passions.</p>') +
+
+    card('mesure', 'Tables de référence — cartes fortes',
+      '<p class="muted small">Nombre de cartes fortes (5/53) selon le nombre de cartes tirées. Loi hypergéométrique.</p>' +
+      ptable(['Cartes tirées', 'Espérance', 'P(3 ou +)', 'P(4 ou +)'], [
+        ['10', '0,94', '4,1 %', '0,3 %'], ['15', '1,42', '13,1 %', '1,9 %'], ['17', '1,60', '18,1 %', '3,2 %'],
+        ['20', '1,89', '27,1 %', '6,1 %'], ['22', '2,08', '33,8 %', '8,8 %'], ['29', '2,74', '59,1 %', '24,0 %']
+      ])) +
+
+    card('mesure', 'Tables de référence — concordance &amp; familles',
+      '<p class="muted small">Concordance parfaite selon le nombre de lames fortes en positions polaires.</p>' +
+      ptable(['Lames fortes polaires', 'P(concordance parfaite)'], [
+        ['5', '10,0 %'], ['6', '5,0 %'], ['8', '1,4 %'], ['10', '0,4 %'], ['13', '0,1 %']
+      ]) +
+      '<p class="muted small">Famille de 7 lames au complet — désignée à l\'avance vs constatée après coup (l\'écart est instructif).</p>' +
+      ptable(['Cartes tirées', 'Famille désignée', 'Une famille quelconque'], [
+        ['20', '0,05 %', '0,4 %'], ['25', '0,31 %', '2,2 %'], ['29', '1,01 %', '6,9 %'], ['35', '4,36 %', '26,8 %']
+      ]) +
+      '<p class="muted small">Combinaison de tirages indépendants : un résultat isolé à 7–8 % n\'est pas concluant ; deux passent sous 5 % ; quatre sous 1 %. L\'indépendance est rarement remplie.</p>') +
+
+    card('discipline', 'Déclarer avant',
+      '<p class="muted">Sept exigences portent sur la même chose : ce qui pourrait être ajusté après le tirage doit être fixé avant.</p>' +
+      li(DECLARER) +
+      '<p class="muted small">Aucune règle ne rend le lecteur neutre. Toutes réduisent sa marge de manœuvre après le tirage — c\'est le seul objectif atteignable.</p>') +
+
+    card('discipline', "Ce qu'il reste à faire",
+      '<p class="muted">Trois travaux, dans l\'ordre (traité, ch. 52). « Rien ne manque à la méthode. Il manque des données. »</p>' +
+      ol([
+        "Tenir la carte du jour trente jours, en déclarant à l'avance que le nombre de cartes fortes sera relevé.",
+        "Relever, tels qu'écrits, les énoncés falsifiables de chaque tirage à la date de délai — sans en ajouter ni reformuler aucun.",
+        "Tenter une fois la lecture à l'aveugle : une remontée pour quelqu'un dont on ignore l'histoire, consignée avant tout échange."
+      ]));
+
   root.innerHTML =
     '<div class="view-head"><h1>Méthode</h1>' +
       '<p class="muted">Mémo de lecture — d\'après <em>Lire le Belline</em> et <em>L\'Oracle et la grille</em>.</p></div>' +
 
-    '<div class="method">' +
+    '<nav class="method-tabs">' +
+      BOOKS.map(function (b, i) {
+        return '<button type="button" class="method-tab' + (i === 0 ? ' is-active' : '') + '" data-book="' + b[0] + '">' + b[1] + '</button>';
+      }).join('') +
+    '</nav>' +
 
-      '<section class="method-card"><h2>Les six principes</h2>' + ol(PRINCIPES) + '</section>' +
+    '<div class="method">' + CARDS + '</div>';
 
-      '<section class="method-card"><h2>La règle d\'or — du littéral au symbolique</h2>' +
-        '<p class="muted">Ne pas chercher d\'abord ce que la carte cache. Regarder d\'abord ce qu\'elle montre.</p>' +
-        '<ol class="method-steps">' +
-          PROGRESSION.map(function (s) { return '<li><strong>' + s[0] + '</strong><br><span class="muted">' + s[1] + '</span></li>'; }).join('') +
-        '</ol></section>' +
-
-      '<section class="method-card"><h2>L\'ordre canonique de lecture</h2>' + ol(ORDRE) + '</section>' +
-
-      '<section class="method-card"><h2>Le test de valence contraire</h2>' +
-        '<ul>' +
-          '<li><strong>Carte favorable en position défavorable</strong> → chercher son ombre, son excès, son blocage.</li>' +
-          '<li><strong>Carte défavorable en position favorable</strong> → chercher sa fonction constructive.</li>' +
-          '<li><strong>Borne stricte</strong> : une carte favorable en position favorable n\'en relève pas.</li>' +
-        '</ul>' +
-        '<p>« Une lame difficile en bonne position ne devient pas douce : elle devient utile. »</p>' +
-        '<p class="muted small">Le test se conduit par énumération écrite, avant l\'interprétation, sur toutes les cartes concernées sans exception.</p>' +
-      '</section>' +
-
-      '<section class="method-card"><h2>La grammaire temporelle (réversibilité)</h2>' +
-        '<p><strong>Le passé se nomme, l\'avenir se conjugue.</strong></p>' +
-        '<ul>' +
-          '<li><strong>Vers le bas</strong> — l\'avenir comme possibilité, qu\'on attend. Le nœud d\'action est un verbe, ses éclaircisseurs des adverbes (comment l\'acte se ferait).</li>' +
-          '<li><strong>Vers le haut</strong> — le passé comme fait, qu\'on peut savoir. Le nœud d\'action devient un nom d\'événement advenu, ses éclaircisseurs des compléments du nom. On remonte du plus récent au plus ancien.</li>' +
-          '<li>Les deux sens ne se mêlent jamais dans une même phrase.</li>' +
-        '</ul></section>' +
-
-      '<section class="method-card"><h2>Les couples élémentaires</h2>' +
-        '<table class="method-table"><tbody>' +
-          COUPLES.map(function (c) { return '<tr><td><strong>' + c[0] + '</strong></td><td class="muted">' + c[1] + '</td><td>' + c[2] + '</td></tr>'; }).join('') +
-        '</tbody></table></section>' +
-
-      '<section class="method-card"><h2>Les cartes fortes</h2>' +
-        '<p><strong>11 Trahison · 34 Despotisme · 38 Accident · 42 Sagesse · 48 Fatalité</strong></p>' +
-        '<p>Elles dominent leur voisinage et fournissent le seul opérateur d\'intensité du jeu. Ne jamais en inventer un autre.</p>' +
-        '<p class="muted small">Espérance : 1,6 sur un tirage de 17 cartes · 2,1 sur 22 · 2,7 sur 29. Trois cartes fortes sur 22 surviennent dans un tiers des cas.</p>' +
-      '</section>' +
-
-      '<section class="method-card"><h2>L\'orientation des familles</h2>' +
-        '<p class="muted small">L\'indice rapporte l\'écart entre lames positives et négatives au nombre de lames de la famille.</p>' +
-        '<table class="method-table"><tbody>' +
-          FAMILLES.map(function (f) { return '<tr><td><strong>' + f[0] + '</strong></td><td class="method-idx">' + f[1] + '</td><td class="muted">' + f[2] + '</td></tr>'; }).join('') +
-        '</tbody></table>' +
-        '<p class="muted small">Un tirage riche en Mars ou en Saturne est mécaniquement sombre, sans que cela constitue une information. La distribution planétaire se lit comme un contexte, jamais comme un présage.</p>' +
-      '</section>' +
-
-      '<section class="method-card"><h2>Déclarer avant</h2>' +
-        '<p class="muted">Sept exigences portent sur la même chose : ce qui pourrait être ajusté après le tirage doit être fixé avant.</p>' +
-        li(DECLARER) +
-        '<p class="muted small">Aucune règle ne rend le lecteur neutre. Toutes réduisent sa marge de manœuvre après le tirage — c\'est le seul objectif atteignable.</p>' +
-      '</section>' +
-
-      '<section class="method-card"><h2>Cartes-personnes &amp; carte focus</h2>' + li(REFERENT) + '</section>' +
-
-      '<section class="method-card"><h2>Les classements fragiles</h2>' +
-        '<p>Trois lames à valence forte sont contestées par les répertoires publiés (marqueur † de la table) : ' +
-        '<strong>37 Feu</strong> (le classement le plus fragile), <strong>41 Héritage</strong>, <strong>48 Fatalité</strong>.</p>' +
-        '<p>Toute concordance qui repose sur elles se donne en deux versions : tranchée, et recalculée en les neutralisant. ' +
-        'Reclasser une seule peut faire varier un résultat du simple au triple. La Progression et le Journal affichent les deux.</p>' +
-        '<p class="muted small">Trois autres se classent mal mais sont déjà neutres, donc sans effet sur la mesure : 36 Pourparlers, 28 Famille, 31 Passions.</p>' +
-      '</section>' +
-
-      '<section class="method-card"><h2>Concevoir un tirage nouveau</h2>' +
-        '<p class="muted">Quatre exigences (ch. 16). L\'éditeur de la vue Tirages les applique.</p>' + ol(CONCEVOIR) + '</section>' +
-
-      '<section class="method-card"><h2>Tables de référence — cartes fortes</h2>' +
-        '<p class="muted small">Nombre de cartes fortes (5/53) selon le nombre de cartes tirées. Loi hypergéométrique.</p>' +
-        ptable(['Cartes tirées', 'Espérance', 'P(3 ou +)', 'P(4 ou +)'], [
-          ['10', '0,94', '4,1 %', '0,3 %'], ['15', '1,42', '13,1 %', '1,9 %'], ['17', '1,60', '18,1 %', '3,2 %'],
-          ['20', '1,89', '27,1 %', '6,1 %'], ['22', '2,08', '33,8 %', '8,8 %'], ['29', '2,74', '59,1 %', '24,0 %']
-        ]) +
-      '</section>' +
-
-      '<section class="method-card"><h2>Tables de référence — concordance &amp; familles</h2>' +
-        '<p class="muted small">Concordance parfaite selon le nombre de lames fortes en positions polaires.</p>' +
-        ptable(['Lames fortes polaires', 'P(concordance parfaite)'], [
-          ['5', '10,0 %'], ['6', '5,0 %'], ['8', '1,4 %'], ['10', '0,4 %'], ['13', '0,1 %']
-        ]) +
-        '<p class="muted small">Famille de 7 lames au complet — désignée à l\'avance vs constatée après coup (l\'écart est instructif).</p>' +
-        ptable(['Cartes tirées', 'Famille désignée', 'Une famille quelconque'], [
-          ['20', '0,05 %', '0,4 %'], ['25', '0,31 %', '2,2 %'], ['29', '1,01 %', '6,9 %'], ['35', '4,36 %', '26,8 %']
-        ]) +
-        '<p class="muted small">Combinaison de tirages indépendants : un résultat isolé à 7–8 % n\'est pas concluant ; deux passent sous 5 % ; quatre sous 1 %. L\'indépendance est rarement remplie.</p>' +
-      '</section>' +
-
-      '<section class="method-card"><h2>Les sept désaccords, tranchés</h2>' +
-        '<p class="muted small">D\'après <em>L\'Oracle et la grille</em>, ch. 14 — arbitrages sur des points qui, sinon, se décideraient au cas par cas selon la commodité.</p>' +
-        '<table class="method-table"><tbody>' +
-          DESACCORDS.map(function (d) { return '<tr><td><strong>' + d[0] + '</strong></td><td>' + d[1] + '</td></tr>'; }).join('') +
-        '</tbody></table>' +
-      '</section>' +
-
-      '<section class="method-card"><h2>Ce qu\'il reste à faire</h2>' +
-        '<p class="muted">Trois travaux, dans l\'ordre (traité, ch. 52). « Rien ne manque à la méthode. Il manque des données. »</p>' +
-        ol([
-          "Tenir la carte du jour trente jours, en déclarant à l'avance que le nombre de cartes fortes sera relevé.",
-          "Relever, tels qu'écrits, les énoncés falsifiables de chaque tirage à la date de délai — sans en ajouter ni reformuler aucun.",
-          "Tenter une fois la lecture à l'aveugle : une remontée pour quelqu'un dont on ignore l'histoire, consignée avant tout échange."
-        ]) +
-      '</section>' +
-
-    '</div>';
+  var tabs = root.querySelectorAll('.method-tab');
+  var cards = root.querySelectorAll('.method-card');
+  tabs.forEach(function (t) {
+    t.addEventListener('click', function () {
+      tabs.forEach(function (x) { x.classList.toggle('is-active', x === t); });
+      var book = t.dataset.book;
+      cards.forEach(function (c) { c.hidden = (book !== 'tout' && c.dataset.book !== book); });
+      root.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    });
+  });
 };

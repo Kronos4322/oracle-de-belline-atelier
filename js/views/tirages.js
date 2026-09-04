@@ -25,10 +25,11 @@ BELLINE.Views.tirages = function (root) {
   if (allIds().indexOf(spreadId) === -1) spreadId = 'hecate';
 
   var spread, posById, draft, slotKeys;
-  var selected = null;
-  var modalOpen = false;
+  var selected = null;      // position affichée dans l'inspecteur (lecture, dans le tirage)
+  var pickerOpen = false;   // fenêtre de choix de carte, distincte de l'inspecteur
+  var pickerAdvance = false;
   var editorOpen = false;
-  var explainOpen = false;
+  var explainOpen = true;
   var guidedStep = -1;   // -1 = fermé
   var boardRO = null;
   var onKey = null;
@@ -103,8 +104,8 @@ BELLINE.Views.tirages = function (root) {
       slotKeys.push(p.id);
       for (var i = 1; i <= (p.adj || 0); i++) slotKeys.push(p.id + '#a' + i);
     });
-    selected = null;
-    modalOpen = false;
+    selected = slotKeys.filter(function (k) { return draft.cards[k]; })[0] || null;
+    pickerOpen = false;
     guidedStep = -1;
   }
   loadSpread(spreadId);
@@ -303,60 +304,150 @@ BELLINE.Views.tirages = function (root) {
       (card.fragile ? ' <em>(classement fragile — à confirmer.)</em>' : '') + '</p>';
   }
 
-  /* ---------- fenêtre ---------- */
+  /* ---------- sélection & inspecteur (lecture, DANS le tirage) ---------- */
 
-  function openModal(key) {
-    if (key) selected = key;
-    if (!selected) selected = nextEmpty() || slotKeys[0];
-    modalOpen = true;
-    renderModal();
-  }
-  function closeModal() {
-    modalOpen = false;
-    var m = root.querySelector('#spModal');
-    if (m) { m.hidden = true; m.innerHTML = ''; }
+  function selectPos(key) {
+    selected = key;
+    renderInspector();
     refreshBoardSel();
+    var insp = root.querySelector('.sp-inspector');
+    if (insp && window.innerWidth < 1000) insp.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }
 
-  function renderModal() {
-    var box = root.querySelector('#spModal');
-    if (!box) return;
-    if (!modalOpen || !selected) { box.hidden = true; box.innerHTML = ''; return; }
-
-    var isAdj = !!adjIndexOf(selected);
-    var base = basePos(selected);
+  function posMeta(key) {
+    var isAdj = !!adjIndexOf(key);
+    var base = basePos(key);
     var p = isAdj
-      ? { id: selected, label: 'Éclaircisseur — ' + base.label, kind: 'adjectif', branch: base.branch, polarity: null, logic: 'Précise le substantif « ' + base.label + ' » sans en changer la nature.' }
+      ? { id: key, label: 'Éclaircisseur — ' + base.label, kind: 'adjectif', branch: base.branch, polarity: null,
+          logic: 'Précise le substantif « ' + base.label + ' » sans en changer la nature.' }
       : base;
+    return { isAdj: isAdj, base: base, p: p };
+  }
+
+  function inspectorHTML() {
+    if (!selected) {
+      return '<div class="sp-insp sp-insp-empty">' +
+        '<p class="big-symbol">✦</p>' +
+        '<p>Touche une position du plateau pour la lire.</p>' +
+        '<p class="muted small">Une carte posée s\'explique ici, sans quitter le tirage.</p>' +
+      '</div>';
+    }
+    var m = posMeta(selected);
+    var p = m.p, isAdj = m.isAdj, base = m.base;
     var n = draft.cards[selected];
     var c = n ? S.getCard(n) : null;
     var idx = slotKeys.indexOf(selected);
     var read = readHint(p, selected);
     var val = c ? BELLINE.VALENCE[c.valence] : null;
 
-    var current = '';
-    if (c) {
-      current =
-        '<div class="sp-modal-current">' +
-          '<button type="button" class="sp-current-remove" id="spClear" aria-label="Retirer la carte" title="Retirer la carte">×</button>' +
-          '<div><strong>' + c.number + ' · ' + esc(c.name) + '</strong>' +
-            ' <span class="val-tag val-' + c.valence + '">valence ' + (val ? val.label : c.valence) + '</span>' +
-            (c.forte ? ' <span class="val-tag val-forte">carte forte</span>' : '') +
-            (c.fragile ? ' <span class="val-tag val-fragile">classement fragile</span>' : '') +
-            ((c.keywords && c.keywords.length) ? '<br><span class="muted small">' + c.keywords.slice(0, 5).map(esc).join(' · ') + '</span>' : '') +
-            (c.sens && c.sens.general ? '<br><span class="sp-modal-sens">' + esc(c.sens.general) + '</span>' : '') +
-          '</div>' +
-          (BELLINE.imageFor(n)
-            ? '<div class="sp-modal-current-btns"><button type="button" class="btn-link" id="spZoom">agrandir</button>' +
-              '<button type="button" class="btn-link" id="spFiche">fiche</button></div>' : '') +
-        '</div>' +
-        contraireNote(p, c) +
-        '<details class="sp-explain"' + (explainOpen ? ' open' : '') + '>' +
-          '<summary>Explication détaillée' +
-            (draft.domaine !== 'general' ? ' — ' + esc(domaineDef(draft.domaine)[1].toLowerCase()) : '') + '</summary>' +
-          cardExplainHTML(c) +
-        '</details>';
+    return '<div class="sp-insp">' +
+      '<div class="sp-insp-head">' +
+        '<span class="sp-kind sp-kind-' + (p.kind === 'substantif' ? 'substantif' : 'adjectif') + '">' +
+          (p.kind === 'substantif' ? 'substantif' : 'adjectif') + '</span>' +
+        '<span class="muted small">' + (idx + 1) + ' / ' + slotCount() + '</span>' +
+      '</div>' +
+      '<h3 class="sp-insp-title">' + esc(p.label) + '</h3>' +
+
+      (c
+        ? '<div class="sp-insp-card">' +
+            (BELLINE.imageFor(n)
+              ? '<button type="button" class="sp-insp-fig is-zoom" id="spInspZoom" style="--hue:' + BELLINE.PLANETS[c.planet].hue + '">' +
+                  '<img src="' + BELLINE.imageFor(n) + '" alt=""></button>'
+              : '') +
+            '<div class="sp-insp-card-txt">' +
+              '<strong>' + c.number + ' · ' + esc(c.name) + '</strong>' +
+              '<div class="sp-insp-tags">' +
+                '<span class="val-tag val-' + c.valence + '">valence ' + (val ? val.label : c.valence) + '</span>' +
+                (c.forte ? '<span class="val-tag val-forte">carte forte</span>' : '') +
+                (c.fragile ? '<span class="val-tag val-fragile">fragile</span>' : '') +
+              '</div>' +
+              ((c.keywords && c.keywords.length) ? '<p class="muted small">' + c.keywords.slice(0, 5).map(esc).join(' · ') + '</p>' : '') +
+            '</div>' +
+          '</div>'
+        : '<p class="muted">Aucune carte ici pour l\'instant.</p>') +
+
+      contraireNote(p, c) +
+
+      '<div class="sp-modal-role">' +
+        '<p class="sp-modal-logic"><span class="sp-modal-role-h">À quoi sert cette position</span>' + esc(p.logic) + '</p>' +
+        (read ? '<p class="sp-modal-read"><span class="sp-modal-role-h">Comment la lire' +
+          (isReversible() ? ' — sens ' + esc(draft.sens) : '') + '</span>' + esc(read) + '</p>' : '') +
+        (isAdj ? '<p class="muted small">Éclaire : ' + esc(base.label) + '</p>' : '') +
+      '</div>' +
+
+      (c
+        ? '<details class="sp-explain"' + (explainOpen ? ' open' : '') + '>' +
+            '<summary>Explication détaillée' +
+              (draft.domaine !== 'general' ? ' — ' + esc(domaineDef(draft.domaine)[1].toLowerCase()) : '') + '</summary>' +
+            cardExplainHTML(c) +
+          '</details>'
+        : '') +
+
+      '<div class="sp-insp-actions">' +
+        '<button type="button" class="btn-primary btn-sm" id="spInspChoose">' + (c ? 'Changer la carte' : 'Choisir une carte') + '</button>' +
+        (c ? '<button type="button" class="btn-ghost btn-sm" id="spInspClear">Retirer</button>' : '') +
+        (c ? '<button type="button" class="btn-ghost btn-sm" id="spInspFiche">Fiche complète</button>' : '') +
+      '</div>' +
+      '<div class="sp-insp-nav">' +
+        '<button type="button" class="btn-ghost btn-sm" id="spInspPrev"' + (idx <= 0 ? ' disabled' : '') + '>← Précédente</button>' +
+        '<button type="button" class="btn-ghost btn-sm" id="spInspNext"' + (idx >= slotCount() - 1 ? ' disabled' : '') + '>Suivante →</button>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function renderInspector() {
+    var box = root.querySelector('#spInspector');
+    if (!box) return;
+    box.innerHTML = inspectorHTML();
+    var q = function (id) { return box.querySelector(id); };
+    if (q('#spInspChoose')) q('#spInspChoose').addEventListener('click', function () { openPicker(selected, false); });
+    if (q('#spInspClear')) q('#spInspClear').addEventListener('click', function () {
+      delete draft.cards[selected]; draft.example = false; persist();
+      renderBoardOnly(); renderInspector();
+    });
+    if (q('#spInspZoom')) q('#spInspZoom').addEventListener('click', function () {
+      BELLINE.lightbox(BELLINE.imageFor(draft.cards[selected]), draft.cards[selected] + ' · ' + cardName(draft.cards[selected]));
+    });
+    if (q('#spInspFiche')) q('#spInspFiche').addEventListener('click', function () {
+      S.write('grimoire.open', draft.cards[selected]); BELLINE.go('grimoire');
+    });
+    if (q('#spInspPrev')) q('#spInspPrev').addEventListener('click', function () { stepPos(-1); renderInspector(); refreshBoardSel(); });
+    if (q('#spInspNext')) q('#spInspNext').addEventListener('click', function () { stepPos(1); renderInspector(); refreshBoardSel(); });
+    var expl = box.querySelector('.sp-explain');
+    if (expl) {
+      expl.addEventListener('toggle', function () { explainOpen = expl.open; });
+      var ef = expl.querySelector('#spExplainFiche');
+      if (ef) ef.addEventListener('click', function () { S.write('grimoire.open', draft.cards[selected]); BELLINE.go('grimoire'); });
     }
+  }
+
+  /* ---------- fenêtre de choix de carte (picker) ---------- */
+
+  function openPicker(key, advance) {
+    if (key) selected = key;
+    if (!selected) selected = nextEmpty() || slotKeys[0];
+    pickerOpen = true;
+    pickerAdvance = !!advance;
+    renderPicker();
+  }
+  function closePicker() {
+    pickerOpen = false;
+    var m = root.querySelector('#spModal');
+    if (m) { m.hidden = true; m.innerHTML = ''; }
+    refreshBoardSel();
+    renderInspector();
+  }
+
+  function renderPicker() {
+    var box = root.querySelector('#spModal');
+    if (!box) return;
+    if (!pickerOpen || !selected) { box.hidden = true; box.innerHTML = ''; return; }
+
+    var m = posMeta(selected);
+    var p = m.p;
+    var n = draft.cards[selected];
+    var c = n ? S.getCard(n) : null;
+    var idx = slotKeys.indexOf(selected);
 
     box.innerHTML =
       '<div class="sp-modal-panel">' +
@@ -376,14 +467,14 @@ BELLINE.Views.tirages = function (root) {
           '<div class="sp-combo-list" id="spComboList" hidden></div>' +
         '</div>' +
 
-        current +
-
-        '<div class="sp-modal-role">' +
-          '<p class="sp-modal-logic"><span class="sp-modal-role-h">À quoi sert cette position</span>' + esc(p.logic) + '</p>' +
-          (read ? '<p class="sp-modal-read"><span class="sp-modal-role-h">Comment la lire' +
-            (isReversible() ? ' — sens ' + esc(draft.sens) : '') + '</span>' + esc(read) + '</p>' : '') +
-          (isAdj ? '<p class="muted small">Éclaire : ' + esc(base.label) + '</p>' : '') +
-        '</div>' +
+        (c
+          ? '<div class="sp-modal-current">' +
+              '<button type="button" class="sp-current-remove" id="spClear" aria-label="Retirer la carte" title="Retirer la carte">×</button>' +
+              '<div><strong>' + c.number + ' · ' + esc(c.name) + '</strong>' +
+                ' <span class="val-tag val-' + c.valence + '">valence ' + BELLINE.VALENCE[c.valence].label + '</span>' +
+                (c.forte ? ' <span class="val-tag val-forte">carte forte</span>' : '') +
+              '</div></div>'
+          : '') +
 
         '<div class="sp-modal-foot">' +
           '<button type="button" class="btn-ghost btn-sm" id="spPrev"' + (idx <= 0 ? ' disabled' : '') + '>← Précédente</button>' +
@@ -405,7 +496,6 @@ BELLINE.Views.tirages = function (root) {
       if (listEl.hidden) return;
       var r = input.getBoundingClientRect();
       var below = window.innerHeight - r.bottom;
-      var h = Math.min(340, Math.max(below, r.top) - 12);
       listEl.style.left = r.left + 'px';
       listEl.style.width = r.width + 'px';
       if (below < 220 && r.top > below) {
@@ -452,8 +542,9 @@ BELLINE.Views.tirages = function (root) {
           draft.example = false;
           persist();
           renderBoardOnly();
-          if (wasEmpty) { var nx = nextEmpty(); if (nx) selected = nx; }
-          renderModal();
+          if (pickerAdvance && wasEmpty) { var nx = nextEmpty(); if (nx) selected = nx; else { closePicker(); return; } }
+          else { closePicker(); return; }
+          renderPicker();
         });
       });
     }
@@ -482,29 +573,15 @@ BELLINE.Views.tirages = function (root) {
     });
 
     var q = function (id) { return box.querySelector(id); };
-    q('#spModalClose').addEventListener('click', closeModal);
-    q('#spDone').addEventListener('click', closeModal);
-    q('#spPrev').addEventListener('click', function () { stepPos(-1); renderBoardOnly(); renderModal(); });
-    q('#spNext').addEventListener('click', function () { stepPos(1); renderBoardOnly(); renderModal(); });
+    q('#spModalClose').addEventListener('click', closePicker);
+    q('#spDone').addEventListener('click', closePicker);
+    q('#spPrev').addEventListener('click', function () { stepPos(-1); renderBoardOnly(); renderPicker(); });
+    q('#spNext').addEventListener('click', function () { stepPos(1); renderBoardOnly(); renderPicker(); });
     if (q('#spClear')) q('#spClear').addEventListener('click', function () {
       delete draft.cards[selected]; draft.example = false; persist();
-      renderBoardOnly(); renderModal();
+      renderBoardOnly(); renderPicker();
     });
-    if (q('#spZoom')) q('#spZoom').addEventListener('click', function () {
-      BELLINE.lightbox(BELLINE.imageFor(draft.cards[selected]), draft.cards[selected] + ' · ' + cardName(draft.cards[selected]));
-    });
-    if (q('#spFiche')) q('#spFiche').addEventListener('click', function () {
-      S.write('grimoire.open', draft.cards[selected]); BELLINE.go('grimoire');
-    });
-    var expl = box.querySelector('.sp-explain');
-    if (expl) {
-      expl.addEventListener('toggle', function () { explainOpen = expl.open; });
-      var ef = expl.querySelector('#spExplainFiche');
-      if (ef) ef.addEventListener('click', function () {
-        S.write('grimoire.open', draft.cards[selected]); BELLINE.go('grimoire');
-      });
-    }
-    box.onclick = function (e) { if (e.target === box) closeModal(); };
+    box.onclick = function (e) { if (e.target === box) closePicker(); };
     refreshBoardSel();
   }
 
@@ -837,7 +914,8 @@ BELLINE.Views.tirages = function (root) {
         : '') +
 
       '<div class="sp-toolbar">' +
-        '<input type="text" id="spQuestion" placeholder="Question du tirage…" value="' + esc(draft.question) + '">' +
+        '<label class="sp-toolbar-q"><span>Question du tirage</span>' +
+          '<input type="text" id="spQuestion" placeholder="Sur quoi porte ce tirage…" value="' + esc(draft.question) + '"></label>' +
         '<label class="sp-domaine"><span class="u-label">Sujet</span>' +
           '<select id="spDomaine">' + DOMAINES.map(function (d) {
             return '<option value="' + d[0] + '"' + (draft.domaine === d[0] ? ' selected' : '') + '>' + esc(d[1]) + '</option>';
@@ -854,7 +932,10 @@ BELLINE.Views.tirages = function (root) {
           ' cartes placées · touche une position pour la lire et y placer une carte</p>' +
       '</div>' +
 
-      '<div class="sp-layout"><div class="sp-board-wrap">' + boardHTML() + '</div></div>' +
+      '<div class="sp-layout">' +
+        '<div class="sp-board-wrap">' + boardHTML() + '</div>' +
+        '<aside class="sp-inspector" id="spInspector"></aside>' +
+      '</div>' +
       '<div id="spGuidedWrap">' + guidedHTML() + '</div>' +
 
       '<label class="field sp-notes"><span>Notes de lecture</span>' +
@@ -866,14 +947,15 @@ BELLINE.Views.tirages = function (root) {
     bindSlots();
     wireToolbar();
     wireGuided();
-    if (modalOpen) renderModal();
+    renderInspector();
+    if (pickerOpen) renderPicker();
     observeBoard();
     setTimeout(function () { fitBoard(0); }, 0);
 
     if (onKey) document.removeEventListener('keydown', onKey);
     onKey = function (ev) {
       if (!document.getElementById('spModal')) { document.removeEventListener('keydown', onKey); return; }
-      if (ev.key === 'Escape' && modalOpen) closeModal();
+      if (ev.key === 'Escape' && pickerOpen) closePicker();
     };
     document.addEventListener('keydown', onKey);
   }
@@ -896,7 +978,10 @@ BELLINE.Views.tirages = function (root) {
       });
     });
     root.querySelectorAll('.sp-slot, .sp-adj').forEach(function (b) {
-      b.addEventListener('click', function () { openModal(b.dataset.pos); });
+      b.addEventListener('click', function () {
+        var key = b.dataset.pos;
+        if (draft.cards[key]) selectPos(key); else openPicker(key, true);
+      });
     });
     root.querySelectorAll('.sp-slot-remove').forEach(function (b) {
       b.addEventListener('click', function (e) {
@@ -907,14 +992,14 @@ BELLINE.Views.tirages = function (root) {
         Object.keys(draft.cards).forEach(function (k) { if (k.indexOf(id + '#a') === 0) delete draft.cards[k]; });
         draft.example = false; persist();
         renderBoardOnly();
-        if (modalOpen && selected === id) renderModal();
+        if (selected === id) renderInspector();
       });
     });
   }
 
   function refreshBoardSel() {
     root.querySelectorAll('.sp-slot, .sp-adj').forEach(function (b) {
-      b.classList.toggle('is-sel', b.dataset.pos === selected && modalOpen);
+      b.classList.toggle('is-sel', b.dataset.pos === selected);
     });
   }
 
@@ -925,6 +1010,7 @@ BELLINE.Views.tirages = function (root) {
     refreshBoardSel();
     var count = root.querySelector('#spCount');
     if (count) count.textContent = filledCount() + ' / ' + slotCount() + ' cartes placées · touche une position pour la lire et y placer une carte';
+    renderInspector();
     var gw = root.querySelector('#spGuidedWrap');
     if (gw && guidedStep >= 0) { gw.innerHTML = guidedHTML(); wireGuided(); }
     setTimeout(function () { fitBoard(0); }, 0);
@@ -950,7 +1036,8 @@ BELLINE.Views.tirages = function (root) {
     var dom = root.querySelector('#spDomaine');
     if (dom) dom.addEventListener('change', function () {
       draft.domaine = dom.value; persist();
-      if (modalOpen) renderModal();
+      renderInspector();
+      if (pickerOpen) renderPicker();
     });
     root.querySelector('#spGuided').addEventListener('click', function () {
       guidedStep = guidedStep < 0 ? 0 : -1; renderGuided();
@@ -966,24 +1053,25 @@ BELLINE.Views.tirages = function (root) {
       slotKeys.forEach(function (k) { var j = pool.indexOf(draft.cards[k]); if (j !== -1) pool.splice(j, 1); });
       for (var s = pool.length - 1; s > 0; s--) { var r = Math.floor(Math.random() * (s + 1)); var t = pool[s]; pool[s] = pool[r]; pool[r] = t; }
       slotKeys.forEach(function (k) { if (!draft.cards[k] && pool.length) draft.cards[k] = pool.shift(); });
-      draft.example = false; modalOpen = false; persist(); render();
+      draft.example = false; pickerOpen = false; selected = slotKeys[0]; persist(); render();
     });
     var exBtn = root.querySelector('#spExample');
     if (exBtn) exBtn.addEventListener('click', function () {
-      if (draft.example) { draft.example = false; }
+      if (draft.example) { draft.example = false; selected = null; }
       else {
         draft.cards = {};
         Object.keys(spread.example.cards).forEach(function (k) { draft.cards[k] = spread.example.cards[k]; });
         draft.question = spread.example.title;
         draft.example = true;
+        selected = Object.keys(spread.example.cards)[0] || null;
       }
-      selected = null; modalOpen = false; persist(); render();
+      pickerOpen = false; persist(); render();
     });
     root.querySelector('#spClearAll').addEventListener('click', function () {
       BELLINE.confirm('Effacer toutes les cartes placées ?').then(function (ok) {
         if (!ok) return;
-        draft = { question: '', cards: {}, notes: '', example: false, sens: draft.sens || 'descendant' };
-        selected = null; modalOpen = false; guidedStep = -1; persist(); render();
+        draft = { question: '', cards: {}, notes: '', example: false, sens: draft.sens || 'descendant', domaine: draft.domaine || 'general' };
+        selected = null; pickerOpen = false; guidedStep = -1; persist(); render();
       });
     });
     root.querySelector('#spSave').addEventListener('click', function () {

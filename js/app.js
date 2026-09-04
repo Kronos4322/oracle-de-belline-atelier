@@ -190,6 +190,55 @@ window.BELLINE = window.BELLINE || {};
     };
   }
 
+  /* --- voûte céleste : quelques étoiles immobiles, un très léger scintillement --- */
+  function setupSkyfield() {
+    var canvas = document.getElementById('skyfield');
+    if (!canvas || !canvas.getContext) return;
+    var ctx = canvas.getContext('2d');
+    var stars = [];
+    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var dpr = Math.min(2, window.devicePixelRatio || 1);
+
+    function seed() {
+      var w = window.innerWidth, h = window.innerHeight;
+      canvas.width = w * dpr; canvas.height = h * dpr;
+      canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      var n = Math.round((w * h) / 9000);
+      stars = [];
+      for (var i = 0; i < n; i++) {
+        stars.push({
+          x: Math.random() * w, y: Math.random() * h,
+          r: Math.random() * 1.1 + 0.25,
+          base: Math.random() * 0.35 + 0.12,
+          phase: Math.random() * Math.PI * 2,
+          speed: Math.random() * 0.0006 + 0.0002
+        });
+      }
+    }
+    function draw(t) {
+      var w = window.innerWidth, h = window.innerHeight;
+      ctx.clearRect(0, 0, w, h);
+      for (var i = 0; i < stars.length; i++) {
+        var s = stars[i];
+        var a = reduce ? s.base : s.base + Math.sin(t * s.speed + s.phase) * 0.16;
+        ctx.beginPath();
+        ctx.fillStyle = 'rgba(236,214,166,' + Math.max(0, a).toFixed(3) + ')';
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      if (!reduce) requestAnimationFrame(draw);
+    }
+    seed();
+    draw(0);
+    if (reduce) return;
+    var resizeTimer = null;
+    window.addEventListener('resize', function () {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(seed, 200);
+    });
+  }
+
   document.addEventListener('DOMContentLoaded', function () {
     if (BELLINE.refreshSpreads) BELLINE.refreshSpreads();
     document.getElementById('nav').innerHTML = buildNav();
@@ -199,6 +248,7 @@ window.BELLINE = window.BELLINE || {};
     setupBackup();
     setupLightbox();
     setupDialogs();
+    setupSkyfield();
     render();
   });
 

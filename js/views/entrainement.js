@@ -91,7 +91,8 @@ BELLINE.Views.entrainement = function (root) {
       var opts = shuffle([c.name].concat(sample(all, 3, null).filter(function (x) { return x.number !== c.number; }).map(function (x) { return x.name; })).slice(0, 4));
       if (opts.indexOf(c.name) === -1) opts[0] = c.name;
       current = { kind: 'qcm', sub: 'nom', card: c, showImage: true,
-        q: 'Quelle est cette carte ?', options: opts, answer: c.name };
+        q: 'Quelle est cette carte ?', options: opts, answer: c.name,
+        reason: c.number + ' · série ' + P[c.planet].name + '. ' + (c.sens && c.sens.general ? c.sens.general : '') };
     } else if (k === 'motscle') {
       var kw = (c.keywords || []);
       if (!kw.length) return buildQCM();
@@ -100,16 +101,20 @@ BELLINE.Views.entrainement = function (root) {
         .map(function (x) { var b = S.getCard(x.number); return (b.keywords || [])[0]; })
         .filter(function (w) { return w && kw.indexOf(w) === -1; }).slice(0, 3);
       current = { kind: 'qcm', sub: 'motscle', card: c, showImage: false,
-        q: 'Quel mot-clé va avec « ' + c.name + ' » ?', options: shuffle([good].concat(others)), answer: good };
+        q: 'Quel mot-clé va avec « ' + c.name + ' » ?', options: shuffle([good].concat(others)), answer: good,
+        reason: kw.length > 1 ? 'Ses autres mots-clés : ' + kw.slice(1, 5).join(', ') + '.' : '' };
     } else if (k === 'serie') {
       var series = BELLINE.PLANET_ORDER.map(function (pk) { return P[pk].name; });
       current = { kind: 'qcm', sub: 'serie', card: c, showImage: true,
-        q: 'À quelle série appartient « ' + c.name + ' » ?', options: shuffle(series.slice()), answer: P[c.planet].name };
+        q: 'À quelle série appartient « ' + c.name + ' » ?', options: shuffle(series.slice()), answer: P[c.planet].name,
+        reason: P[c.planet].symbol + ' ' + P[c.planet].name + ' — ' + P[c.planet].desc };
     } else {
+      var polReason = 'Valence lexicale : le nom seul, hors position et hors tirage (table figée, ch. 2).' +
+        (c.fragile ? ' Classement contesté (†) — l\'un des trois les plus fragiles de la table.' : '');
       current = { kind: 'qcm', sub: 'valence', card: c, showImage: false,
         q: 'Quelle est la valence lexicale de « ' + c.name + ' » ?',
         options: ['positive', 'négative', 'neutre'],
-        answer: BELLINE.VALENCE[c.valence].label };
+        answer: BELLINE.VALENCE[c.valence].label, reason: polReason };
     }
   }
 
@@ -119,10 +124,14 @@ BELLINE.Views.entrainement = function (root) {
     var good = pick(list);
     var others = shuffle(list.filter(function (x) { return x !== good; })).slice(0, 3);
     var label = good.cards.map(function (k) { var b = BELLINE.cardByNumber(k); return k + ' ' + (b ? b.name : ''); }).join('  +  ');
-    current = { kind: 'combo', pairLabel: label, cards: good.cards,
+    var SENS_TXT = { renforce: 'renforcement — même polarité, l\'effet s\'additionne.',
+      retourne: 'destruction — une négative retourne la promesse de l\'autre.',
+      temporise: 'temporisation — l\'effet est réel mais retardé ou atténué.',
+      'précise': 'précision — la deuxième carte cadre où se loge la première.' };
+    current = { kind: 'combo', pairLabel: label, cards: good.cards, sens: good.sens,
       q: 'Comment se lit cette combinaison ?',
       options: shuffle([good.note].concat(others.map(function (o) { return o.note; }))),
-      answer: good.note };
+      answer: good.note, reason: SENS_TXT[good.sens] || '' };
   }
 
   function buildPosition() {
@@ -134,16 +143,23 @@ BELLINE.Views.entrainement = function (root) {
     var c = S.getCard((np.length ? pick(np) : pick(pool())).number);
     var favCard = c.valence === 'positive';
     var favPos = pos.polarity === 'favorable';
-    var ans = favCard === favPos ? 'Elle concorde — rien à faire de spécial.'
+    var concord = favCard === favPos;
+    var ans = concord ? 'Elle concorde — rien à faire de spécial.'
       : favCard ? 'Test de valence contraire : chercher son ombre.'
                 : 'Test de valence contraire : chercher sa fonction constructive.';
+    var reason = concord
+      ? 'Une carte favorable en position favorable (ou défavorable en position défavorable) ne relève pas du test — l\'y soumettre dénaturerait la règle.'
+      : favCard
+        ? 'Favorable en position défavorable : la carte garde son sens, mais on y cherche son ombre, son excès ou son blocage — elle ne devient pas mauvaise pour autant.'
+        : 'Défavorable en position favorable : une lame difficile en bonne position ne devient pas douce, elle devient utile — on y cherche sa fonction constructive.';
     current = { kind: 'position', card: c, posLabel: sp.name + ' — ' + pos.label + ' (' + pos.polarity + ')',
+      posLogic: pos.logic,
       q: '« ' + c.number + ' ' + c.name + ' » (valence ' + BELLINE.VALENCE[c.valence].label + ') tombe ici. Que fais-tu ?',
       options: shuffle([
         'Elle concorde — rien à faire de spécial.',
         'Test de valence contraire : chercher son ombre.',
         'Test de valence contraire : chercher sa fonction constructive.'
-      ]), answer: ans };
+      ]), answer: ans, reason: reason };
   }
 
   function next() {
@@ -206,7 +222,7 @@ BELLINE.Views.entrainement = function (root) {
           (current.showImage ? figureHTML(current.card, true) : '') +
           '<p class="qcm-q">' + esc(current.q) + '</p>' +
           optsHTML(current.options, current.answer) +
-          (answered != null ? feedbackHTML(current.card) : '') +
+          (answered != null ? feedbackHTML(current.card, current.reason) : '') +
         '</div>';
     } else if (current && current.kind === 'combo') {
       body =
@@ -219,6 +235,7 @@ BELLINE.Views.entrainement = function (root) {
             }).join('') + '</div>' +
           '<p class="qcm-q">' + esc(current.q) + '</p>' +
           optsHTML(current.options, current.answer) +
+          (answered != null ? feedbackHTML(null, current.reason) : '') +
         '</div>';
     } else if (current && current.kind === 'position') {
       body =
@@ -226,6 +243,7 @@ BELLINE.Views.entrainement = function (root) {
           '<p class="qcm-sub">' + esc(current.posLabel) + '</p>' +
           '<p class="qcm-q">' + esc(current.q) + '</p>' +
           optsHTML(current.options, current.answer) +
+          (answered != null ? feedbackHTML(null, current.reason) : '') +
         '</div>';
     }
 
@@ -259,16 +277,23 @@ BELLINE.Views.entrainement = function (root) {
         else if (i === answered) cls += ' wrong';
       }
       return '<button type="button" class="' + cls + '" data-i="' + i + '"' + (answered != null ? ' disabled' : '') + '>' + esc(o) + '</button>';
-    }).join('') + '</div>' +
-      (answered != null
-        ? '<div class="qcm-next"><button type="button" class="btn-primary" id="exContinue">Continuer</button></div>'
-        : '');
+    }).join('') + '</div>';
   }
 
-  function feedbackHTML(c) {
-    if (!c) return '';
-    return '<p class="qcm-score">' + esc(c.number + ' ' + c.name) + ' · ' + P[c.planet].name +
-      ' · valence ' + BELLINE.VALENCE[c.valence].label + '</p>';
+  /* Retour riche après réponse : pourquoi, avec la matière du Grimoire quand
+     une carte est en jeu — c'est ce qui fait progresser, pas juste le score. */
+  function feedbackHTML(c, reason) {
+    var wasRight = answered != null && current.options[answered] === current.answer;
+    var head = '<div class="ex-feedback ' + (wasRight ? 'is-right' : 'is-wrong') + '">' +
+      '<span class="ex-feedback-mark">' + (wasRight ? '✓ Juste' : '✕ Pas tout à fait') + '</span>';
+    var cardLine = c
+      ? '<p class="ex-feedback-card"><strong>' + esc(c.number + ' ' + c.name) + '</strong> · ' + P[c.planet].symbol + ' ' + P[c.planet].name +
+        ' · <span class="val-tag val-' + c.valence + '" style="vertical-align:middle">valence ' + BELLINE.VALENCE[c.valence].label + '</span>' +
+        (c.forte ? ' <span class="val-tag val-forte">forte</span>' : '') +
+        (c.fragile ? ' <span class="val-tag val-fragile">fragile</span>' : '') + '</p>'
+      : '';
+    return head + cardLine + (reason ? '<p class="ex-feedback-why">' + esc(reason) + '</p>' : '') +
+      '<div class="qcm-next"><button type="button" class="btn-primary" id="exContinue">Continuer</button></div></div>';
   }
 
   function wire() {

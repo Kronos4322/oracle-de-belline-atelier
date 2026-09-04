@@ -455,23 +455,21 @@ button.planet-sym:hover { color: var(--gold-soft); text-shadow: 0 0 10px current
 }
 .sp-coupe-cards { display: flex; gap: 12px; }
 
-/* --- panneau --- */
-.sp-panel {
-  background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px;
-  position: sticky; top: 8px; z-index: 6;
+/* --- infobulle : suit la position cliquée --- */
+.sp-pop {
+  position: fixed; z-index: 50; width: min(360px, calc(100vw - 24px));
+  max-height: 72vh; overflow-y: auto;
+  background: var(--panel); border: 1px solid var(--gold);
+  border-radius: var(--radius); padding: 14px 16px 14px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, .5);
 }
-@media (min-width: 900px) { .sp-panel { top: 66px; } }
-.sp-panel-empty { font-size: .9rem; }
-.sp-panel-open { display: grid; gap: 6px 22px; }
-@media (min-width: 720px) {
-  .sp-panel-open { grid-template-columns: 1fr 1fr; align-items: start; }
-  .sp-panel-open .sp-panel-role { grid-column: 1; }
-  .sp-panel-open .sp-panel-logic { grid-column: 1; margin: 4px 0 0; }
-  .sp-panel-open > p.muted.small { grid-column: 1; }
-  .sp-panel-card { grid-column: 2; grid-row: 1 / 5; margin-top: 0; padding-top: 0; border-top: none; border-left: 1px solid var(--line); padding-left: 18px; }
-  .sp-panel-actions { grid-column: 1; }
+.sp-pop-close {
+  position: absolute; top: 6px; right: 8px; width: 28px; height: 28px;
+  display: grid; place-items: center; font-size: 20px; line-height: 1;
+  background: none; border: none; color: var(--muted); border-radius: 8px;
 }
-.sp-panel-role { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.sp-pop-close:hover { color: var(--ink); background: var(--panel-2); }
+.sp-panel-role { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding-right: 26px; }
 .sp-panel-role h3 { margin: 0; font-size: 1.02rem; }
 .sp-kind {
   font-size: .68rem; text-transform: uppercase; letter-spacing: .06em;

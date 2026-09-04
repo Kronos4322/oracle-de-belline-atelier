@@ -17,7 +17,9 @@ BELLINE.Views.tirages = function (root) {
 
   var selected = null;
   var pickerOpen = false;
+  var panelClosed = false;
   var boardRO = null;
+  var onScroll = null;
 
   function persist() { S.saveDraft(spread.id, draft); }
 
@@ -57,7 +59,7 @@ BELLINE.Views.tirages = function (root) {
       var w = layout.clientWidth;
       if (Math.abs(w - last) < 2) return;
       last = w;
-      fitBoard(0);
+      requestAnimationFrame(function () { fitBoard(0); positionPop(); });
     });
     boardRO.observe(layout);
   }
@@ -149,15 +151,11 @@ BELLINE.Views.tirages = function (root) {
       '</div>';
   }
 
-  /* ---------- panneau latéral ---------- */
+  /* ---------- infobulle mobile : suit la position cliquée ---------- */
 
-  function panelHTML() {
-    if (!selected) {
-      return '<div class="sp-panel-empty muted">' +
-        'Touche une position du plateau pour lire son rôle et y placer une carte.' +
-        '</div>';
-    }
+  function popHTML() {
     var p = posById[selected];
+    if (!p) return '';
     var n = draft.cards[selected];
     var c = n ? S.getCard(n) : null;
     var parent = p.parent ? posById[p.parent] : null;
@@ -176,7 +174,7 @@ BELLINE.Views.tirages = function (root) {
         '</div>';
     }
 
-    return '<div class="sp-panel-open">' +
+    return '<button type="button" class="sp-pop-close" id="spPopClose" aria-label="Fermer">×</button>' +
       '<div class="sp-panel-role">' +
         '<span class="sp-kind sp-kind-' + p.kind + '">' + (p.kind === 'substantif' ? 'substantif' : 'adjectif') + '</span>' +
         '<h3>' + esc(p.label) + '</h3>' +
@@ -187,8 +185,36 @@ BELLINE.Views.tirages = function (root) {
       '<div class="sp-panel-actions">' +
         '<button type="button" class="btn-primary btn-sm" id="spChoose">' + (n ? 'Changer la carte' : 'Placer une carte') + '</button>' +
         (n ? '<button type="button" class="btn-ghost btn-sm" id="spClear">Retirer</button>' : '') +
-      '</div>' +
       '</div>';
+  }
+
+  function showPop() {
+    var pop = root.querySelector('#spPop');
+    if (!pop) return;
+    if (!selected || panelClosed || pickerOpen) { pop.hidden = true; pop.innerHTML = ''; return; }
+    pop.innerHTML = popHTML();
+    pop.hidden = false;
+    wirePanel();
+    positionPop();
+  }
+
+  function positionPop() {
+    var pop = root.querySelector('#spPop');
+    if (!pop || pop.hidden || !selected) return;
+    var slot = root.querySelector('.sp-slot[data-pos="' + selected + '"]');
+    if (!slot) return;
+    var sr = slot.getBoundingClientRect();
+    var pw = pop.offsetWidth, ph = pop.offsetHeight;
+    var vw = window.innerWidth, vh = window.innerHeight;
+    var m = 10, topSafe = 62, bottomSafe = vh - 78;
+    var left = sr.left + sr.width / 2 - pw / 2;
+    left = Math.max(m, Math.min(left, vw - pw - m));
+    var below = sr.bottom + 8;
+    var above = sr.top - ph - 8;
+    var top = (below + ph <= bottomSafe || above < topSafe) ? below : above;
+    top = Math.max(topSafe, Math.min(top, Math.max(topSafe, bottomSafe - ph)));
+    pop.style.left = left + 'px';
+    pop.style.top = top + 'px';
   }
 
   function readingHTML() {
@@ -229,11 +255,11 @@ BELLINE.Views.tirages = function (root) {
           '<button type="button" class="btn-ghost btn-sm" id="spClearAll">Tout effacer</button>' +
           '<button type="button" class="btn-primary btn-sm" id="spSave">Enregistrer</button>' +
         '</div>' +
-        '<p class="muted small" id="spCount">' + filledCount() + ' / ' + spread.count + ' cartes placées</p>' +
+        '<p class="muted small" id="spCount">' + filledCount() + ' / ' + spread.count +
+          ' cartes placées · touche une position pour la lire et y placer une carte</p>' +
       '</div>' +
 
       '<div class="sp-layout">' +
-        '<aside class="sp-panel" id="spPanel">' + panelHTML() + '</aside>' +
         '<div class="sp-board-wrap">' + boardHTML() + '</div>' +
       '</div>' +
 
@@ -241,25 +267,35 @@ BELLINE.Views.tirages = function (root) {
         '<textarea id="spNotes" rows="4" placeholder="Ce que dit le tirage, les phrases qui se dégagent…">' + esc(draft.notes) + '</textarea></label>' +
 
       readingHTML() +
-      '<div id="spPicker"></div>';
+      '<div id="spPicker"></div>' +
+      '<div class="sp-pop" id="spPop" hidden></div>';
 
     root.querySelectorAll('.sp-slot').forEach(function (b) {
       b.addEventListener('click', function () {
-        var id = b.dataset.pos;
-        if (selected === id && !draft.cards[id]) { openPicker(); return; }
-        selected = id;
+        selected = b.dataset.pos;
+        panelClosed = false;
         refreshBoardSel();
-        root.querySelector('#spPanel').innerHTML = panelHTML();
-        wirePanel();
-        if (!draft.cards[id]) openPicker();
+        showPop();
       });
     });
 
     wireToolbar();
-    wirePanel();
     if (pickerOpen) renderPicker();
+    showPop();
     observeBoard();
     setTimeout(function () { fitBoard(0); }, 0);
+
+    if (onScroll) { window.removeEventListener('scroll', onScroll); window.removeEventListener('resize', onScroll); }
+    onScroll = function () {
+      if (!document.getElementById('spPop')) {
+        window.removeEventListener('scroll', onScroll);
+        window.removeEventListener('resize', onScroll);
+        return;
+      }
+      positionPop();
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
   }
 
   function refreshBoardSel() {
@@ -315,11 +351,14 @@ BELLINE.Views.tirages = function (root) {
   }
 
   function wirePanel() {
+    var close = root.querySelector('#spPopClose');
+    if (close) close.addEventListener('click', function () { panelClosed = true; showPop(); });
     var choose = root.querySelector('#spChoose');
     if (choose) choose.addEventListener('click', openPicker);
     var clear = root.querySelector('#spClear');
     if (clear) clear.addEventListener('click', function () {
-      delete draft.cards[selected]; draft.example = false; persist(); render();
+      delete draft.cards[selected]; draft.example = false; persist();
+      renderBoardOnly(); showPop();
     });
     var zoom = root.querySelector('#spZoom');
     if (zoom) zoom.addEventListener('click', function () {
@@ -333,7 +372,9 @@ BELLINE.Views.tirages = function (root) {
   function openPicker() {
     if (!selected) selected = nextEmpty() || spread.positions[0].id;
     pickerOpen = true;
+    showPop();
     renderPicker();
+    root.querySelector('#spPicker').scrollIntoView({ block: 'nearest' });
   }
 
   function renderPicker() {
@@ -386,14 +427,16 @@ BELLINE.Views.tirages = function (root) {
     root.querySelector('.sp-board-wrap .spread').outerHTML = boardHTML();
     root.querySelectorAll('.sp-slot').forEach(function (b) {
       b.addEventListener('click', function () {
-        selected = b.dataset.pos; refreshBoardSel();
-        root.querySelector('#spPanel').innerHTML = panelHTML(); wirePanel();
-        if (!draft.cards[selected]) openPicker();
+        selected = b.dataset.pos;
+        panelClosed = false;
+        refreshBoardSel();
+        showPop();
       });
     });
-    root.querySelector('#spPanel').innerHTML = panelHTML();
-    wirePanel();
-    root.querySelector('#spCount').textContent = filledCount() + ' / ' + spread.count + ' cartes placées';
+    refreshBoardSel();
+    var count = root.querySelector('#spCount');
+    if (count) count.textContent = filledCount() + ' / ' + spread.count +
+      ' cartes placées · touche une position pour la lire et y placer une carte';
     setTimeout(function () { fitBoard(0); }, 0);
   }
 

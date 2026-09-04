@@ -6,6 +6,7 @@ window.BELLINE = window.BELLINE || {};
 (function () {
   var ROUTES = {
     grimoire:     { label: 'Grimoire',     icon: '📖' },
+    associations: { label: 'Associations', icon: '🔗' },
     entrainement: { label: 'Entraînement', icon: '🎴' },
     tirages:      { label: 'Tirages',      icon: '🔮' },
     journal:      { label: 'Journal',      icon: '📓' },

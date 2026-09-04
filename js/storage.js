@@ -108,10 +108,20 @@ window.BELLINE = window.BELLINE || {};
     return !!(c && c.keywords && c.keywords.length && c.sens && c.sens.general && c.sens.general.trim());
   }
 
-  /* --- Dossiers (regroupements libres, ex. pour les associations) --- */
+  /* --- Associations : dossiers (arborescents) + combinaisons de cartes ---
+   *   folders      : [{ id, name, parentId }]      parentId = null -> racine
+   *   associations : [{ id, folderId, cards:[n], text }]
+   */
 
   function getFolders() { return read('folders', []); }
   function saveFolders(list) { return write('folders', list); }
+
+  function getAssociations() { return read('associations', []); }
+  function saveAssociations(list) { return write('associations', list); }
+
+  function uid() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  }
 
   /* --- Sauvegarde / restauration complète --- */
 
@@ -145,6 +155,9 @@ window.BELLINE = window.BELLINE || {};
     isCardComplete: isCardComplete,
     getFolders: getFolders,
     saveFolders: saveFolders,
+    getAssociations: getAssociations,
+    saveAssociations: saveAssociations,
+    uid: uid,
     exportAll: exportAll,
     importAll: importAll
   };

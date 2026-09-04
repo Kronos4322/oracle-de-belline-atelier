@@ -108,4 +108,108 @@ BELLINE.CLASSIC_COMBOS = [
       return { cards: x.cards.slice(), text: x.note, sens: x.sens || '' };
     });
   };
+
+  /* -----------------------------------------------------------------------
+   * Moteur des 2652 combinaisons — 52 cartes (tout sauf la Carte Bleue,
+   * hors-série) × 51 partenaires possibles, en respectant l'ordre
+   * grammatical substantif → adjectif (méthode, ch. 18).
+   *
+   * Trois strates, de la plus sourcée à la plus déduite :
+   *   1. « curée »   — une paire du corpus CLASSIC_COMBOS (lecture attestée)
+   *   2. « dossier »  — l'adjectif est un des 8 modificateurs universels que
+   *                     le Dossier documente carte par carte (combos[])
+   *   3. « calculée » — synthèse par la grammaire : noyau du substantif +
+   *                     valence/teinte de l'adjectif. Toujours annoncée
+   *                     comme telle, jamais présentée comme une source.
+   * ------------------------------------------------------------------- */
+  var byNumber = {};
+  (BELLINE.SEED_CARDS || []).forEach(function (c) { byNumber[c.number] = c; });
+
+  BELLINE.PAIR_COUNT = 52 * 51; // 2652 — total des paires ordonnées hors Carte Bleue
+
+  // Étiquette du modificateur telle qu'elle apparaît dans Dossier[n].combos[i].a
+  var MODIFIER_LABEL = {
+    53: 'Carte Bleue',
+    1: 'La Destinée',
+    5: 'Réussite',
+    51: 'Retard',
+    48: 'Fatalité',
+    19: 'Argent'
+  };
+  // Amour (29) et Union (27) partagent la même case « Amor / Union » du Dossier.
+  var AMOR_UNION_CARDS = [29, 27];
+
+  function firstClause(str) {
+    if (!str) return '';
+    var m = String(str).split(/[;.]/)[0];
+    return (m || '').trim();
+  }
+  function lower1(s) {
+    return s ? s.charAt(0).toLowerCase() + s.slice(1) : s;
+  }
+  function dossierComboNote(subNum, matchRe) {
+    var D = (BELLINE.CARD_DOSSIER || {})[subNum];
+    if (!D || !D.combos) return null;
+    var hit = D.combos.filter(function (e) { return e && e.a && matchRe.test(e.a); })[0];
+    return hit ? hit.note : null;
+  }
+  function sensFromValences(subValence, adjValence) {
+    if (adjValence === 'positive') return subValence === 'negative' ? 'retourne' : (subValence === 'positive' ? 'renforce' : 'precise');
+    if (adjValence === 'negative') return subValence === 'positive' ? 'retourne' : (subValence === 'negative' ? 'renforce' : 'precise');
+    return 'precise';
+  }
+
+  function computedReading(subC, adjC, subD, adjD) {
+    subD = subD || {}; adjD = adjD || {};
+    var topic = (subD.motscles && subD.motscles.length) ? subD.motscles.slice(0, 3).join(', ')
+      : firstClause(subD.noyau) || (subC.sens && subC.sens.general) || subC.name;
+    var trait = (adjD.motscles && adjD.motscles.length) ? adjD.motscles[0] : adjC.name;
+    var ombre = firstClause(adjD.ombre);
+    var sens = sensFromValences(subC.valence, adjC.valence);
+    var phrase;
+    if (adjC.valence === 'positive') {
+      phrase = subC.name + ' qualifiée par ' + adjC.name + ' : ' + lower1(topic) + ', porté(e) ou facilité(e) par ' + lower1(trait) + '.';
+    } else if (adjC.valence === 'negative') {
+      phrase = subC.name + ' qualifiée par ' + adjC.name + ' : ' + lower1(topic) + ', freiné(e) ou compliqué(e) par ' + lower1(ombre || trait) + '.';
+    } else {
+      phrase = subC.name + ' qualifiée par ' + adjC.name + ' : ' + lower1(topic) + ', ramenée au registre concret de ' + lower1(trait) + '.';
+    }
+    return { source: 'calculee', text: phrase, sens: sens };
+  }
+
+  /* Lecture de la paire (substantif = thème/base, adjectif = qui qualifie).
+     Toujours retourne { source, text, sens, subNum, adjNum } ou null si la
+     paire n'est pas valide (carte absente, ou substantif === adjectif). */
+  BELLINE.combinationReading = function (subNum, adjNum) {
+    subNum = Number(subNum);
+    adjNum = Number(adjNum);
+    var subC = byNumber[subNum], adjC = byNumber[adjNum];
+    if (!subC || !adjC || subNum === adjNum) return null;
+
+    // 1) curée
+    var curated = BELLINE.CLASSIC_COMBOS.filter(function (x) {
+      return x.cards.length === 2 && x.cards.indexOf(subNum) !== -1 && x.cards.indexOf(adjNum) !== -1;
+    })[0];
+    if (curated) {
+      return { source: 'curee', text: curated.note, sens: curated.sens, subNum: subNum, adjNum: adjNum };
+    }
+
+    // 2) dossier — l'adjectif est un modificateur universel documenté
+    var note = null, sens2 = null;
+    if (MODIFIER_LABEL[adjNum]) {
+      note = dossierComboNote(subNum, new RegExp('\\+\\s*' + MODIFIER_LABEL[adjNum].replace('.', '\\.') + '\\s*$', 'i'));
+    } else if (AMOR_UNION_CARDS.indexOf(adjNum) !== -1) {
+      note = dossierComboNote(subNum, /amor\s*\/\s*union/i);
+    }
+    if (note) {
+      sens2 = sensFromValences(subC.valence, adjC.valence);
+      return { source: 'dossier', text: note, sens: sens2, subNum: subNum, adjNum: adjNum };
+    }
+
+    // 3) calculée — synthèse grammaticale
+    var D = BELLINE.CARD_DOSSIER || {};
+    var r = computedReading(subC, adjC, D[subNum], D[adjNum]);
+    r.subNum = subNum; r.adjNum = adjNum;
+    return r;
+  };
 })();

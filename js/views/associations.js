@@ -14,6 +14,8 @@ BELLINE.Views.associations = function (root) {
   var folders = S.getFolders();
   var assocs = S.getAssociations();
   var editing = null; // { folderId, assocId|null, cards:[], text:'' }
+  var engineSub = 1;   // La Destinée — substantif par défaut du moteur
+  var engineAdj = 5;   // Réussite — adjectif par défaut du moteur
 
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (m) {
@@ -33,7 +35,9 @@ BELLINE.Views.associations = function (root) {
   function render() {
     root.innerHTML =
       '<div class="view-head"><h1>Associations</h1>' +
-        '<p class="muted">Range tes combinaisons de cartes dans des dossiers et sous-dossiers.</p></div>' +
+        '<p class="muted">Le moteur calcule une lecture pour chacune des 2652 combinaisons possibles ; ' +
+        'range celles qui te servent dans des dossiers et sous-dossiers.</p></div>' +
+      '<div id="comboEngine"></div>' +
       '<div class="assoc-toolbar">' +
         '<button class="btn-ghost btn-sm" id="assocAddRoot">+ Dossier</button>' +
         (assocs.length ? '' : '<button class="btn-ghost btn-sm" id="assocSeed">Importer les combinaisons traditionnelles</button>') +
@@ -42,6 +46,8 @@ BELLINE.Views.associations = function (root) {
       'Deux dynamiques : <em>renforcement</em> (même polarité qui s\'ajoute) et <em>destruction</em> (une négative retourne la promesse).</p>' +
       '<div id="assocTree"></div>' +
       '<div id="assocEditor"></div>';
+
+    renderEngine();
 
     var tree = root.querySelector('#assocTree');
     var roots = childrenOf(null);
@@ -56,6 +62,90 @@ BELLINE.Views.associations = function (root) {
     renderEditor();
   }
 
+  /* ---------- moteur de combinaisons (2652 paires) ---------- */
+
+  var TIER_LABEL = { curee: 'lecture attestée', dossier: 'sourcée — Dossier', calculee: 'calculée' };
+
+  function cardOptions(selected) {
+    return (BELLINE.SEED_CARDS || []).filter(function (c) { return c.number !== 53; }).map(function (c) {
+      return '<option value="' + c.number + '"' + (c.number === selected ? ' selected' : '') + '>' +
+        c.number + '. ' + esc(c.name) + '</option>';
+    }).join('');
+  }
+
+  function renderEngine() {
+    var box = root.querySelector('#comboEngine');
+    if (!box) return;
+    box.innerHTML =
+      '<div class="combo-engine">' +
+        '<div class="combo-engine-head">' +
+          '<h2>Moteur de combinaisons</h2>' +
+          '<p class="muted small">52 cartes (hors Carte Bleue) × 51 partenaires = <strong>' + BELLINE.PAIR_COUNT + '</strong> lectures. ' +
+          'Le <b>substantif</b> pose le thème, l\'<b>adjectif</b> le qualifie — inverser change le sens.</p>' +
+        '</div>' +
+        '<div class="combo-picker">' +
+          '<label class="field"><span>Substantif — le thème</span>' +
+            '<select id="comboSub">' + cardOptions(engineSub) + '</select></label>' +
+          '<button class="btn-icon" id="comboSwap" title="Inverser substantif / adjectif" aria-label="Inverser">⇄</button>' +
+          '<label class="field"><span>Adjectif — ce qui qualifie</span>' +
+            '<select id="comboAdj">' + cardOptions(engineAdj) + '</select></label>' +
+        '</div>' +
+        '<div id="comboResult"></div>' +
+      '</div>';
+
+    box.querySelector('#comboSub').addEventListener('change', function (e) {
+      engineSub = Number(e.target.value); renderComboResult();
+    });
+    box.querySelector('#comboAdj').addEventListener('change', function (e) {
+      engineAdj = Number(e.target.value); renderComboResult();
+    });
+    box.querySelector('#comboSwap').addEventListener('click', function () {
+      var t = engineSub; engineSub = engineAdj; engineAdj = t;
+      box.querySelector('#comboSub').value = engineSub;
+      box.querySelector('#comboAdj').value = engineAdj;
+      renderComboResult();
+    });
+
+    renderComboResult();
+  }
+
+  function renderComboResult() {
+    var out = root.querySelector('#comboResult');
+    if (!out) return;
+    if (engineSub === engineAdj) {
+      out.innerHTML = '<p class="muted small pad">Choisis deux cartes différentes.</p>';
+      return;
+    }
+    var r = BELLINE.combinationReading(engineSub, engineAdj);
+    if (!r) { out.innerHTML = ''; return; }
+    var sensClass = SENS_LABEL[r.sens] || r.sens || '';
+    out.innerHTML =
+      '<div class="combo-reading">' +
+        '<div class="combo-reading-head">' +
+          '<span class="combo-tier tier-' + r.source + '">' + esc(TIER_LABEL[r.source] || r.source) + '</span>' +
+          (r.sens ? '<span class="combo-sens ' + sensClass + '">' + esc(r.sens) + '</span>' : '') +
+        '</div>' +
+        '<p class="combo-reading-text">' + esc(r.text) + '</p>' +
+        '<div class="combo-reading-actions">' +
+          '<button class="btn-link" id="comboSave">+ enregistrer dans Associations</button>' +
+        '</div>' +
+      '</div>';
+    out.querySelector('#comboSave').addEventListener('click', function () { saveCombo(r); });
+  }
+
+  function ensureEngineFolder() {
+    var f = folders.filter(function (x) { return !x.parentId && x.name === 'Combinaisons du moteur'; })[0];
+    if (!f) { f = { id: S.uid(), name: 'Combinaisons du moteur', parentId: null }; folders.push(f); }
+    return f;
+  }
+  function saveCombo(r) {
+    var f = ensureEngineFolder();
+    assocs.push({ id: S.uid(), folderId: f.id, cards: [r.subNum, r.adjNum], text: r.text, sens: r.sens });
+    persist();
+    BELLINE.toast('Association enregistrée dans « Combinaisons du moteur ».', 'success');
+    render();
+  }
+
   function seedTraditional() {
     if (!BELLINE.seedAssociations) return;
     var fid = S.uid();
@@ -66,7 +156,7 @@ BELLINE.Views.associations = function (root) {
     persist(); render();
   }
 
-  var SENS_LABEL = { renforce: 'renforce', retourne: 'retourne', temporise: 'temporise', 'précise': 'precise' };
+  var SENS_LABEL = { renforce: 'renforce', retourne: 'retourne', temporise: 'temporise', 'précise': 'precise', precise: 'precise' };
 
   function folderNode(f, depth) {
     var subs = childrenOf(f.id);

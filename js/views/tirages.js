@@ -56,16 +56,17 @@ BELLINE.Views.tirages = function (root) {
     if (!c) return '';
     var dk = draft.domaine || 'general';
     var d = domaineDef(dk);
+    var locked = dk !== 'general';
     var dossier = (BELLINE.CARD_DOSSIER || {})[c.number] || {};
     var planche = BELLINE.plancheFor ? BELLINE.plancheFor(c.number) : null;
 
     var rows = [];
-    // ta version (Grimoire) d'abord
-    var mineSens = c.sens && (dk === 'general' ? c.sens.general : c.sens[dk === 'travail' ? 'travail' : dk]);
+    // ta version (Grimoire) d'abord — jamais que le champ du sujet verrouillé
+    var mineSens = c.sens && (dk === 'general' ? c.sens.general : c.sens[dk]);
     if (mineSens) rows.push(['Ta fiche — ' + (dk === 'general' ? 'sens général' : d[1].toLowerCase()), mineSens]);
-    if (dk === 'general' && c.symbolisme) rows.push(['Ton symbolisme', c.symbolisme]);
+    if (!locked && c.symbolisme) rows.push(['Ton symbolisme', c.symbolisme]);
     if (c.notes) rows.push(['Tes notes', c.notes]);
-    // dossier pour le domaine
+    // dossier — uniquement les rubriques du sujet verrouillé
     d[2].forEach(function (field) {
       var v = dossier[field];
       if (v && !/transpose son noyau|qualifie le climat|constitue une ressource|logique profonde de la situation/.test(v)) {
@@ -76,15 +77,23 @@ BELLINE.Views.tirages = function (root) {
       }
     });
     if (planche && planche.cle) rows.push(['Clé de lecture', planche.cle]);
-    if (dossier.temporalite && dk === 'general') rows.push(['Temporalité', dossier.temporalite]);
-    if (dossier.ouinon && dk === 'general') rows.push(['Oui / Non', dossier.ouinon]);
+    if (!locked && dossier.temporalite) rows.push(['Temporalité', dossier.temporalite]);
+    if (!locked && dossier.ouinon) rows.push(['Oui / Non', dossier.ouinon]);
 
-    if (!rows.length) return '<p class="muted small">Rien de spécifique à « ' + esc(d[1]) + ' » pour cette carte. Complète sa fiche dans le Grimoire.</p>';
-    return '<div class="sp-explain-rows">' +
+    var banner = locked
+      ? '<p class="sp-lock-banner">🔒 Verrouillé sur <b>' + esc(d[1]) + '</b> — les autres significations de cette carte ' +
+        '(les autres sujets) sont masquées tant que ce Sujet reste choisi pour le tirage. ' +
+        '<button type="button" class="btn-link" id="spExplainUnlock">Revenir à « Tout le tirage »</button></p>'
+      : '';
+
+    if (!rows.length) {
+      return banner + '<p class="muted small">Rien de spécifique à « ' + esc(d[1]) + ' » pour cette carte. Complète sa fiche dans le Grimoire.</p>';
+    }
+    return banner + '<div class="sp-explain-rows">' +
       rows.map(function (r) {
         return '<div class="sp-explain-row"><strong>' + esc(r[0]) + '</strong> ' + esc(r[1]) + '</div>';
       }).join('') +
-      '<button type="button" class="btn-link" id="spExplainFiche">Ouvrir la fiche complète</button>' +
+      '<button type="button" class="btn-link" id="spExplainFiche">Voir toutes les significations (fiche complète)</button>' +
     '</div>';
   }
 
@@ -419,6 +428,13 @@ BELLINE.Views.tirages = function (root) {
       expl.addEventListener('toggle', function () { explainOpen = expl.open; });
       var ef = expl.querySelector('#spExplainFiche');
       if (ef) ef.addEventListener('click', function () { S.write('grimoire.open', draft.cards[selected]); BELLINE.go('grimoire'); });
+      var eu = expl.querySelector('#spExplainUnlock');
+      if (eu) eu.addEventListener('click', function () {
+        draft.domaine = 'general'; persist();
+        var dom = root.querySelector('#spDomaine'); if (dom) dom.value = 'general';
+        renderInspector();
+        if (pickerOpen) renderPicker();
+      });
     }
   }
 
@@ -925,7 +941,8 @@ BELLINE.Views.tirages = function (root) {
       '<div class="sp-toolbar">' +
         '<label class="sp-toolbar-q"><span>Question du tirage</span>' +
           '<input type="text" id="spQuestion" placeholder="Sur quoi porte ce tirage…" value="' + esc(draft.question) + '"></label>' +
-        '<label class="sp-domaine"><span class="u-label">Sujet</span>' +
+        '<label class="sp-domaine' + (draft.domaine !== 'general' ? ' is-locked' : '') + '">' +
+          '<span class="u-label">Sujet' + (draft.domaine !== 'general' ? ' 🔒' : '') + '</span>' +
           '<select id="spDomaine">' + DOMAINES.map(function (d) {
             return '<option value="' + d[0] + '"' + (draft.domaine === d[0] ? ' selected' : '') + '>' + esc(d[1]) + '</option>';
           }).join('') + '</select></label>' +

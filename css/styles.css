@@ -259,7 +259,7 @@ code { font-family: var(--mono); font-size: .86em; color: var(--gold-soft); }
 
 .field { display: block; margin-bottom: 14px; }
 .field > span { display: block; margin-bottom: 5px; font-size: .9rem; color: var(--muted); }
-.field input, .field textarea {
+.field input, .field textarea, .field select {
   width: 100%; padding: 10px 12px; border-radius: 10px;
   background: var(--bg-2); border: 1px solid var(--line); color: var(--ink);
   font-family: inherit; font-size: .95rem; resize: vertical; transition: border-color .15s;
@@ -732,6 +732,37 @@ button.planet-sym:hover { color: var(--gold-soft); text-shadow: 0 0 10px current
   border-radius: 7px; padding: 4px 8px; font-size: .8rem;
 }
 .assoc-tog.on { background: var(--gold); color: #241c0c; border-color: var(--gold); font-weight: 600; }
+
+/* ---------- Associations : moteur de combinaisons ---------- */
+
+.combo-engine {
+  margin: 14px 0 20px; padding: 16px; border-radius: var(--radius);
+  background: linear-gradient(165deg, var(--panel), var(--bg-2)); border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+}
+.combo-engine-head h2 { margin: 0 0 4px; font-size: 1.05rem; color: var(--gold-soft); font-family: var(--serif); }
+.combo-picker {
+  display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: end; margin: 12px 0 4px;
+}
+.combo-picker .field { margin-bottom: 0; }
+#comboSwap { align-self: center; font-size: 1.1rem; }
+@media (max-width: 640px) {
+  .combo-picker { grid-template-columns: 1fr; }
+  #comboSwap { justify-self: center; transform: rotate(90deg); }
+}
+.combo-reading {
+  margin-top: 14px; padding: 13px 15px; border-radius: 12px;
+  background: var(--bg-2); border: 1px solid var(--line-lit);
+}
+.combo-reading-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.combo-tier {
+  font-family: var(--mono); font-size: .66rem; text-transform: uppercase; letter-spacing: .07em;
+  padding: 2px 8px; border-radius: 999px; color: var(--muted); border: 1px solid var(--line);
+}
+.combo-tier.tier-curee { color: var(--gold-soft); border-color: var(--gold); }
+.combo-tier.tier-dossier { color: hsl(200 45% 68%); border-color: hsl(200 45% 40%); }
+.combo-reading-text { margin: 0; font-size: .96rem; line-height: 1.5; }
+.combo-reading-actions { margin-top: 10px; }
 
 /* ---------- Tirages : plateau ---------- */
 
@@ -1352,6 +1383,14 @@ button.planet-sym:hover { color: var(--gold-soft); text-shadow: 0 0 10px current
   padding: 8px 10px; border-radius: 9px; background: var(--bg-2);
   border: 1px solid var(--line); color: var(--ink); font-family: var(--reading); font-size: .9rem;
 }
+.sp-domaine.is-locked select { border-color: var(--gold); box-shadow: 0 0 0 1px rgba(217,178,107,.18); }
+.sp-domaine.is-locked .u-label { color: var(--gold-soft); }
+.sp-lock-banner {
+  margin: 0 0 10px; padding: 9px 12px; border-radius: 9px; font-size: .85rem;
+  background: rgba(217,178,107,.1); border: 1px solid var(--gold); color: var(--ink);
+}
+.sp-lock-banner b { color: var(--gold-soft); }
+.sp-lock-banner .btn-link { font-size: .82rem; margin-left: 2px; }
 .sp-explain {
   margin: 10px 0 0; border-radius: 10px; background: var(--bg-2); border: 1px solid var(--line);
   padding: 2px 12px 8px;

@@ -162,15 +162,15 @@ window.BELLINE = window.BELLINE || {};
       positions: [
         { id: 'coupe_1', label: "La Coupe", kind: 'adjectif', branch: 'coupe', polarity: null, logic: "Climat, contexte. Hors positions, remise au jeu avant l'étalement." },
         { id: 'coupe_2', label: "La Coupe", kind: 'adjectif', branch: 'coupe', polarity: null, logic: "Climat, contexte. Hors positions, remise au jeu avant l'étalement." },
-        { id: 'coeur', label: "Le Cœur", kind: 'substantif', branch: 'axe', polarity: null, logic: "Le sentiment dominant." },
-        { id: 'conscient', label: "Le Conscient", kind: 'substantif', branch: 'axe', polarity: null, logic: "Ce qui est su et reconnu." },
-        { id: 'enfoui', label: "L'Enfoui", kind: 'substantif', branch: 'axe', polarity: null, logic: "Ce qui agit sans se dire." },
-        { id: 'memoire', label: "La Mémoire", kind: 'substantif', branch: 'axe', polarity: null, logic: "Ce qui demeure de l'histoire." },
-        { id: 'verrou', label: "Le Verrou", kind: 'substantif', branch: 'axe', polarity: null, logic: "Ce qui bloque : peur, blessure, contradiction." },
-        { id: 'desir', label: "Le Désir", kind: 'substantif', branch: 'axe', polarity: null, logic: "Ce qui est voulu au fond." },
-        { id: 'masque', label: "Le Masque", kind: 'substantif', branch: 'axe', polarity: null, logic: "Ce qui est montré au dehors." },
-        { id: 'nondit', label: "Le Non-dit", kind: 'substantif', branch: 'axe', polarity: null, logic: "Ce qui ne parvient pas à s'exprimer." },
-        { id: 'miroir_syn', label: "Le Miroir", kind: 'substantif', branch: 'axe', polarity: null, logic: "Synthèse du rapport entre les positions précédentes." }
+        { id: 'coeur', label: "Le Cœur", kind: 'substantif', branch: 'axe', polarity: null, logic: "Le sentiment dominant.", read: "Le socle : tout le reste se lit en rapport avec elle. Premier terme de l'axe vertical." },
+        { id: 'conscient', label: "Le Conscient", kind: 'substantif', branch: 'axe', polarity: null, logic: "Ce qui est su et reconnu.", read: "À opposer à L'Enfoui : la pensée et l'affect ne racontent pas la même chose (axe horizontal)." },
+        { id: 'enfoui', label: "L'Enfoui", kind: 'substantif', branch: 'axe', polarity: null, logic: "Ce qui agit sans se dire.", read: "À opposer au Conscient : ce qui gouverne les comportements sans être reconnu." },
+        { id: 'memoire', label: "La Mémoire", kind: 'substantif', branch: 'axe', polarity: null, logic: "Ce qui demeure de l'histoire.", read: "Sur l'axe vertical : ce qui, du passé, agit encore aujourd'hui." },
+        { id: 'verrou', label: "Le Verrou", kind: 'substantif', branch: 'axe', polarity: null, logic: "Ce qui bloque : peur, blessure, contradiction.", read: "Le milieu de l'axe dedans / milieu / dehors : c'est lui qui explique pourquoi le Désir ne se traduit pas en Masque." },
+        { id: 'desir', label: "Le Désir", kind: 'substantif', branch: 'axe', polarity: null, logic: "Ce qui est voulu au fond.", read: "À opposer au Masque : l'écart entre ce qui est voulu et ce qui est montré. C'est l'axe qui donne son nom au tirage." },
+        { id: 'masque', label: "Le Masque", kind: 'substantif', branch: 'axe', polarity: null, logic: "Ce qui est montré au dehors.", read: "À opposer au Désir : la façade, ce que l'entourage voit." },
+        { id: 'nondit', label: "Le Non-dit", kind: 'substantif', branch: 'axe', polarity: null, logic: "Ce qui ne parvient pas à s'exprimer.", read: "Sur l'axe vertical : ce qui bute contre le Verrou et ne sort pas." },
+        { id: 'miroir_syn', label: "Le Miroir", kind: 'substantif', branch: 'axe', polarity: null, logic: "Synthèse du rapport entre les positions précédentes.", read: "Ne s'ajoute pas aux autres : elle dit le rapport entre elles. Se lit en dernier." }
       ]
     },
 
@@ -205,9 +205,9 @@ window.BELLINE = window.BELLINE || {};
       positions: [
         { id: 'coupe_1', label: "La Coupe", kind: 'adjectif', branch: 'coupe', polarity: null, logic: "Climat général. Ne tranche pas la question." },
         { id: 'coupe_2', label: "La Coupe", kind: 'adjectif', branch: 'coupe', polarity: null, logic: "Climat général. Ne tranche pas la question." },
-        { id: 'pour', label: "Pour", kind: 'substantif', branch: 'pos', polarity: 'favorable', logic: "Ce qui pousse vers le oui." },
-        { id: 'contre', label: "Contre", kind: 'substantif', branch: 'neg', polarity: 'defavorable', logic: "Ce qui pousse vers le non." },
-        { id: 'pivot', label: "Pivot", kind: 'fonctionnelle', branch: 'axe', polarity: null, logic: "Ce qui fera basculer." },
+        { id: 'pour', label: "Pour", kind: 'substantif', branch: 'pos', polarity: 'favorable', logic: "Ce qui pousse vers le oui.", read: "Avec « Contre », la seule paire mesurable (polaire). À lire en tension, pas à additionner." },
+        { id: 'contre', label: "Contre", kind: 'substantif', branch: 'neg', polarity: 'defavorable', logic: "Ce qui pousse vers le non.", read: "Avec « Pour », la seule paire mesurable. Le poids relatif des deux oriente la lecture du Verdict." },
+        { id: 'pivot', label: "Pivot", kind: 'fonctionnelle', branch: 'axe', polarity: null, logic: "Ce qui fera basculer.", read: "Ni pour ni contre : le facteur qui peut faire pencher d'un côté. Pas encore la réponse." },
         { id: 'verdict_pos', label: "Verdict", kind: 'substantif', branch: 'axe', polarity: null, logic: "La réponse principale. Se lit selon la grille oui / neutre / non établie hors de tout tirage." },
         { id: 'precision', label: "Précision", kind: 'adjectif', branch: 'axe', polarity: null, logic: "Explique le verdict sans le renverser." }
       ]
@@ -244,13 +244,13 @@ window.BELLINE = window.BELLINE || {};
       positions: [
         { id: 'coupe_1', label: "La Coupe", kind: 'adjectif', branch: 'coupe', polarity: null, logic: "Fond de journée." },
         { id: 'coupe_2', label: "La Coupe", kind: 'adjectif', branch: 'coupe', polarity: null, logic: "Fond de journée." },
-        { id: 'flamme', label: "Flamme", kind: 'substantif', branch: 'axe', polarity: null, logic: "L'énergie dominante du jour." },
-        { id: 'braise', label: "Braise", kind: 'substantif', branch: 'axe', polarity: null, logic: "Ce qui vient de la veille et brûle encore." },
-        { id: 'vent', label: "Vent", kind: 'substantif', branch: 'axe', polarity: null, logic: "Ce qui influence ou déstabilise." },
-        { id: 'foyer', label: "Foyer", kind: 'substantif', branch: 'axe', polarity: null, logic: "Le cœur concret de la journée." },
-        { id: 'ombre', label: "Ombre", kind: 'substantif', branch: 'axe', polarity: null, logic: "Le risque à surveiller." },
-        { id: 'geste', label: "Geste", kind: 'substantif', branch: 'axe', polarity: null, logic: "Ce qu'il faut faire ou favoriser." },
-        { id: 'lueur', label: "Lueur", kind: 'substantif', branch: 'axe', polarity: null, logic: "L'issue du soir, la leçon du jour." }
+        { id: 'flamme', label: "Flamme", kind: 'substantif', branch: 'axe', polarity: null, logic: "L'énergie dominante du jour.", read: "Se lit en premier : donne le ton de toute la journée." },
+        { id: 'braise', label: "Braise", kind: 'substantif', branch: 'axe', polarity: null, logic: "Ce qui vient de la veille et brûle encore.", read: "À opposer au Vent : ce qui pousse de l'intérieur (l'hier) contre ce qui vient du dehors." },
+        { id: 'vent', label: "Vent", kind: 'substantif', branch: 'axe', polarity: null, logic: "Ce qui influence ou déstabilise.", read: "À opposer à la Braise : l'extérieur, ce qui peut faire dévier la journée." },
+        { id: 'foyer', label: "Foyer", kind: 'substantif', branch: 'axe', polarity: null, logic: "Le cœur concret de la journée.", read: "L'événement ou la tâche autour de quoi tout tourne." },
+        { id: 'ombre', label: "Ombre", kind: 'substantif', branch: 'axe', polarity: null, logic: "Le risque à surveiller.", read: "À opposer au Geste : le piège d'un côté, le levier de l'autre." },
+        { id: 'geste', label: "Geste", kind: 'substantif', branch: 'axe', polarity: null, logic: "Ce qu'il faut faire ou favoriser.", read: "À opposer à l'Ombre : l'action concrète qui aide la journée." },
+        { id: 'lueur', label: "Lueur", kind: 'substantif', branch: 'axe', polarity: null, logic: "L'issue du soir, la leçon du jour.", read: "Se lit en dernier : ce qu'on retient une fois la journée passée." }
       ]
     }
 

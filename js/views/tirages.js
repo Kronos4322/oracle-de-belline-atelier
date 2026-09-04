@@ -213,6 +213,31 @@ BELLINE.Views.tirages = function (root) {
       '</details>';
   }
 
+  /* Comment lire une carte à cette position. */
+  function readHint(p) {
+    if (p.read) return p.read;
+    var rev = spread.typologie && spread.typologie.reversible;
+    if (p.branch === 'coupe') return "Se lit avant tout le reste. Ne se relie à aucune position : c'est le décor, pas un événement.";
+    if (p.id === 'guide') return "Se lit juste après la Coupe. Nomme le régime dans lequel toute la suite se lit — jamais une prédiction.";
+    if (p.id === 'synthese') return "Une intention, pas un fait : ce vers quoi le consultant tend, non ce qui arrivera.";
+    if (p.id === 'verdict_pos') return "La réponse. Se lit selon la grille oui / neutre / non fixée AVANT le tirage. Carte neutre = réponse neutre.";
+    if (p.id === 'precision') return "Éclaire le Verdict, ne l'annule jamais. Si elle semble le contredire, reprends la lecture.";
+    if (p.kind === 'substantif' && p.id.indexOf('voie') === 0)
+      return "Lis-la seule d'abord : c'est le mot qui gouverne toute la colonne. Les quatre cartes en dessous ne font que le décliner.";
+    if (/— cause/.test(p.label)) return "Répond à « pourquoi cette voie ? ». À lire comme un nom : une condition.";
+    if (/— action/.test(p.label))
+      return rev
+        ? "Répond à « par quel geste ? ». En descendant : un verbe (l'acte). En remontant : un nom (l'acte qui a eu lieu)."
+        : "Répond à « par quel geste ? ». L'acte par lequel la voie s'accomplit.";
+    if (/Éclaircisseur — cause/.test(p.label)) return "Précise le nom du nœud : de quoi cette cause est faite.";
+    if (/Éclaircisseur — action/.test(p.label))
+      return rev ? "En descendant : un adverbe (comment). En remontant : un complément du nom." : "Comment l'acte se ferait.";
+    if (p.polarity && p.branch === 'axe')
+      return "À mettre en regard de son homologue de l'autre colonne : les deux ne coïncident pas, et c'est le sens.";
+    if (p.parent) return "Précise et nuance « " + posById[p.parent].label + " » — sans jamais le renverser.";
+    return null;
+  }
+
   /* Test de valence contraire : carte en désaccord avec la polarité de sa case. */
   function contraireNote(pos, card) {
     if (!card || !pos.polarity || card.valence === 'neutre') return '';
@@ -251,16 +276,19 @@ BELLINE.Views.tirages = function (root) {
     var parent = p.parent ? posById[p.parent] : null;
     var idx = spread.positions.findIndex(function (x) { return x.id === selected; });
 
+    var read = readHint(p);
+    var val = c ? BELLINE.VALENCE[c.valence] : null;
+
     var current = '';
     if (c) {
-      var val = BELLINE.VALENCE[c.valence];
       current =
         '<div class="sp-modal-current">' +
           '<button type="button" class="sp-current-remove" id="spClear" aria-label="Retirer la carte" title="Retirer la carte">×</button>' +
-          '<div><span class="muted small">Carte placée</span><br><strong>' + c.number + ' · ' + esc(c.name) + '</strong>' +
-            ((c.keywords && c.keywords.length) ? ' <span class="muted small">— ' + c.keywords.slice(0, 4).map(esc).join(' · ') + '</span>' : '') +
-            '<br><span class="val-tag val-' + c.valence + '">valence ' + (val ? val.label : c.valence) + '</span>' +
+          '<div><strong>' + c.number + ' · ' + esc(c.name) + '</strong>' +
+            ' <span class="val-tag val-' + c.valence + '">valence ' + (val ? val.label : c.valence) + '</span>' +
             (c.forte ? ' <span class="val-tag val-forte">carte forte</span>' : '') +
+            ((c.keywords && c.keywords.length) ? '<br><span class="muted small">' + c.keywords.slice(0, 5).map(esc).join(' · ') + '</span>' : '') +
+            (c.sens && c.sens.general ? '<br><span class="sp-modal-sens">' + esc(c.sens.general) + '</span>' : '') +
           '</div>' +
           (BELLINE.imageFor(n)
             ? '<div class="sp-modal-current-btns"><button type="button" class="btn-link" id="spZoom">agrandir</button></div>' : '') +
@@ -274,38 +302,73 @@ BELLINE.Views.tirages = function (root) {
         '<div class="sp-modal-head">' +
           '<span class="sp-kind sp-kind-' + p.kind + '">' + (p.kind === 'substantif' ? 'substantif' : 'adjectif') + '</span>' +
           '<h3>' + esc(p.label) + '</h3>' +
+          '<span class="muted small">' + (idx + 1) + ' / ' + spread.count + '</span>' +
         '</div>' +
-        '<p class="sp-modal-logic">' + esc(p.logic) + '</p>' +
-        (parent ? '<p class="muted small">Éclaire : ' + esc(parent.label) + '</p>' : '') +
+
+        '<div class="sp-combo" id="spCombo">' +
+          '<input type="text" id="spComboInput" role="combobox" aria-expanded="false" autocomplete="off" ' +
+            'placeholder="' + (c ? 'Changer la carte…' : 'Choisir une carte — nom ou numéro') + '" ' +
+            'value="' + (c ? esc(c.number + ' · ' + c.name) : '') + '">' +
+          '<button type="button" class="sp-combo-toggle" id="spComboToggle" aria-label="Ouvrir la liste">▾</button>' +
+          '<div class="sp-combo-list" id="spComboList" hidden></div>' +
+        '</div>' +
+
         current +
-        '<input type="search" id="spModalSearch" placeholder="' + (c ? 'Changer' : 'Choisir') + ' la carte : nom ou numéro…" autocomplete="off">' +
-        '<div class="sp-modal-grid" id="spModalGrid"></div>' +
+
+        '<div class="sp-modal-role">' +
+          '<p class="sp-modal-logic"><span class="sp-modal-role-h">À quoi sert cette position</span>' + esc(p.logic) + '</p>' +
+          (read ? '<p class="sp-modal-read"><span class="sp-modal-role-h">Comment la lire</span>' + esc(read) + '</p>' : '') +
+          (parent ? '<p class="muted small">Éclaire : ' + esc(parent.label) + '</p>' : '') +
+        '</div>' +
+
         '<div class="sp-modal-foot">' +
           '<button type="button" class="btn-ghost btn-sm" id="spPrev"' + (idx <= 0 ? ' disabled' : '') + '>← Précédente</button>' +
-          '<span class="muted small">' + (idx + 1) + ' / ' + spread.count + '</span>' +
           '<button type="button" class="btn-ghost btn-sm" id="spNext"' + (idx >= spread.count - 1 ? ' disabled' : '') + '>Suivante →</button>' +
           '<button type="button" class="btn-primary btn-sm" id="spDone">Terminé</button>' +
         '</div>' +
       '</div>';
     box.hidden = false;
 
-    var grid = box.querySelector('#spModalGrid');
-    var search = box.querySelector('#spModalSearch');
+    /* --- combobox --- */
+    var combo = box.querySelector('#spCombo');
+    var input = box.querySelector('#spComboInput');
+    var listEl = box.querySelector('#spComboList');
+    var typed = '';
 
-    function drawGrid() {
-      var f = (search.value || '').trim().toLowerCase();
-      grid.innerHTML = BELLINE.SEED_CARDS.filter(function (x) {
+    function openList() {
+      listEl.hidden = false;
+      input.setAttribute('aria-expanded', 'true');
+      drawList();
+    }
+    function closeList() {
+      listEl.hidden = true;
+      input.setAttribute('aria-expanded', 'false');
+      typed = '';
+      var cur = draft.cards[selected];
+      input.value = cur ? (cur + ' · ' + cardName(cur)) : '';
+    }
+    function drawList() {
+      var f = typed.trim().toLowerCase();
+      var items = BELLINE.SEED_CARDS.filter(function (x) {
         if (!f) return true;
-        return x.name.toLowerCase().indexOf(f) !== -1 || String(x.number) === f;
-      }).map(function (x) {
-        var here = draft.cards[selected] === x.number;
-        var elsw = usedElsewhere(x.number);
-        return '<button type="button" class="sp-pick' + (here ? ' on' : '') + (elsw.length ? ' used' : '') +
-          '" data-n="' + x.number + '"' + (elsw.length ? ' title="déjà placée ailleurs"' : '') + '>' +
-          x.number + '. ' + esc(x.name) + '</button>';
-      }).join('');
-      grid.querySelectorAll('.sp-pick').forEach(function (b) {
-        b.addEventListener('click', function () {
+        return x.name.toLowerCase().indexOf(f) !== -1 || String(x.number).indexOf(f) === 0;
+      });
+      listEl.innerHTML = items.length
+        ? items.map(function (x) {
+            var here = draft.cards[selected] === x.number;
+            var elsw = usedElsewhere(x.number).map(function (id) { return posById[id] ? posById[id].label : id; });
+            return '<button type="button" class="sp-opt' + (here ? ' on' : '') + (elsw.length ? ' used' : '') + '" data-n="' + x.number + '">' +
+              '<span class="sp-opt-n">' + x.number + '</span>' +
+              '<span class="sp-opt-name">' + esc(x.name) + '</span>' +
+              '<span class="sp-opt-val val-' + x.valence + '" title="valence ' + BELLINE.VALENCE[x.valence].label + '">●</span>' +
+              (x.forte ? '<span class="sp-opt-forte" title="carte forte">★</span>' : '') +
+              (elsw.length ? '<span class="sp-opt-used">déjà en ' + esc(elsw[0]) + '</span>' : '') +
+              '</button>';
+          }).join('')
+        : '<p class="sp-opt-empty muted">Aucune carte.</p>';
+      listEl.querySelectorAll('.sp-opt').forEach(function (b) {
+        b.addEventListener('mousedown', function (e) {
+          e.preventDefault();
           var wasEmpty = !draft.cards[selected];
           draft.cards[selected] = Number(b.dataset.n);
           draft.example = false;
@@ -316,9 +379,24 @@ BELLINE.Views.tirages = function (root) {
         });
       });
     }
-    search.addEventListener('input', drawGrid);
-    drawGrid();
-    setTimeout(function () { try { search.focus(); } catch (e) {} }, 30);
+
+    input.addEventListener('focus', function () { typed = ''; input.value = ''; openList(); });
+    input.addEventListener('input', function () { typed = input.value; if (listEl.hidden) openList(); else drawList(); });
+    box.querySelector('#spComboToggle').addEventListener('mousedown', function (e) {
+      e.preventDefault();
+      if (listEl.hidden) { input.focus(); } else { closeList(); }
+    });
+    input.addEventListener('blur', function () { setTimeout(closeList, 120); });
+    box.querySelector('.sp-modal-panel').addEventListener('mousedown', function (e) {
+      if (!listEl.hidden && !combo.contains(e.target)) closeList();
+    });
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !listEl.hidden) { e.stopPropagation(); closeList(); input.blur(); }
+      else if (e.key === 'Enter') {
+        var first = listEl.querySelector('.sp-opt');
+        if (first && !listEl.hidden) { e.preventDefault(); first.dispatchEvent(new MouseEvent('mousedown')); }
+      }
+    });
 
     var q = function (id) { return box.querySelector(id); };
     q('#spModalClose').addEventListener('click', closeModal);

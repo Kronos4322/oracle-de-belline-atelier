@@ -583,7 +583,7 @@ button.planet-sym:hover { color: var(--gold-soft); text-shadow: 0 0 10px current
 }
 .sp-modal[hidden] { display: none !important; }
 .sp-modal-panel {
-  width: min(640px, 100%); max-height: 88vh; display: flex; flex-direction: column;
+  width: min(560px, 100%); max-height: 88vh; overflow-y: auto;
   background: var(--panel); border: 1px solid var(--gold); border-radius: var(--radius);
   padding: 20px; position: relative; box-shadow: 0 20px 60px rgba(0, 0, 0, .55);
 }
@@ -593,14 +593,59 @@ button.planet-sym:hover { color: var(--gold-soft); text-shadow: 0 0 10px current
   background: none; border: none; color: var(--muted); border-radius: 8px;
 }
 .sp-modal-close:hover { color: var(--ink); background: var(--panel-2); }
-.sp-modal-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding-right: 30px; }
-.sp-modal-head h3 { margin: 0; font-size: 1.08rem; }
-.sp-modal-logic { margin: 8px 0 4px; font-size: .92rem; }
+.sp-modal-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding-right: 30px; margin-bottom: 12px; }
+.sp-modal-head h3 { margin: 0; font-size: 1.08rem; flex: 1; }
+
+.sp-modal-role { margin: 14px 0 4px; }
+.sp-modal-role-h {
+  display: block; font-size: .7rem; text-transform: uppercase; letter-spacing: .06em;
+  color: var(--muted); margin-bottom: 2px;
+}
+.sp-modal-logic, .sp-modal-read { margin: 0 0 12px; font-size: .92rem; }
+.sp-modal-read { color: var(--gold-soft); }
+
+.sp-modal-sens { display: block; margin-top: 4px; }
+
+/* combobox */
+.sp-combo { position: relative; }
+#spComboInput {
+  width: 100%; padding: 10px 34px 10px 12px; border-radius: 9px;
+  background: var(--bg); border: 1px solid var(--gold); color: var(--ink); font-size: .95rem;
+}
+.sp-combo-toggle {
+  position: absolute; right: 4px; top: 4px; bottom: 4px; width: 28px;
+  background: none; border: none; color: var(--muted); font-size: .8rem;
+}
+.sp-combo-list {
+  position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 8;
+  max-height: min(320px, 44vh); overflow-y: auto;
+  background: var(--bg); border: 1px solid var(--gold); border-radius: 9px;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, .5);
+}
+.sp-combo-list[hidden] { display: none !important; }
+.sp-opt {
+  width: 100%; display: flex; align-items: center; gap: 10px; text-align: left;
+  padding: 8px 12px; background: none; border: none; color: var(--ink); font-size: .9rem;
+  border-bottom: 1px solid var(--line);
+}
+.sp-opt:last-child { border-bottom: none; }
+.sp-opt:hover { background: var(--panel-2); }
+.sp-opt.on { background: rgba(217, 178, 107, .16); }
+.sp-opt.used { opacity: .5; }
+.sp-opt-n { flex: none; width: 24px; text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+.sp-opt-name { flex: 1; }
+.sp-opt-val { flex: none; font-size: .7rem; }
+.sp-opt-val.val-positive { color: hsl(140 45% 62%); }
+.sp-opt-val.val-negative { color: hsl(5 60% 66%); }
+.sp-opt-val.val-neutre { color: var(--muted); }
+.sp-opt-forte { flex: none; color: var(--gold-soft); font-size: .72rem; }
+.sp-opt-used { flex: none; font-size: .72rem; color: var(--muted); }
+.sp-opt-empty { padding: 12px; margin: 0; }
+
 .sp-modal-current {
   position: relative;
-  display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
-  margin: 10px 0; padding: 10px 34px 10px 12px; border-radius: 10px;
-  background: var(--bg-2); border: 1px solid var(--gold);
+  margin: 12px 0; padding: 12px 34px 12px 14px; border-radius: 10px;
+  background: var(--bg-2); border: 1px solid var(--gold); font-size: .9rem;
 }
 .sp-modal-current-btns { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .sp-modal-current .val-tag { display: inline-block; margin-top: 6px; }
@@ -616,22 +661,6 @@ button.planet-sym:hover { color: var(--gold-soft); text-shadow: 0 0 10px current
   background: none; border: 1px solid transparent; color: var(--danger);
 }
 .sp-current-remove:hover { background: rgba(217, 138, 138, .16); border-color: var(--danger); }
-#spModalSearch {
-  width: 100%; padding: 9px 11px; margin: 10px 0 8px; border-radius: 8px;
-  background: var(--bg); border: 1px solid var(--line); color: var(--ink); font-size: .95rem;
-}
-.sp-modal-grid {
-  flex: 1; min-height: 120px; overflow-y: auto;
-  display: flex; flex-wrap: wrap; gap: 5px; align-content: flex-start;
-  padding: 8px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px;
-}
-.sp-pick {
-  background: var(--panel-2); border: 1px solid var(--line); color: var(--ink);
-  border-radius: 7px; padding: 5px 9px; font-size: .82rem;
-}
-.sp-pick:hover { border-color: var(--gold-soft); }
-.sp-pick.used { opacity: .42; }
-.sp-pick.on { background: var(--gold); color: #241c0c; border-color: var(--gold); font-weight: 600; }
 .sp-modal-foot {
   display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 12px;
 }

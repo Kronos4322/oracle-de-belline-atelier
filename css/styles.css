@@ -338,6 +338,8 @@ button.planet-sym:hover { color: var(--gold-soft); text-shadow: 0 0 10px current
   background: var(--panel-2); border: 1px solid var(--line); color: var(--muted);
 }
 .jr-3state.on { background: var(--gold); color: #241c0c; border-color: var(--gold); font-weight: 600; }
+.jr-combined { margin: 12px 0 0; padding: 10px 12px; border-radius: 8px; background: var(--bg-2); border: 1px solid var(--gold); font-size: .9rem; }
+.method-table th { padding: 6px 8px; text-align: left; font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); border-bottom: 1px solid var(--line); }
 
 /* ---------- Méthode ---------- */
 

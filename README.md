@@ -10,14 +10,19 @@ dans ses lectures.
 | **Grimoire** | fonctionnel — 53 fiches pré-remplies, à retravailler |
 | **Associations** | fonctionnel — combinaisons de cartes en dossiers / sous-dossiers |
 | **Entraînement** | première version — révision libre par flashcards |
-| **Tirages** | fonctionnel — **Tirage d'Hécate** (22 positions), plateau + panneau de lecture |
-| **Journal** | ossature — décrit ce qui est prévu |
-| **Progression** | ossature — 2 indicateurs branchés |
+| **Tirages** | 4 dispositifs : Hécate, Miroir du Cœur, Verdict, Flambeau |
+| **Journal** | fonctionnel — le carnet (format du manuel : avant / après) |
+| **Progression** | fonctionnel — test de concordance, relevé des cartes fortes |
+| **Méthode** | mémo de lecture d'après les deux manuels |
 
-Le **Tirage d'Hécate** (`js/data/spreads.js`) : plateau en arbre (axe central →
-deux voies → nœuds → éclaircisseurs + la Coupe), chaque position explique son rôle,
-placement des cartes une à une ou tirage au sort, bouton « Charger l'exemple »
-(transcription des planches de référence), section « Comment lire ce tirage ».
+Basé sur *Lire le Belline — manuel de méthode* et *L'Oracle et la grille* :
+- **valence** (positive / négative / neutre) et **5 cartes fortes** (11, 34, 38, 42, 48) ;
+- 4 tirages avec leur grammaire (substantif / adjectif, nœud de cause / d'action,
+  réversibilité, axes) ;
+- **test de valence contraire** automatique dans la fenêtre de placement ;
+- carnet : relevés calculés (familles, valences, cartes fortes, positions contraires),
+  concordance, énoncés falsifiables ;
+- Progression : concordance par tirage + combinaison de Fisher, écart cumulé des cartes fortes.
 
 ### Les 3 couches d'une fiche
 
@@ -81,7 +86,8 @@ js/
   data/cards.js          les 53 cartes (structure)
   data/card-images.js    numéro → image + symboles planétaires (généré)
   data/card-reference.js repères de lecture (pré-remplissage des fiches)
-  data/spreads.js        modèles de tirage (Tirage d'Hécate)
+  data/cards.js           + valence et cartes fortes des 53 lames
+  data/spreads.js        4 modèles de tirage + analyse (relevés, concordance)
   storage.js             couches de données + sauvegarde/restauration
   app.js                 routeur + lightbox + démarrage
   views/                 une vue par module

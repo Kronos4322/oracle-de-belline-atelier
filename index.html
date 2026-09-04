@@ -20,7 +20,15 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
   <!-- v: incrémenter à chaque modif de CSS/JS pour forcer le rechargement,
        puis lancer `node tools/gen-sw.js` pour que le cache hors-ligne suive -->
-  <link rel="stylesheet" href="css/styles.css?v=42">
+  <link rel="stylesheet" href="css/styles.css?v=44">
+  <script>
+    // Appliqué avant le premier rendu pour éviter un flash sombre->clair.
+    try {
+      if (localStorage.getItem('belline.theme') === '"light"') {
+        document.documentElement.setAttribute('data-theme', 'light');
+      }
+    } catch (e) {}
+  </script>
 </head>
 <body>
   <canvas id="skyfield" aria-hidden="true"></canvas>
@@ -28,6 +36,7 @@
     <header class="topbar">
       <div class="brand"><span class="brand-mark">✦</span> Oracle de Belline <em>— atelier</em></div>
       <div class="topbar-actions">
+        <button class="btn-icon" id="btnTheme" title="Version claire / sombre" aria-label="Changer d'apparence">☀</button>
         <button class="btn-icon" id="btnExport" title="Télécharger une sauvegarde de mes données" aria-label="Télécharger une sauvegarde">⬇</button>
         <label class="btn-icon" title="Importer une sauvegarde" aria-label="Importer une sauvegarde">⬆
           <input type="file" id="fileImport" accept="application/json" hidden>
@@ -44,25 +53,25 @@
   <div id="sheet" class="sheet-modal" hidden></div>
 
   <!-- Données de référence -->
-  <script src="js/data/cards.js?v=42"></script>
-  <script src="js/data/card-images.js?v=42"></script>
-  <script src="js/data/card-reference.js?v=42"></script>
-  <script src="js/data/card-dossier.js?v=42"></script>
-  <script src="js/data/card-planche.js?v=42"></script>
-  <script src="js/data/combos.js?v=42"></script>
+  <script src="js/data/cards.js?v=44"></script>
+  <script src="js/data/card-images.js?v=44"></script>
+  <script src="js/data/card-reference.js?v=44"></script>
+  <script src="js/data/card-dossier.js?v=44"></script>
+  <script src="js/data/card-planche.js?v=44"></script>
+  <script src="js/data/combos.js?v=44"></script>
   <!-- Couche de stockage -->
-  <script src="js/storage.js?v=42"></script>
-  <script src="js/data/spreads.js?v=42"></script>
+  <script src="js/storage.js?v=44"></script>
+  <script src="js/data/spreads.js?v=44"></script>
   <!-- Vues -->
-  <script src="js/views/journalier.js?v=42"></script>
-  <script src="js/views/grimoire.js?v=42"></script>
-  <script src="js/views/associations.js?v=42"></script>
-  <script src="js/views/entrainement.js?v=42"></script>
-  <script src="js/views/tirages.js?v=42"></script>
-  <script src="js/views/journal.js?v=42"></script>
-  <script src="js/views/progression.js?v=42"></script>
-  <script src="js/views/methode.js?v=42"></script>
+  <script src="js/views/journalier.js?v=44"></script>
+  <script src="js/views/grimoire.js?v=44"></script>
+  <script src="js/views/associations.js?v=44"></script>
+  <script src="js/views/entrainement.js?v=44"></script>
+  <script src="js/views/tirages.js?v=44"></script>
+  <script src="js/views/journal.js?v=44"></script>
+  <script src="js/views/progression.js?v=44"></script>
+  <script src="js/views/methode.js?v=44"></script>
   <!-- Routeur / démarrage -->
-  <script src="js/app.js?v=42"></script>
+  <script src="js/app.js?v=44"></script>
 </body>
 </html>

@@ -264,6 +264,26 @@ window.BELLINE = window.BELLINE || {};
     });
   }
 
+  /* --- version claire / sombre --- */
+  function setupTheme() {
+    var btn = document.getElementById('btnTheme');
+    var meta = document.querySelector('meta[name="theme-color"]');
+    function isLight() { return document.documentElement.getAttribute('data-theme') === 'light'; }
+    function paint() {
+      if (btn) {
+        btn.textContent = isLight() ? '☾' : '☀';
+        btn.title = isLight() ? 'Passer en version sombre' : 'Passer en version claire';
+      }
+      if (meta) meta.setAttribute('content', isLight() ? '#f7f3e8' : '#100e17');
+    }
+    paint();
+    if (btn) btn.addEventListener('click', function () {
+      if (isLight()) { document.documentElement.removeAttribute('data-theme'); BELLINE.Storage.write('theme', 'dark'); }
+      else { document.documentElement.setAttribute('data-theme', 'light'); BELLINE.Storage.write('theme', 'light'); }
+      paint();
+    });
+  }
+
   /* --- hors-ligne : une fois ouverte en ligne, l'app se relance sans réseau --- */
   function setupOffline() {
     if (!('serviceWorker' in navigator)) return;
@@ -279,6 +299,7 @@ window.BELLINE = window.BELLINE || {};
     var more = document.getElementById('navMore');
     if (more) more.addEventListener('click', openSheet);
     window.addEventListener('hashchange', render);
+    setupTheme();
     setupBackup();
     setupLightbox();
     setupDialogs();

@@ -7,7 +7,7 @@ BELLINE.Views = BELLINE.Views || {};
 BELLINE.Views.progression = function (root) {
   var S = BELLINE.Storage;
 
-  var done = S.getCards().filter(S.isCardComplete).length;
+  var done = S.editedCount();
   var stats = S.read('training.stats', { seen: 0, known: 0 });
   var pct = Math.round((done / 53) * 100);
 
@@ -18,7 +18,7 @@ BELLINE.Views.progression = function (root) {
     '<div class="stat-grid">' +
       '<div class="stat">' +
         '<div class="stat-n">' + done + '<span>/53</span></div>' +
-        '<div class="stat-l">Fiches du Grimoire complétées</div>' +
+        '<div class="stat-l">Fiches du Grimoire retravaillées</div>' +
         '<div class="bar"><i style="width:' + pct + '%"></i></div>' +
       '</div>' +
       '<div class="stat">' +

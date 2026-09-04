@@ -1,5 +1,9 @@
 /* ---------------------------------------------------------------------------
- * Vue « Grimoire » — les 53 fiches de cartes, éditables et enregistrées.
+ * Vue « Grimoire » — les 53 fiches de cartes.
+ *
+ * Les champs sont pré-remplis avec les repères issus de la recherche
+ * (js/data/card-reference.js). Dès que tu enregistres, c'est TA version qui
+ * prend le dessus. « Revenir au texte de référence » efface ta version.
  * ------------------------------------------------------------------------- */
 window.BELLINE = window.BELLINE || {};
 BELLINE.Views = BELLINE.Views || {};
@@ -42,8 +46,10 @@ BELLINE.Views.grimoire = function (root) {
   }
 
   function renderProgress() {
-    var done = S.getCards().filter(S.isCardComplete).length;
-    root.querySelector('#grimProgress').textContent = done + ' / 53 fiches complétées';
+    var n = S.editedCount();
+    root.querySelector('#grimProgress').textContent =
+      n === 0 ? '53 fiches pré-remplies — aucune retravaillée pour l’instant'
+              : n + ' / 53 fiches retravaillées';
   }
 
   function renderList() {
@@ -66,16 +72,17 @@ BELLINE.Views.grimoire = function (root) {
         '<h3 class="planet-title" style="--hue:' + planet.hue + '">' + pSym + ' ' + planet.name + '</h3>' +
         '<ul>' + items.map(function (c) {
           var img = BELLINE.imageFor(c.number);
+          var edited = S.isCardEdited(c.number);
           return '<li><button class="card-row' +
             (selected === c.number ? ' is-active' : '') +
-            (S.isCardComplete(c) ? ' is-done' : '') +
+            (edited ? ' is-done' : '') +
             '" data-num="' + c.number + '">' +
             '<span class="card-figure">' +
               '<span class="card-num">' + c.number + '</span>' +
               (img ? '<img src="' + img + '" alt="" loading="lazy" onerror="this.remove()">' : '') +
             '</span>' +
             '<span class="card-name">' + esc(c.name) + '</span>' +
-            (S.isCardComplete(c) ? '<span class="dot" title="Fiche complétée">●</span>' : '') +
+            (edited ? '<span class="dot" title="Retravaillée">●</span>' : '') +
             '</button></li>';
         }).join('') + '</ul>' +
       '</div>';
@@ -98,81 +105,13 @@ BELLINE.Views.grimoire = function (root) {
       '<textarea id="' + id + '" rows="3" placeholder="' + esc(ph || '') + '">' + esc(value) + '</textarea></label>';
   }
 
-  /* --- Repères de lecture (lecture seule, issus de card-reference.js) --- */
-
-  var REF_KEYS = ['keywords', 'symbolisme', 'sens-general', 'sens-amour', 'sens-travail', 'sens-sante', 'sens-evolution'];
-
-  function refText(ref, key) {
-    if (!ref) return '';
-    if (key === 'keywords') return (ref.keywords || []).join(', ');
-    if (key === 'symbolisme') return ref.symbolisme || '';
-    if (key.indexOf('sens-') === 0) return (ref.sens && ref.sens[key.slice(5)]) || '';
-    return '';
-  }
-
-  function refFieldEl(key) {
-    if (key === 'keywords') return detailEl.querySelector('#f-keywords');
-    if (key === 'symbolisme') return detailEl.querySelector('#f-symbolisme');
-    if (key.indexOf('sens-') === 0) return detailEl.querySelector('#f-' + key);
-    return null;
-  }
-
-  function refRow(ref, key, label) {
-    var t = refText(ref, key);
-    if (!t) return '';
-    return '<div class="ref-row">' +
-      '<div class="ref-row-top"><strong>' + label + '</strong>' +
-      '<button type="button" class="btn-link ref-copy" data-key="' + key + '">copier ↑</button></div>' +
-      '<p>' + esc(t) + '</p></div>';
-  }
-
-  function referenceSection(ref) {
-    if (!ref) return '';
-    var rows = refRow(ref, 'keywords', 'Mots-clés') +
-      refRow(ref, 'symbolisme', "Symbolisme") +
-      DOMAINS.map(function (d) { return refRow(ref, 'sens-' + d[0], d[1]); }).join('');
-    if (!rows) return '';
-    return '<section class="fiche-ref">' +
-      '<div class="ref-head"><h3>Repères de lecture</h3>' +
-      '<button type="button" class="btn-ghost btn-sm" id="refFillAll">Pré-remplir mes champs vides</button></div>' +
-      '<p class="muted small">Synthèse de plusieurs sources publiques, à retravailler avec tes mots.</p>' +
-      rows +
-      (ref.sources && ref.sources.length
-        ? '<p class="muted small ref-src">Sources : ' + ref.sources.map(esc).join(' · ') + '</p>' : '') +
-      '</section>';
-  }
-
-  function wireReference(ref) {
-    if (!ref) return;
-    detailEl.querySelectorAll('.ref-copy').forEach(function (b) {
-      b.addEventListener('click', function () {
-        var el = refFieldEl(b.dataset.key);
-        if (!el) return;
-        var t = refText(ref, b.dataset.key);
-        var sep = b.dataset.key === 'keywords' ? ', ' : '\n\n';
-        el.value = el.value.trim() ? el.value.trim() + sep + t : t;
-        el.focus();
-      });
-    });
-    var fill = detailEl.querySelector('#refFillAll');
-    if (fill) fill.addEventListener('click', function () {
-      REF_KEYS.forEach(function (key) {
-        var el = refFieldEl(key);
-        if (el && !el.value.trim()) {
-          var t = refText(ref, key);
-          if (t) el.value = t;
-        }
-      });
-    });
-  }
-
   function emptyDetail() {
     detailEl.classList.remove('is-open');
     detailEl.innerHTML =
       '<div class="detail-empty">' +
         '<p class="big-symbol">✷</p>' +
         '<p>Choisis une carte pour ouvrir sa fiche.</p>' +
-        '<p class="muted">On remplit les 53 fiches ensemble, une par une.</p>' +
+        '<p class="muted">Les fiches sont pré-remplies : à toi de les réécrire avec tes mots.</p>' +
       '</div>';
   }
 
@@ -182,10 +121,14 @@ BELLINE.Views.grimoire = function (root) {
     var planet = P[c.planet];
     var img = BELLINE.imageFor(c.number);
     var pImg = BELLINE.planetImageFor(c.planet);
+    var edited = S.isCardEdited(num);
     var pSym = pImg
       ? '<button type="button" class="planet-sym" id="fichePlanet" title="Voir la carte planétaire">' + planet.symbol + '</button>'
       : '<span class="planet-sym">' + planet.symbol + '</span>';
-    var ref = (BELLINE.CARD_REFERENCE || {})[num];
+
+    var statusLine = edited
+      ? '<p class="fiche-status is-mine">Ta version enregistrée.</p>'
+      : '<p class="fiche-status">Texte de départ (recherche) — réécris-le avec tes mots, puis enregistre.</p>';
 
     detailEl.classList.add('is-open');
     detailEl.innerHTML =
@@ -202,26 +145,34 @@ BELLINE.Views.grimoire = function (root) {
         '</div>' +
       '</header>' +
 
+      statusLine +
+
       '<label class="field"><span>Mots-clés <em class="muted">(séparés par des virgules)</em></span>' +
         '<input type="text" id="f-keywords" value="' + esc((c.keywords || []).join(', ')) + '" ' +
         'placeholder="ex. rupture, révélation, vérité qui éclate"></label>' +
 
       textField("Symbolisme de l'image", 'f-symbolisme', c.symbolisme,
-        "Ce que montre la carte : personnages, décor, couleurs, gestes…") +
+        "Ce que montre TA carte : personnages, décor, couleurs, gestes… (à observer)") +
 
       '<h3 class="fiche-sub">Significations par domaine</h3>' +
       DOMAINS.map(function (d) {
         return textField(d[1], 'f-sens-' + d[0], c.sens ? c.sens[d[0]] : '', '');
       }).join('') +
 
-      textField('Notes personnelles', 'f-notes', c.notes,
-        "Ressentis, tirages marquants, associations d'idées, combinaisons…") +
+      '<h3 class="fiche-sub">Associations &amp; combinaisons</h3>' +
+      textField('Avec d’autres cartes', 'f-associations', c.associations,
+        "Ex. avec Trahison (11) : … — avec Union (27) : … — 3 cartes Saturne : …") +
 
-      referenceSection(ref) +
+      textField('Notes personnelles', 'f-notes', c.notes,
+        "Ressentis, tirages marquants, ce que la carte t’évoque…") +
+
+      (c.sources && c.sources.length
+        ? '<p class="muted small fiche-src">Texte de départ synthétisé de : ' + c.sources.map(esc).join(' · ') + '</p>'
+        : '') +
 
       '<div class="fiche-actions">' +
         '<button class="btn-primary" id="grimSave">Enregistrer</button>' +
-        '<button class="btn-ghost" id="grimReset">Réinitialiser</button>' +
+        (edited ? '<button class="btn-ghost" id="grimReset">Revenir au texte de référence</button>' : '') +
         '<span class="save-hint" id="grimHint"></span>' +
       '</div>';
 
@@ -237,13 +188,12 @@ BELLINE.Views.grimoire = function (root) {
       fpi.addEventListener('click', function () { BELLINE.lightbox(pImg, 'Série ' + planet.name); });
     }
 
-    wireReference(ref);
-
     detailEl.querySelector('#grimSave').addEventListener('click', function () {
       var patch = {
         keywords: detailEl.querySelector('#f-keywords').value.split(',')
           .map(function (s) { return s.trim(); }).filter(Boolean),
         symbolisme: detailEl.querySelector('#f-symbolisme').value.trim(),
+        associations: detailEl.querySelector('#f-associations').value.trim(),
         notes: detailEl.querySelector('#f-notes').value.trim(),
         sens: {}
       };
@@ -253,19 +203,31 @@ BELLINE.Views.grimoire = function (root) {
       if (S.saveCard(num, patch)) {
         var hint = detailEl.querySelector('#grimHint');
         hint.textContent = 'Enregistré ✓';
-        setTimeout(function () { if (hint) hint.textContent = ''; }, 2000);
+        setTimeout(function () { if (hint) hint.textContent = ''; }, 2500);
+        var st = detailEl.querySelector('.fiche-status');
+        if (st) { st.textContent = 'Ta version enregistrée.'; st.classList.add('is-mine'); }
+        if (!detailEl.querySelector('#grimReset')) {
+          var b = document.createElement('button');
+          b.className = 'btn-ghost'; b.id = 'grimReset';
+          b.textContent = 'Revenir au texte de référence';
+          detailEl.querySelector('#grimSave').insertAdjacentElement('afterend', b);
+          b.addEventListener('click', onReset);
+        }
         renderList();
         renderProgress();
       }
     });
 
-    detailEl.querySelector('#grimReset').addEventListener('click', function () {
-      if (!confirm('Effacer tout le contenu saisi pour « ' + c.name + ' » ?')) return;
+    function onReset() {
+      if (!confirm('Revenir au texte de référence pour « ' + c.name + ' » ? Ta version sera effacée.')) return;
       S.resetCard(num);
       select(num);
       renderList();
       renderProgress();
-    });
+    }
+
+    var reset = detailEl.querySelector('#grimReset');
+    if (reset) reset.addEventListener('click', onReset);
 
     renderList();
   }

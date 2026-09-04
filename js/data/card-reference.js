@@ -1,13 +1,15 @@
 /* ---------------------------------------------------------------------------
  * Repères de lecture — synthèse de plusieurs sources publiques sur l'Oracle
- * de Belline, reformulée. Ce n'est PAS ton grimoire : c'est une base de
- * travail, affichée en lecture seule sous chaque fiche, que tu peux recopier
- * puis retravailler avec tes propres mots.
+ * de Belline, reformulée.
+ *
+ * Ces textes PRÉ-REMPLISSENT les champs de chaque fiche du Grimoire. Dès que
+ * tu enregistres une carte, ta version remplace ces repères (couche « edits »
+ * dans storage.js). « Revenir au texte de référence » restaure ceci.
  *
  * Sources croisées : kartomanta.com, clemy-voyance.fr, oracle-de-belline.com
  *
- * Le « symbolisme de l'image » est volontairement laissé vide : c'est à toi
- * de l'observer sur ta propre carte, c'est le meilleur exercice.
+ * Le « symbolisme de l'image » n'est pas fourni : c'est à observer sur ta
+ * propre carte, c'est le meilleur exercice.
  * ------------------------------------------------------------------------- */
 window.BELLINE = window.BELLINE || {};
 

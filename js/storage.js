@@ -5,9 +5,12 @@
  * Tout est isolé derrière cet objet BELLINE.Storage : le jour où l'on
  * branchera une vraie base (Supabase, etc.), seul ce fichier changera.
  *
- * Les cartes ne sont pas dupliquées : on garde SEED_CARDS comme référence
- * et on ne stocke que les modifications de l'utilisateur (« patches »),
- * indexées par numéro de carte.
+ * Une carte se compose de 3 couches, de la plus faible à la plus forte :
+ *   1. SEED_CARDS      : numéro, nom, série planétaire (structure)
+ *   2. CARD_REFERENCE  : mots-clés + significations issus de la recherche
+ *   3. cards.edits      : ce que TOI tu écris — remplace la référence
+ *
+ * On ne stocke donc que tes modifications, indexées par numéro de carte.
  * ------------------------------------------------------------------------- */
 window.BELLINE = window.BELLINE || {};
 
@@ -36,46 +39,79 @@ window.BELLINE = window.BELLINE || {};
     }
   }
 
-  /* --- Cartes : référence + modifications utilisateur --- */
+  /* --- Cartes : 3 couches --- */
+
+  var EMPTY_SENS = { general: '', amour: '', travail: '', sante: '', evolution: '' };
 
   function cardEdits() { return read('cards.edits', {}); }
 
+  // Couches 1 + 2 : structure + repères de recherche.
+  function cardBase(seed) {
+    var ref = (BELLINE.CARD_REFERENCE || {})[seed.number] || {};
+    return {
+      number: seed.number,
+      name: seed.name,
+      planet: seed.planet,
+      keywords: ref.keywords ? ref.keywords.slice() : [],
+      symbolisme: '',
+      sens: Object.assign({}, EMPTY_SENS, ref.sens || {}),
+      notes: '',
+      associations: '',
+      sources: ref.sources || []
+    };
+  }
+
+  // Couche 3 : tes modifications viennent par-dessus.
   function mergeCard(base, patch) {
-    var out = Object.assign({}, base, patch || {});
-    out.sens = Object.assign({}, base.sens, (patch && patch.sens) || {});
+    if (!patch) return base;
+    var out = Object.assign({}, base, patch);
+    out.sens = Object.assign({}, base.sens, patch.sens || {});
     return out;
   }
 
   function getCards() {
     var edits = cardEdits();
-    return BELLINE.SEED_CARDS.map(function (c) { return mergeCard(c, edits[c.number]); });
+    return BELLINE.SEED_CARDS.map(function (c) { return mergeCard(cardBase(c), edits[c.number]); });
   }
 
   function getCard(number) {
     number = Number(number);
-    var base = BELLINE.SEED_CARDS.find(function (c) { return c.number === number; });
-    if (!base) return null;
-    return mergeCard(base, cardEdits()[number]);
+    var seed = BELLINE.SEED_CARDS.find(function (c) { return c.number === number; });
+    if (!seed) return null;
+    return mergeCard(cardBase(seed), cardEdits()[number]);
   }
 
   function saveCard(number, patch) {
     var edits = cardEdits();
     var prev = edits[number] || {};
-    edits[number] = mergeCard({ sens: {} }, Object.assign({}, prev, patch, {
+    edits[number] = Object.assign({}, prev, patch, {
       sens: Object.assign({}, prev.sens, patch.sens || {})
-    }));
+    });
     return write('cards.edits', edits);
   }
 
+  // Revenir au texte de référence (supprime tes modifications sur cette carte).
   function resetCard(number) {
     var edits = cardEdits();
     delete edits[number];
     return write('cards.edits', edits);
   }
 
+  function isCardEdited(number) {
+    return Object.prototype.hasOwnProperty.call(cardEdits(), String(number));
+  }
+
+  function editedCount() { return Object.keys(cardEdits()).length; }
+
+  // Ancienne notion « complète » : garde un sens (mots-clés + sens général présents).
   function isCardComplete(c) {
     return !!(c && c.keywords && c.keywords.length && c.sens && c.sens.general && c.sens.general.trim());
   }
+
+  /* --- Dossiers (regroupements libres, ex. pour les associations) --- */
+
+  function getFolders() { return read('folders', []); }
+  function saveFolders(list) { return write('folders', list); }
 
   /* --- Sauvegarde / restauration complète --- */
 
@@ -85,7 +121,7 @@ window.BELLINE = window.BELLINE || {};
       var k = localStorage.key(i);
       if (k && k.indexOf(NS + '.') === 0) data[k] = localStorage.getItem(k);
     }
-    return { app: 'oracle-belline', schema: 1, exportedAt: new Date().toISOString(), data: data };
+    return { app: 'oracle-belline', schema: 2, exportedAt: new Date().toISOString(), data: data };
   }
 
   function importAll(obj) {
@@ -104,7 +140,11 @@ window.BELLINE = window.BELLINE || {};
     getCard: getCard,
     saveCard: saveCard,
     resetCard: resetCard,
+    isCardEdited: isCardEdited,
+    editedCount: editedCount,
     isCardComplete: isCardComplete,
+    getFolders: getFolders,
+    saveFolders: saveFolders,
     exportAll: exportAll,
     importAll: importAll
   };

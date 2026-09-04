@@ -288,19 +288,13 @@ button.planet-sym:hover { color: var(--gold-soft); text-shadow: 0 0 10px current
 }
 .lightbox figcaption { font-family: var(--serif); color: var(--gold-soft); text-align: center; }
 
-/* ---------- Repères de lecture ---------- */
+/* ---------- Statut de fiche & sources ---------- */
 
-.fiche-ref {
-  margin-top: 20px; padding: 16px; border-radius: var(--radius);
+.fiche-status {
+  margin: 0 0 16px; padding: 8px 12px; border-radius: 8px;
   background: var(--bg-2); border: 1px solid var(--line);
+  color: var(--muted); font-size: .84rem;
 }
-.ref-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-.ref-head h3 { margin: 0; font-size: 1rem; color: var(--gold-soft); }
+.fiche-status.is-mine { border-color: var(--gold); color: var(--gold-soft); }
+.fiche-src { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line); opacity: .8; }
 .btn-sm { padding: 5px 10px; font-size: .82rem; }
-.ref-row { padding: 10px 0; border-top: 1px solid var(--line); }
-.ref-row:first-of-type { border-top: none; }
-.ref-row-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
-.ref-row-top strong { font-size: .9rem; }
-.ref-row p { margin: 4px 0 0; color: var(--ink); font-size: .92rem; }
-.ref-copy { white-space: nowrap; }
-.ref-src { margin-top: 12px; }

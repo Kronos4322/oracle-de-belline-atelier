@@ -32,12 +32,10 @@ BELLINE.Views.entrainement = function (root) {
   function draw() {
     var planet = P[card.planet];
     var img = BELLINE.imageFor(card.number);
-    var ref = (BELLINE.CARD_REFERENCE || {})[card.number] || {};
 
-    var ownKw = (card.keywords || []);
-    var kw = ownKw.length ? ownKw : (ref.keywords || []);
-    var fromRef = !ownKw.length && kw.length;
-    var sens = (card.sens && card.sens.general) || (ref.sens && ref.sens.general) || '';
+    var kw = card.keywords || [];
+    var sens = (card.sens && card.sens.general) || '';
+    var fromRef = !S.isCardEdited(card.number);
 
     var figure = '<div class="flash-figure' + (img ? ' has-img' : '') + '" style="--hue:' + planet.hue + '">' +
       '<span>' + card.number + '</span>' +
@@ -52,7 +50,7 @@ BELLINE.Views.entrainement = function (root) {
           : '<em class="muted">Aucun mot-clé — complète la fiche dans le Grimoire.</em>') +
       '</div>' +
       (sens ? '<p class="flash-sens">' + esc(sens) + '</p>' : '') +
-      (fromRef ? '<p class="muted small flash-from-ref">d’après les repères — ta fiche n’est pas encore remplie</p>' : '');
+      (fromRef ? '<p class="muted small flash-from-ref">texte de départ — pas encore retravaillé</p>' : '');
 
     var faceHidden =
       '<p class="muted">' + planet.symbol + ' Série ' + planet.name + '</p>' +

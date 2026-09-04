@@ -83,6 +83,13 @@ BELLINE.Views.entrainement = function (root) {
       '</div>';
 
     var q = function (id) { return root.querySelector(id); };
+    var fig = root.querySelector('.flash-figure.has-img');
+    if (fig && img) {
+      fig.classList.add('is-zoom');
+      fig.addEventListener('click', function () {
+        BELLINE.lightbox(img, revealed ? (card.number + ' · ' + card.name) : ('Carte ' + card.number));
+      });
+    }
     if (q('#trReveal')) q('#trReveal').addEventListener('click', function () { revealed = true; draw(); });
     if (q('#trKnew')) q('#trKnew').addEventListener('click', function () {
       stats.seen++; stats.known++; S.write('training.stats', stats); pick();

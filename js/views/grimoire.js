@@ -92,6 +92,74 @@ BELLINE.Views.grimoire = function (root) {
       '<textarea id="' + id + '" rows="3" placeholder="' + esc(ph || '') + '">' + esc(value) + '</textarea></label>';
   }
 
+  /* --- Repères de lecture (lecture seule, issus de card-reference.js) --- */
+
+  var REF_KEYS = ['keywords', 'symbolisme', 'sens-general', 'sens-amour', 'sens-travail', 'sens-sante', 'sens-evolution'];
+
+  function refText(ref, key) {
+    if (!ref) return '';
+    if (key === 'keywords') return (ref.keywords || []).join(', ');
+    if (key === 'symbolisme') return ref.symbolisme || '';
+    if (key.indexOf('sens-') === 0) return (ref.sens && ref.sens[key.slice(5)]) || '';
+    return '';
+  }
+
+  function refFieldEl(key) {
+    if (key === 'keywords') return detailEl.querySelector('#f-keywords');
+    if (key === 'symbolisme') return detailEl.querySelector('#f-symbolisme');
+    if (key.indexOf('sens-') === 0) return detailEl.querySelector('#f-' + key);
+    return null;
+  }
+
+  function refRow(ref, key, label) {
+    var t = refText(ref, key);
+    if (!t) return '';
+    return '<div class="ref-row">' +
+      '<div class="ref-row-top"><strong>' + label + '</strong>' +
+      '<button type="button" class="btn-link ref-copy" data-key="' + key + '">copier ↑</button></div>' +
+      '<p>' + esc(t) + '</p></div>';
+  }
+
+  function referenceSection(ref) {
+    if (!ref) return '';
+    var rows = refRow(ref, 'keywords', 'Mots-clés') +
+      refRow(ref, 'symbolisme', "Symbolisme") +
+      DOMAINS.map(function (d) { return refRow(ref, 'sens-' + d[0], d[1]); }).join('');
+    if (!rows) return '';
+    return '<section class="fiche-ref">' +
+      '<div class="ref-head"><h3>Repères de lecture</h3>' +
+      '<button type="button" class="btn-ghost btn-sm" id="refFillAll">Pré-remplir mes champs vides</button></div>' +
+      '<p class="muted small">Synthèse de plusieurs sources publiques, à retravailler avec tes mots.</p>' +
+      rows +
+      (ref.sources && ref.sources.length
+        ? '<p class="muted small ref-src">Sources : ' + ref.sources.map(esc).join(' · ') + '</p>' : '') +
+      '</section>';
+  }
+
+  function wireReference(ref) {
+    if (!ref) return;
+    detailEl.querySelectorAll('.ref-copy').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var el = refFieldEl(b.dataset.key);
+        if (!el) return;
+        var t = refText(ref, b.dataset.key);
+        var sep = b.dataset.key === 'keywords' ? ', ' : '\n\n';
+        el.value = el.value.trim() ? el.value.trim() + sep + t : t;
+        el.focus();
+      });
+    });
+    var fill = detailEl.querySelector('#refFillAll');
+    if (fill) fill.addEventListener('click', function () {
+      REF_KEYS.forEach(function (key) {
+        var el = refFieldEl(key);
+        if (el && !el.value.trim()) {
+          var t = refText(ref, key);
+          if (t) el.value = t;
+        }
+      });
+    });
+  }
+
   function emptyDetail() {
     detailEl.classList.remove('is-open');
     detailEl.innerHTML =
@@ -111,6 +179,7 @@ BELLINE.Views.grimoire = function (root) {
     var pIco = pImg
       ? '<img class="planet-ico" src="' + pImg + '" alt="" onerror="this.remove()">'
       : planet.symbol;
+    var ref = (BELLINE.CARD_REFERENCE || {})[num];
 
     detailEl.classList.add('is-open');
     detailEl.innerHTML =
@@ -142,6 +211,8 @@ BELLINE.Views.grimoire = function (root) {
       textField('Notes personnelles', 'f-notes', c.notes,
         "Ressentis, tirages marquants, associations d'idées, combinaisons…") +
 
+      referenceSection(ref) +
+
       '<div class="fiche-actions">' +
         '<button class="btn-primary" id="grimSave">Enregistrer</button>' +
         '<button class="btn-ghost" id="grimReset">Réinitialiser</button>' +
@@ -149,6 +220,19 @@ BELLINE.Views.grimoire = function (root) {
       '</div>';
 
     detailEl.querySelector('#grimBack').addEventListener('click', emptyDetail);
+
+    if (img) {
+      var fv = detailEl.querySelector('.fiche-visual');
+      fv.classList.add('is-zoom');
+      fv.addEventListener('click', function () { BELLINE.lightbox(img, c.number + ' · ' + c.name); });
+    }
+    var fpi = detailEl.querySelector('.fiche-head-txt .planet-ico');
+    if (fpi && pImg) {
+      fpi.classList.add('is-zoom');
+      fpi.addEventListener('click', function () { BELLINE.lightbox(pImg, 'Série ' + planet.name); });
+    }
+
+    wireReference(ref);
 
     detailEl.querySelector('#grimSave').addEventListener('click', function () {
       var patch = {

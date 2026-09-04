@@ -77,12 +77,33 @@ window.BELLINE = window.BELLINE || {};
     });
   }
 
+  function setupLightbox() {
+    var box = document.getElementById('lightbox');
+    if (!box) return;
+
+    function close() { box.hidden = true; box.innerHTML = ''; }
+
+    box.addEventListener('click', close);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !box.hidden) close();
+    });
+
+    BELLINE.lightbox = function (src, caption) {
+      if (!src) return;
+      box.innerHTML = '<figure><img src="' + src + '" alt="">' +
+        (caption ? '<figcaption>' + caption + '</figcaption>' : '') + '</figure>';
+      box.hidden = false;
+    };
+  }
+
   document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('nav').innerHTML = buildNav();
     window.addEventListener('hashchange', render);
     setupBackup();
+    setupLightbox();
     render();
   });
 
   BELLINE.go = function (route) { location.hash = '#/' + route; };
+  BELLINE.lightbox = function () {}; // remplacé au chargement
 })();

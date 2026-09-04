@@ -175,7 +175,8 @@ BELLINE.Views.methode = function (root) {
       '<strong>37 Feu</strong> (le classement le plus fragile), <strong>41 Héritage</strong>, <strong>48 Fatalité</strong>.</p>' +
       '<p>Toute concordance qui repose sur elles se donne en deux versions : tranchée, et recalculée en les neutralisant. ' +
       'Reclasser une seule peut faire varier un résultat du simple au triple. La Progression et le Journal affichent les deux.</p>' +
-      '<p class="muted small">Trois autres se classent mal mais sont déjà neutres, donc sans effet sur la mesure : 36 Pourparlers, 28 Famille, 31 Passions.</p>') +
+      '<p class="muted small">Deux autres se classent mal mais restent neutres à dessein — les sources elles-mêmes divergent, donc sans effet sur la mesure : 36 Pourparlers, 31 Passions. ' +
+      '(28 Famille, longtemps classée neutre par erreur, est reclassée positive depuis l\'audit des sources — sept. 2026.)</p>') +
 
     card('mesure', 'Tables de référence — cartes fortes',
       '<p class="muted small">Nombre de cartes fortes (5/53) selon le nombre de cartes tirées. Loi hypergéométrique.</p>' +

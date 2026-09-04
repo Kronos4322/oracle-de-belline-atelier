@@ -27,6 +27,12 @@ BELLINE.MODIFIERS = [
 
 /* Paires et trios traditionnels. `note` = lecture courante ; `sens` = teinte
    (renforce / retourne / précise / temporise). À confronter au tirage réel. */
+/* Sources vérifiées (audit sept. 2026) : kartomanta.com (fiches carte par
+   carte + pages « associations-<carte>-oracle-belline »), oracle-de-belline.
+   com, tarot-ana.fr, mediumnitemagnetisme.org, belline.fr. Chaque paire
+   ci-dessous a été confrontée à au moins une de ces sources ; les paires
+   ajoutées lors de l'audit sont marquées « // + audit ». Le triplon
+   22×50 (trois entrées contradictoires pour la même paire) a été fusionné. */
 BELLINE.CLASSIC_COMBOS = [
   // --- amour ---
   { cards: [29, 24], note: "Déclaration, aveu, annonce heureuse dans la relation.", sens: "renforce" },
@@ -39,23 +45,36 @@ BELLINE.CLASSIC_COMBOS = [
   { cards: [27, 45], note: "Union heureuse, mariage favorable, alliance qui porte ses fruits.", sens: "renforce" },
   { cards: [27, 33], note: "Union sous tension juridique : contrat disputé, séparation, divorce.", sens: "retourne" },
   { cards: [31, 37], note: "Passion brûlante, désir qui consume, emballement difficile à tenir.", sens: "renforce" },
+  { cards: [29, 40], note: "Amour récent fondé sur l'attirance physique et esthétique ; relation harmonieuse qui peut approfondir.", sens: "renforce" }, // + audit
+  { cards: [29, 9],  note: "Amour apaisant et régénérateur, propice à l'équilibre intérieur du couple.", sens: "renforce" }, // + audit
+  { cards: [29, 20], note: "Affection cérébrale et cultivée, nourrie par la connaissance ; une vraie connexion intellectuelle.", sens: "précise" }, // + audit
+  { cards: [29, 28], note: "Harmonie amoureuse acceptée et célébrée par les proches, dans le cercle familial.", sens: "renforce" }, // + audit
+  { cards: [29, 32], note: "Jalousie dans le couple, rivalité amoureuse, relation qui vire toxique.", sens: "retourne" }, // + audit
+  { cards: [29, 31], note: "Amour intense et consumant ; grande force du lien, à canaliser pour ne pas virer possessif.", sens: "renforce" }, // + audit
+  { cards: [27, 24], note: "Annonce officielle : fiançailles ou engagement rendu public.", sens: "renforce" }, // + audit
   // --- argent, travail ---
   { cards: [19, 33], note: "Litige financier, dette réclamée, argent devant la justice.", sens: "précise" },
   { cards: [19, 21], note: "Perte d'argent, vol, dépense subie, trou dans le budget.", sens: "retourne" },
   { cards: [19, 5],  note: "Gain, opération rentable, objectif financier atteint.", sens: "renforce" },
   { cards: [19, 41], note: "Rentrée patrimoniale : succession, donation, capital reçu.", sens: "précise" },
   { cards: [22, 43], note: "Reconnaissance professionnelle, promotion, montée en visibilité.", sens: "renforce" },
-  { cards: [22, 50], note: "Projet qui échoue, entreprise qui s'effondre, chantier abandonné.", sens: "retourne" },
   { cards: [5, 7],   note: "Succès public, réussite reconnue, honneur mérité.", sens: "renforce" },
   { cards: [6, 43],  note: "Ascension sociale, notoriété qui grandit.", sens: "renforce" },
   { cards: [33, 34], note: "Procès perdu ou autorité qui écrase : rapport de force défavorable.", sens: "renforce" },
   { cards: [20, 24], note: "Nouvelle bien comprise, information juste, bon raisonnement.", sens: "renforce" },
+  { cards: [22, 51], note: "Blocage dans un projet, signature repoussée : la patience est requise avant d'avancer.", sens: "temporise" }, // + audit
+  { cards: [36, 33], note: "Le conflit se dénoue par le dialogue : une négociation évite l'affrontement judiciaire.", sens: "retourne" }, // + audit
   // --- nouvelles, voyages, lieux ---
   { cards: [24, 15], note: "Nouvelle qui vient de loin, d'au-delà de l'eau, de l'étranger.", sens: "précise" },
   { cards: [12, 15], note: "Voyage par mer, départ à l'étranger, éloignement géographique.", sens: "précise" },
   { cards: [12, 16], note: "Départ du foyer, déménagement, changement de domicile.", sens: "précise" },
   { cards: [18, 16], note: "Changement dans la maison : travaux, réaménagement, nouvelle vie de famille.", sens: "précise" },
   { cards: [23, 30], note: "On échange sans fabriquer d'espace commun : réunions qui n'aboutissent pas.", sens: "précise" },
+  { cards: [12, 23], note: "Le déplacement doit être coordonné : tout ne dépend pas de la seule volonté du consultant.", sens: "précise" }, // + audit
+  { cards: [12, 34], note: "Le départ est empêché : le consultant n'a pas les mains libres pour partir.", sens: "retourne" }, // + audit
+  { cards: [12, 45], note: "On tourne une page sans regret : départ vécu comme une libération heureuse.", sens: "renforce" }, // + audit
+  { cards: [12, 3],  note: "Une femme s'éloigne ou se déplace pour rejoindre quelqu'un ; mobilité au féminin.", sens: "précise" }, // + audit
+  { cards: [12, 11], note: "Le départ espéré n'a pas lieu : il est abandonné ou empêché au dernier moment.", sens: "retourne" }, // + audit
   // --- santé ---
   { cards: [17, 48], note: "Maladie grave, pronostic lourd, épreuve du corps qui s'impose.", sens: "renforce" },
   { cards: [17, 53], note: "Guérison, amélioration, sortie de la maladie.", sens: "retourne" },
@@ -66,18 +85,34 @@ BELLINE.CLASSIC_COMBOS = [
   { cards: [38, 37], note: "Choc soudain qui embrase tout : accident, emportement, crise ouverte.", sens: "renforce" },
   { cards: [37, 50], note: "Le feu atteint la structure : ce qui brûlait finit par ruiner.", sens: "renforce" },
   { cards: [46, 51], note: "Malchance qui s'éternise, guigne tenace, rien ne se débloque.", sens: "renforce" },
-  { cards: [50, 22], note: "Défaire pour refaire : une structure tombe, une autre se bâtit.", sens: "retourne" },
+  { cards: [22, 50], note: "Projet qui échoue, entreprise qui s'effondre, chantier abandonné — la structure qu'on bâtissait se défait (couple élémentaire, ch. 20.3 : destruction contre construction).", sens: "retourne" },
   { cards: [47, 22], note: "Projet stérile : effort sans résultat, entreprise qui ne prend pas.", sens: "retourne" },
+  { cards: [11, 35], note: "Trahison orchestrée : complot ou hostilité concertée contre le consultant.", sens: "renforce" }, // + audit
+  { cards: [11, 45], note: "La trahison, une fois traversée, libère : elle ouvre paradoxalement sur un mieux-être.", sens: "retourne" }, // + audit
+  { cards: [47, 51], note: "Blocage qui perdure sans résolution en vue ; stagnation confirmée.", sens: "renforce" }, // + audit
+  { cards: [47, 18], note: "Le blocage se lève grâce à une évolution : sortie de l'impasse par la transformation.", sens: "retourne" }, // + audit
+  { cards: [48, 49], note: "L'inévitable devient bénéfique : ce qui semblait une contrainte se révèle une chance déguisée.", sens: "retourne" }, // + audit
   // --- couples élémentaires (manuel, ch. 20.3) ---
   { cards: [37, 15], note: "Deux manières de vivre la même énergie : l'intensité contre la fluidité.", sens: "précise" },
-  { cards: [50, 22], note: "Destruction contre construction : défaire ou refaire une structure.", sens: "précise" },
   { cards: [51, 18], note: "Répétition contre transformation : la roue bloquée ou le déplacement.", sens: "précise" },
   { cards: [52, 23], note: "Retrait contre circulation : s'arrêter ou continuer à faire circuler.", sens: "précise" },
   // --- issues, tournants ---
   { cards: [1, 48],  note: "Tournant imposé : un choix décisif que les circonstances tranchent.", sens: "renforce" },
   { cards: [14, 11], note: "On découvre une trahison : révélation d'un mensonge, vérité qui éclate.", sens: "précise" },
   { cards: [41, 48], note: "Succession ouverte par un décès : héritage et fin de cycle.", sens: "précise" },
-  { cards: [26, 27], note: "Paix retrouvée dans le lien : réconciliation, apaisement du couple.", sens: "renforce" }
+  { cards: [26, 27], note: "Paix retrouvée dans le lien : réconciliation, apaisement du couple.", sens: "renforce" },
+  // --- Carte Bleue : lectures spécifiques au-delà de la note générique du Dossier ---
+  { cards: [53, 11], note: "Occasion manquée : risque de laisser passer sa chance par méfiance excessive ou négligence.", sens: "précise" }, // + audit
+  { cards: [53, 22], note: "Projet parfait : certitude quasi absolue de mener ses initiatives à un succès total, avec une vision claire.", sens: "renforce" }, // + audit
+  { cards: [53, 33], note: "Chance jalousée : des détracteurs contestent la réussite ; une défense ferme protège les intérêts acquis.", sens: "précise" }, // + audit
+  { cards: [53, 44], note: "Coup de sort magistral : une fortune exceptionnelle s'ouvre, à saisir sans tarder.", sens: "renforce" }, // + audit
+  { cards: [53, 52], note: "Indépendance idéale : un retrait protecteur qui permet de préparer sereinement de futurs succès.", sens: "précise" }, // + audit
+  // --- Héritage : lectures spécifiques au-delà de la note générique du Dossier ---
+  { cards: [41, 52], note: "Transmission confidentielle : un bien ou un savoir légué en secret, hors des circuits officiels.", sens: "précise" }, // + audit
+  { cards: [41, 10], note: "Matérialisation heureuse : un cadeau significatif ou un legs concret enrichit le patrimoine.", sens: "renforce" }, // + audit
+  { cards: [41, 21], note: "Spoliation ou perte : un héritage matériel ou moral risque de disparaître par négligence.", sens: "retourne" }, // + audit
+  { cards: [41, 32], note: "Legs empoisonné : le passé pèse lourdement, conflits ou complications malveillantes autour de la transmission.", sens: "retourne" }, // + audit
+  { cards: [41, 40], note: "Transmission artistique précoce : savoirs esthétiques ou œuvres reçues qui magnifient le parcours.", sens: "renforce" } // + audit
 ];
 
 (function () {

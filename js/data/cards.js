@@ -150,7 +150,11 @@ BELLINE.FORTES = [11, 34, 38, 42, 48];
 (function () {
   // Carte 53 = La Carte Bleue, « la carte du ciel » : tenue pour la plus
   // favorable du jeu (un ciel bleu sans nuage, une éclaircie après l'orage).
-  var POS = [4, 5, 6, 7, 8, 9, 10, 14, 20, 25, 26, 27, 29, 39, 40, 41, 42, 43, 45, 49, 53];
+  // 16, 19, 22, 28, 30, 44 vérifiées et corrigées (audit sources, sept. 2026) :
+  // classées neutres par erreur alors que la tradition (kartomanta, oracle-
+  // de-belline.com, tarot-ana, mediumnitemagnetisme…) les donne favorables
+  // sans réserve — et 44 contredisait même sa propre marque « majeure ».
+  var POS = [4, 5, 6, 7, 8, 9, 10, 14, 16, 19, 20, 22, 25, 26, 27, 28, 29, 30, 39, 40, 41, 42, 43, 44, 45, 49, 53];
   var NEG = [11, 13, 17, 21, 32, 33, 34, 35, 37, 38, 46, 47, 48, 50, 51];
   var FORTE = BELLINE.FORTES;                    // opérateur d'intensité traditionnel, fixe
   var MAJ_POS = [5, 26, 27, 29, 39, 42, 43, 44, 45, 49, 53]; // très favorables

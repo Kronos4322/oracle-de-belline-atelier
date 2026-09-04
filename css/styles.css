@@ -216,6 +216,9 @@ button.planet-sym:hover { color: var(--gold-soft); text-shadow: 0 0 10px current
 .val-negative { color: hsl(5 60% 66%); }
 .val-neutre   { color: var(--muted); }
 .val-forte    { color: var(--gold-soft); border-color: var(--gold); background: rgba(217, 178, 107, .12); }
+.val-maj-positive { color: hsl(140 55% 66%); border-color: hsl(140 45% 45%); background: hsl(140 40% 16%); }
+.val-maj-negative { color: hsl(5 65% 70%); border-color: hsl(5 55% 48%); background: hsl(5 40% 16%); }
+.fiche-pol { margin: 4px 0 0; }
 
 .fiche-sub {
   font-size: .8rem; text-transform: uppercase; letter-spacing: .08em;
@@ -389,6 +392,18 @@ button.planet-sym:hover { color: var(--gold-soft); text-shadow: 0 0 10px current
 .fiche-status.is-mine { border-color: var(--gold); color: var(--gold-soft); }
 .fiche-src { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line); opacity: .8; }
 .btn-sm { padding: 5px 10px; font-size: .82rem; }
+
+.fiche-dossier {
+  margin-top: 18px; background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 4px 16px 12px;
+}
+.fiche-dossier summary { cursor: pointer; padding: 12px 0; font-family: var(--serif); color: var(--gold-soft); }
+.dos-row { padding: 8px 0; border-top: 1px solid var(--line); font-size: .9rem; }
+.dos-row:first-of-type { border-top: none; }
+.dos-row strong { color: var(--muted); display: block; font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 2px; }
+.dos-oui strong { color: var(--gold-soft); }
+.dos-lec { list-style: none; margin: 4px 0 0; padding: 0; }
+.dos-lec li { padding: 3px 0; }
 .btn-link.danger { color: var(--danger); }
 
 /* ---------- Associations ---------- */

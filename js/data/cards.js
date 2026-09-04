@@ -113,14 +113,43 @@ BELLINE.VALENCE = {
   neutre:   { key: 'neutre',   label: 'neutre',   long: 'Valence neutre / ambivalente', hue: 45  }
 };
 
+/* Polarité de travail (d'après le « Dossier encyclopédique des 53 cartes »).
+   Plus nuancée que la valence lexicale : elle décrit comment la carte pèse
+   en pratique. Une carte « majeure » (très favorable ou très défavorable)
+   domine son voisinage — c'est vrai des deux côtés. */
+BELLINE.POLARITE = {
+  53: "Très favorable / protectrice",
+  1: "Favorable conditionnelle", 2: "Neutre à favorable, significateur", 3: "Neutre à favorable, significateur",
+  4: "Favorable", 5: "Très favorable", 6: "Favorable", 7: "Favorable", 8: "Favorable", 9: "Favorable", 10: "Favorable",
+  11: "Défavorable", 12: "Neutre à favorable selon contexte", 13: "Défavorable / instable", 14: "Favorable / révélatrice",
+  15: "Neutre, émotionnelle et mobile", 16: "Favorable / stable", 17: "Défavorable",
+  18: "Favorable à neutre, dynamique", 19: "Favorable matériellement", 20: "Favorable", 21: "Défavorable",
+  22: "Favorable active", 23: "Favorable à neutre", 24: "Neutre, messagère",
+  25: "Favorable", 26: "Très favorable", 27: "Très favorable relationnellement", 28: "Favorable",
+  29: "Très favorable affectivement", 30: "Favorable sociale", 31: "Favorable à risquée, très intense",
+  32: "Défavorable", 33: "Défavorable à neutre, conflictuel", 34: "Défavorable", 35: "Défavorable",
+  36: "Neutre à favorable si dialogue constructif", 37: "Dynamique, favorable ou dangereuse selon contexte",
+  38: "Très défavorable / brusque",
+  39: "Très favorable", 40: "Favorable", 41: "Favorable à neutre", 42: "Très favorable / modératrice",
+  43: "Très favorable socialement", 44: "Très favorable mais imprévisible", 45: "Très favorable",
+  46: "Défavorable", 47: "Très défavorable / bloquante", 48: "Très défavorable / contraignante",
+  49: "Très favorable / protectrice", 50: "Très défavorable", 51: "Défavorable mais temporaire",
+  52: "Défavorable à protectrice selon contexte"
+};
+
 (function () {
   var POS = [4, 5, 6, 7, 8, 9, 10, 14, 20, 25, 26, 27, 29, 39, 40, 41, 42, 43, 45, 49];
   var NEG = [11, 13, 17, 21, 32, 33, 34, 35, 37, 38, 46, 47, 48, 50, 51];
-  var FORTE = [11, 34, 38, 42, 48];
+  var FORTE = [11, 34, 38, 42, 48];              // opérateur d'intensité traditionnel, fixe
+  var MAJ_POS = [5, 26, 27, 29, 39, 42, 43, 44, 45, 49, 53]; // très favorables
+  var MAJ_NEG = [38, 47, 48, 50];                            // très défavorables
   BELLINE.SEED_CARDS.forEach(function (c) {
     c.valence = POS.indexOf(c.number) !== -1 ? 'positive'
       : NEG.indexOf(c.number) !== -1 ? 'negative' : 'neutre';
     c.forte = FORTE.indexOf(c.number) !== -1;
+    c.polarite = BELLINE.POLARITE[c.number] || '';
+    c.majeure = MAJ_POS.indexOf(c.number) !== -1 ? 'positive'
+      : MAJ_NEG.indexOf(c.number) !== -1 ? 'negative' : null;
   });
 })();
 

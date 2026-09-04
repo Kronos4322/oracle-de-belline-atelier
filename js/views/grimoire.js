@@ -105,6 +105,41 @@ BELLINE.Views.grimoire = function (root) {
       '<textarea id="' + id + '" rows="3" placeholder="' + esc(ph || '') + '">' + esc(value) + '</textarea></label>';
   }
 
+  /* --- Dossier complet (lecture seule, depuis card-dossier.js) --- */
+  function isTemplate(s) {
+    return !s || /transpose son noyau sémantique|qualifie le climat du foyer par son sens central|constitue une ressource, une possibilité utile ou le mécanisme|logique profonde de la situation tient à/.test(s);
+  }
+  function dossierRow(label, text) {
+    if (isTemplate(text)) return '';
+    return '<div class="dos-row"><strong>' + label + '</strong> ' + esc(text) + '</div>';
+  }
+  function dossierHTML(num) {
+    var d = (BELLINE.CARD_DOSSIER || {})[num];
+    if (!d) return '';
+    var lec = d.lecture || {};
+    var lecRows = ['favorable', 'défavorable', 'pivot', 'verdict', 'explication'].map(function (k) {
+      var key = k === 'défavorable' ? 'défavorable' : k;
+      var v = lec[key] || lec[k];
+      return v ? '<li><span class="muted">' + k + '</span> — ' + esc(v) + '</li>' : '';
+    }).join('');
+    return '<details class="fiche-dossier">' +
+      '<summary>Dossier complet</summary>' +
+      (d.icono ? '<div class="dos-row"><strong>Iconographie</strong> ' + esc(d.icono) + '</div>' : '') +
+      dossierRow('Ombre & renversé', d.ombre) +
+      dossierRow('Sexualité & intimité', d.sexualite) +
+      dossierRow('Études & concours', d.etudes) +
+      dossierRow('Argent & patrimoine', d.argent) +
+      dossierRow('Droit & administration', d.droit) +
+      dossierRow('Personnes & lieux', d.personnes) +
+      dossierRow('Temporalité', d.temporalite) +
+      (d.ouinon ? '<div class="dos-row dos-oui"><strong>Oui / Non</strong> ' + esc(d.ouinon) + '</div>' : '') +
+      dossierRow('Fonction grammaticale', d.grammaire) +
+      (lecRows ? '<div class="dos-row"><strong>Lecture par position</strong><ul class="dos-lec">' + lecRows + '</ul></div>' : '') +
+      (d.confusion ? '<div class="dos-row"><strong>À ne pas confondre</strong> ' + esc(d.confusion) + '</div>' : '') +
+      '<p class="muted small">Source : Dossier encyclopédique des 53 cartes.</p>' +
+      '</details>';
+  }
+
   function emptyDetail() {
     detailEl.classList.remove('is-open');
     detailEl.innerHTML =
@@ -142,10 +177,12 @@ BELLINE.Views.grimoire = function (root) {
           '<h2>' + esc(c.name) + '</h2>' +
           '<p class="muted">' + pSym + ' Série ' + planet.name + '</p>' +
           '<p class="fiche-tags">' +
-            '<span class="val-tag val-' + c.valence + '" title="Valeur portée par le seul nom de la carte, hors position et hors tirage">valence ' +
+            '<span class="val-tag val-' + c.valence + '" title="Valeur lexicale, portée par le seul nom de la carte, hors position et hors tirage">valence ' +
               (BELLINE.VALENCE[c.valence] ? BELLINE.VALENCE[c.valence].label : c.valence) + '</span>' +
-            (c.forte ? '<span class="val-tag val-forte" title="Une des 5 lames fortes : elle domine son voisinage">carte forte</span>' : '') +
+            (c.majeure ? '<span class="val-tag val-maj-' + c.majeure + '" title="Carte majeure : elle domine son voisinage (très favorable ou très défavorable)">carte majeure</span>' : '') +
+            (c.forte ? '<span class="val-tag val-forte" title="Une des 5 lames fortes de la tradition (opérateur d\'intensité fixe) : 11, 34, 38, 42, 48">carte forte</span>' : '') +
           '</p>' +
+          (c.polarite ? '<p class="muted small fiche-pol">Polarité de travail : ' + esc(c.polarite) + '</p>' : '') +
           '<p class="muted small">' + planet.desc + '</p>' +
         '</div>' +
       '</header>' +
@@ -170,6 +207,8 @@ BELLINE.Views.grimoire = function (root) {
 
       textField('Notes personnelles', 'f-notes', c.notes,
         "Ressentis, tirages marquants, ce que la carte t’évoque…") +
+
+      dossierHTML(num) +
 
       (c.sources && c.sources.length
         ? '<p class="muted small fiche-src">Texte de départ synthétisé de : ' + c.sources.map(esc).join(' · ') + '</p>'

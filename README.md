@@ -15,8 +15,14 @@ dans ses lectures.
 | **Progression** | fonctionnel — test de concordance, relevé des cartes fortes |
 | **Méthode** | mémo de lecture d'après les deux manuels |
 
-Basé sur *Lire le Belline — manuel de méthode* et *L'Oracle et la grille* :
-- **valence** (positive / négative / neutre) et **5 cartes fortes** (11, 34, 38, 42, 48) ;
+Basé sur *Lire le Belline*, *L'Oracle et la grille* et le *Dossier encyclopédique
+des 53 cartes* :
+- **valence** lexicale (positive / négative / neutre), **polarité de travail**
+  nuancée, **5 cartes fortes** traditionnelles (11, 34, 38, 42, 48) et
+  **cartes majeures** — dont 11 très favorables (Réussite, Paix, Union, Amor,
+  Appui, Sagesse, Renommée, Hasard, Bonheur, Grâce, Carte Bleue) ;
+- fiches du Grimoire pré-remplies depuis le dossier + section **« Dossier complet »**
+  (ombre, oui/non, lecture par position, à ne pas confondre…) ;
 - 4 tirages avec leur grammaire (substantif / adjectif, nœud de cause / d'action,
   réversibilité, axes) ;
 - **test de valence contraire** automatique dans la fenêtre de placement ;

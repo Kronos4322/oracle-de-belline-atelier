@@ -54,6 +54,8 @@ window.BELLINE = window.BELLINE || {};
       planet: seed.planet,
       valence: seed.valence,
       forte: seed.forte,
+      polarite: seed.polarite,
+      majeure: seed.majeure,
       keywords: ref.keywords ? ref.keywords.slice() : [],
       symbolisme: '',
       sens: Object.assign({}, EMPTY_SENS, ref.sens || {}),

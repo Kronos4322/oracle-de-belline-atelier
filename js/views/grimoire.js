@@ -323,11 +323,13 @@ BELLINE.Views.grimoire = function (root) {
     });
 
     function onReset() {
-      if (!confirm('Revenir au texte de référence pour « ' + c.name + ' » ? Ta version sera effacée.')) return;
-      S.resetCard(num);
-      select(num);
-      renderList();
-      renderProgress();
+      BELLINE.confirm('Revenir au texte de référence pour « ' + c.name + ' » ? Ta version sera effacée.').then(function (ok) {
+        if (!ok) return;
+        S.resetCard(num);
+        select(num);
+        renderList();
+        renderProgress();
+      });
     }
 
     var reset = detailEl.querySelector('#grimReset');

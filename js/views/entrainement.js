@@ -88,8 +88,8 @@ BELLINE.Views.entrainement = function (root) {
     var c = S.getCard(pick(pool()).number);
     var all = BELLINE.SEED_CARDS;
     if (k === 'nom') {
-      var opts = shuffle([c.name].concat(sample(all, 3, null).filter(function (x) { return x.number !== c.number; }).map(function (x) { return x.name; })).slice(0, 4));
-      if (opts.indexOf(c.name) === -1) opts[0] = c.name;
+      var others = all.filter(function (x) { return x.number !== c.number; });
+      var opts = shuffle([c.name].concat(sample(others, 3, null).map(function (x) { return x.name; })));
       current = { kind: 'qcm', sub: 'nom', card: c, showImage: true,
         q: 'Quelle est cette carte ?', options: opts, answer: c.name,
         reason: c.number + ' · série ' + P[c.planet].name + '. ' + (c.sens && c.sens.general ? c.sens.general : '') };

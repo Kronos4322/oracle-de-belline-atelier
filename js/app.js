@@ -227,7 +227,7 @@ window.BELLINE = window.BELLINE || {};
         ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
         ctx.fill();
       }
-      if (!reduce) requestAnimationFrame(draw);
+      if (!reduce && !document.hidden) requestAnimationFrame(draw);
     }
     seed();
     draw(0);
@@ -236,6 +236,10 @@ window.BELLINE = window.BELLINE || {};
     window.addEventListener('resize', function () {
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(seed, 200);
+    });
+    // Pause l'animation quand l'onglet/l'appli n'est pas visible (batterie sur téléphone).
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden) requestAnimationFrame(draw);
     });
   }
 

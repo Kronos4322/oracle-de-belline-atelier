@@ -61,10 +61,12 @@ BELLINE.Views.associations = function (root) {
     var fid = S.uid();
     folders.push({ id: fid, name: 'Combinaisons traditionnelles', parentId: null });
     BELLINE.seedAssociations().forEach(function (x) {
-      assocs.push({ id: S.uid(), folderId: fid, cards: x.cards, text: x.text });
+      assocs.push({ id: S.uid(), folderId: fid, cards: x.cards, text: x.text, sens: x.sens || '' });
     });
     persist(); render();
   }
+
+  var SENS_LABEL = { renforce: 'renforce', retourne: 'retourne', temporise: 'temporise', 'précise': 'precise' };
 
   function folderNode(f, depth) {
     var subs = childrenOf(f.id);
@@ -91,8 +93,10 @@ BELLINE.Views.associations = function (root) {
       return '<button class="assoc-chip" data-card="' + n + '" title="Voir la carte">' +
         '<b>' + n + '</b> ' + esc(cardName(n)) + '</button>';
     }).join('<span class="assoc-plus">+</span>');
+    var sensChip = a.sens && SENS_LABEL[a.sens]
+      ? ' <span class="combo-sens ' + SENS_LABEL[a.sens] + '">' + esc(a.sens) + '</span>' : '';
     return '<li class="assoc-item">' +
-      '<div class="assoc-cards">' + (chips || '<em class="muted">aucune carte</em>') + '</div>' +
+      '<div class="assoc-cards">' + (chips || '<em class="muted">aucune carte</em>') + sensChip + '</div>' +
       (a.text ? '<p class="assoc-text">' + esc(a.text) + '</p>' : '') +
       '<div class="assoc-item-actions">' +
         '<button class="btn-link" data-act="edit-assoc" data-id="' + a.id + '">modifier</button>' +

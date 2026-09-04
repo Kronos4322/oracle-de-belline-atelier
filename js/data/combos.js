@@ -105,7 +105,7 @@ BELLINE.CLASSIC_COMBOS = [
   /* Toutes les paires curées, pour amorcer la vue Associations. */
   BELLINE.seedAssociations = function () {
     return BELLINE.CLASSIC_COMBOS.map(function (x) {
-      return { cards: x.cards.slice(), text: x.note + (x.sens ? ' [' + x.sens + ']' : '') };
+      return { cards: x.cards.slice(), text: x.note, sens: x.sens || '' };
     });
   };
 })();

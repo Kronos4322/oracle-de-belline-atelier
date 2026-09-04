@@ -119,8 +119,8 @@ BELLINE.Views.progression = function (root) {
       'Un résultat ne s\'énonce jamais seul : la colonne « fragiles neutralisées » recalcule en retirant 37, 41, 48 ' +
       '(classements contestés). Si les deux divergent nettement, le résultat n\'est pas exploitable.</p>' +
       (concLines.length
-        ? '<table class="method-table"><thead><tr><th>Tirage</th><th>Concord.</th><th>P tranchée</th><th>P fragiles neutr.</th></tr></thead>' +
-          '<tbody>' + concLines.join('') + '</tbody></table>' +
+        ? '<div class="tbl-scroll"><table class="method-table"><thead><tr><th>Tirage</th><th>Concord.</th><th>P tranchée</th><th>P fragiles neutr.</th></tr></thead>' +
+          '<tbody>' + concLines.join('') + '</tbody></table></div>' +
           (combined
             ? '<p class="jr-combined"><strong>Combinaison de Fisher</strong> — tranchée : ' + pct(combined.p) +
               (combinedN ? ' · fragiles neutralisées : ' + pct(combinedN.p) : '') +

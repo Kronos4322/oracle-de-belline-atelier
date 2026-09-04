@@ -72,9 +72,12 @@ BELLINE.Views.journal = function (root) {
       b.addEventListener('click', function () { openId = b.dataset.id; render(); });
     });
     root.querySelectorAll('.jr-del').forEach(function (b) {
-      b.addEventListener('click', function () {
-        if (!confirm('Supprimer ce tirage du journal ?')) return;
-        S.deleteTirage(b.dataset.id); render();
+      b.addEventListener('click', function (e) {
+        e.stopPropagation();
+        BELLINE.confirm('Supprimer ce tirage du journal ?').then(function (ok) {
+          if (!ok) return;
+          S.deleteTirage(b.dataset.id); render();
+        });
       });
     });
   }

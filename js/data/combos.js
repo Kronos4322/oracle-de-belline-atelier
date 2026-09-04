@@ -229,7 +229,11 @@ BELLINE.CLASSIC_COMBOS = [
 
   function computedReading(subC, adjC, subD, adjD) {
     subD = subD || {}; adjD = adjD || {};
-    var topic = (subD.motscles && subD.motscles.length) ? subD.motscles.slice(0, 3).join(', ')
+    // Le Dossier capitalise chaque mot-clé comme s'il ouvrait sa propre puce
+    // (« Significateur masculin », « Égocentrisme »…) ; mis bout à bout dans
+    // une liste à virgules, seul le premier doit rester capitalisé.
+    var topic = (subD.motscles && subD.motscles.length)
+      ? subD.motscles.slice(0, 3).map(lower1).join(', ')
       : firstClause(subD.noyau) || (subC.sens && subC.sens.general) || subC.name;
     var trait = (adjD.motscles && adjD.motscles.length) ? adjD.motscles[0] : adjC.name;
     var ombre = firstClause(adjD.ombre);

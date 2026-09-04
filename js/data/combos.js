@@ -157,7 +157,14 @@ BELLINE.CLASSIC_COMBOS = [
   { cards: [38, 18], note: "La rupture devient le moteur d'une mutation positive.", sens: "retourne" }, // + audit
   { cards: [38, 50], note: "L'usure destructrice entraîne l'effondrement de ce qui n'était déjà plus tenable.", sens: "renforce" }, // + audit
   { cards: [46, 19], note: "Restrictions ou pertes financières : gestion rigoureuse requise, mise en garde sérieuse contre tout investissement risqué pour l'instant.", sens: "retourne" }, // + audit
-  { cards: [46, 18], note: "L'épreuve touche à sa fin : la transformation qui suit ouvre sur un nouveau départ.", sens: "retourne" } // + audit
+  { cards: [46, 18], note: "L'épreuve touche à sa fin : la transformation qui suit ouvre sur un nouveau départ.", sens: "retourne" }, // + audit
+  // --- audit continu, 3e vague : Famille, La Table et Le Hasard n'avaient
+  // encore qu'une seule paire attestée. Sourcé sur oracle-de-belline.com. ---
+  { cards: [28, 53], note: "Période de protection, de réussite et d'harmonie au sein du cercle familial.", sens: "renforce" }, // + audit
+  { cards: [28, 1],  note: "Période où le destin joue un rôle central dans les dynamiques familiales.", sens: "précise" }, // + audit
+  { cards: [30, 53], note: "Période de succès et de protection dans les relations sociales et les plaisirs partagés.", sens: "renforce" }, // + audit
+  { cards: [30, 8],  note: "Relation sincère qui s'exprime ou se renforce à travers des moments de partage, de dialogue et de convivialité.", sens: "renforce" }, // + audit
+  { cards: [44, 46], note: "Dépense inattendue et soudaine.", sens: "retourne" } // + audit
 ];
 
 (function () {

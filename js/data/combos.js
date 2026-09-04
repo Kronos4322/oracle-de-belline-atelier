@@ -91,7 +91,7 @@ BELLINE.CLASSIC_COMBOS = [
   { cards: [11, 45], note: "La trahison, une fois traversée, libère : elle ouvre paradoxalement sur un mieux-être.", sens: "retourne" }, // + audit
   { cards: [47, 51], note: "Blocage qui perdure sans résolution en vue ; stagnation confirmée.", sens: "renforce" }, // + audit
   { cards: [47, 18], note: "Le blocage se lève grâce à une évolution : sortie de l'impasse par la transformation.", sens: "retourne" }, // + audit
-  { cards: [48, 49], note: "L'inévitable devient bénéfique : ce qui semblait une contrainte se révèle une chance déguisée.", sens: "retourne" }, // + audit
+  { cards: [48, 49], note: "L'inévitable devient bénéfique : ce qui semblait une contrainte se révèle une chance déguisée — un sauvetage in extremis, une protection qui préserve du coup dur.", sens: "retourne" }, // + audit
   // --- couples élémentaires (manuel, ch. 20.3) ---
   { cards: [37, 15], note: "Deux manières de vivre la même énergie : l'intensité contre la fluidité.", sens: "précise" },
   { cards: [51, 18], note: "Répétition contre transformation : la roue bloquée ou le déplacement.", sens: "précise" },
@@ -112,7 +112,33 @@ BELLINE.CLASSIC_COMBOS = [
   { cards: [41, 10], note: "Matérialisation heureuse : un cadeau significatif ou un legs concret enrichit le patrimoine.", sens: "renforce" }, // + audit
   { cards: [41, 21], note: "Spoliation ou perte : un héritage matériel ou moral risque de disparaître par négligence.", sens: "retourne" }, // + audit
   { cards: [41, 32], note: "Legs empoisonné : le passé pèse lourdement, conflits ou complications malveillantes autour de la transmission.", sens: "retourne" }, // + audit
-  { cards: [41, 40], note: "Transmission artistique précoce : savoirs esthétiques ou œuvres reçues qui magnifient le parcours.", sens: "renforce" } // + audit
+  { cards: [41, 40], note: "Transmission artistique précoce : savoirs esthétiques ou œuvres reçues qui magnifient le parcours.", sens: "renforce" }, // + audit
+  // --- audit continu (sept. 2026) : cartes sans, ou avec une seule, paire attestée ---
+  { cards: [42, 11], note: "Renoncement à la réserve : une impulsivité soudaine mine la prudence habituelle, risque d'instabilité.", sens: "retourne" }, // + audit
+  { cards: [42, 22], note: "Expertise mise à contribution : ton expertise devient centrale à un projet, on sollicite tes conseils avisés.", sens: "renforce" }, // + audit
+  { cards: [42, 33], note: "Remise en question du savoir : une opposition directe conteste l'expérience ; le dialogue est recommandé.", sens: "retourne" }, // + audit
+  { cards: [42, 41], note: "Enseignement du passé : l'expérience actuelle vient d'un apprentissage de longue date qui guide le chemin présent.", sens: "renforce" }, // + audit
+  { cards: [42, 1],  note: "Prudence pérenne : un tempérament raisonnable assure une progression stable et des choix judicieux sur la durée.", sens: "précise" }, // + audit
+  { cards: [26, 37], note: "Passion pour l'harmonie : on défend la paix avec une énergie ardente qui inspire les autres.", sens: "précise" }, // + audit
+  { cards: [26, 48], note: "La tranquillité s'impose : les circonstances forcent un retour au calme, indépendamment de la préférence.", sens: "précise" }, // + audit
+  { cards: [26, 6],  note: "Réconciliation qui libère l'esprit, favorise la croissance intérieure.", sens: "renforce" }, // + audit
+  { cards: [26, 17], note: "L'harmonie devient fragile : la paix se détériore peu à peu, une intervention rapide s'impose.", sens: "retourne" }, // + audit
+  { cards: [26, 25], note: "Sérénité réjouissante : de bonnes relations apportent une joie et un bien-être immédiats.", sens: "renforce" }, // + audit
+  { cards: [14, 25], note: "Redécouverte des plaisirs de la vie ; équilibre sain entre obligations et détente.", sens: "renforce" }, // + audit
+  { cards: [14, 36], note: "Ce qu'on découvre suscite le débat : la trouvaille génère discussion et nécessite des négociations.", sens: "précise" }, // + audit
+  { cards: [14, 47], note: "Malgré des éléments clés identifiés, rien n'est exploité : la découverte manque de suite concrète.", sens: "retourne" }, // + audit
+  { cards: [14, 5],  note: "La recherche porte ses fruits : ce qu'on trouve devient central pour un succès à venir, et inspire.", sens: "renforce" }, // + audit
+  { cards: [14, 13], note: "Risque de mal interpréter les faits : prudence et discernement nécessaires pour éviter l'erreur de jugement.", sens: "retourne" }, // + audit
+  { cards: [3, 14],  note: "Une femme découvre une information cruciale : prise de conscience ou révélation qui transforme la perspective.", sens: "précise" }, // + audit
+  { cards: [3, 25],  note: "Une femme érudite ou amatrice d'art, en quête de joie dans des activités créatives et culturelles.", sens: "précise" }, // + audit
+  { cards: [3, 36],  note: "Une femme pas facile à convaincre ; rôle clé dans une négociation ou la résolution d'un conflit.", sens: "précise" }, // + audit
+  { cards: [3, 47],  note: "Un projet ou un désir de maternité tarde à se concrétiser : patience ou obstacle à identifier.", sens: "précise" }, // + audit
+  { cards: [3, 2],   note: "Une rencontre qui trouve le compagnon idéal : relation harmonieuse, complémentaire et équilibrée.", sens: "précise" }, // + audit
+  { cards: [49, 7],  note: "Reconnaissance sacrée : une connexion spirituelle apporte admiration et respect.", sens: "renforce" }, // + audit
+  { cards: [49, 18], note: "Évolution spirituelle : les croyances se transforment, ouvrent de nouvelles dimensions de foi et de compréhension intérieure.", sens: "précise" }, // + audit
+  { cards: [49, 29], note: "Rencontre d'âmes sœurs : une rencontre qui semble destinée, bénie.", sens: "renforce" }, // + audit
+  { cards: [49, 40], note: "Miracle régénérateur : transformation harmonieuse de l'apparence, ou guérison qui restaure l'éclat naturel.", sens: "renforce" }, // + audit
+  { cards: [2, 4],   note: "Renouveau, nouveau départ inspiré par une influence masculine bienveillante.", sens: "précise" } // + audit
 ];
 
 (function () {

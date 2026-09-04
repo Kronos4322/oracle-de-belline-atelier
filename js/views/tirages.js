@@ -492,15 +492,23 @@ BELLINE.Views.tirages = function (root) {
 
     /* La liste est en position fixe (jamais rognée par le défilement du
        panneau) et se recale sur la position de l'input. */
+    /* En dessous de 640px, la liste reste DANS le flux normal, sous l'input
+       (voir CSS) : pas de calcul de position flottante, donc pas de conflit
+       avec le clavier virtuel qui rétrécit la zone visible. C'est ce calcul
+       flottant, contre un clavier qui ne change pas window.innerHeight sur
+       iOS, qui rendait la liste inaccessible / son défilement inopérant. */
+    function isInline() { return window.matchMedia && window.matchMedia('(max-width: 640px)').matches; }
     function placeList() {
-      if (listEl.hidden) return;
+      if (listEl.hidden || isInline()) return;
+      var vv = window.visualViewport;
+      var viewH = vv ? vv.height + vv.offsetTop : window.innerHeight;
       var r = input.getBoundingClientRect();
-      var below = window.innerHeight - r.bottom;
+      var below = viewH - r.bottom;
       listEl.style.left = r.left + 'px';
       listEl.style.width = r.width + 'px';
       if (below < 220 && r.top > below) {
         listEl.style.top = 'auto';
-        listEl.style.bottom = (window.innerHeight - r.top + 4) + 'px';
+        listEl.style.bottom = (viewH - r.top + 4) + 'px';
         listEl.style.maxHeight = Math.min(340, r.top - 12) + 'px';
       } else {
         listEl.style.bottom = 'auto';

@@ -49,7 +49,6 @@ BELLINE.Views.grimoire = function (root) {
     selected = null;
     detailEl.hidden = true;
     detailEl.innerHTML = '';
-    document.body.style.overflow = '';
     renderList();
   }
 
@@ -219,7 +218,6 @@ BELLINE.Views.grimoire = function (root) {
       : '<p class="fiche-status">Texte de départ (recherche) — réécris-le avec tes mots, puis enregistre.</p>';
 
     detailEl.hidden = false;
-    document.body.style.overflow = 'hidden';
     detailEl.scrollTop = 0;
     detailEl.innerHTML =
       '<button class="grim-page-close" id="grimClose" aria-label="Fermer la fiche" title="Fermer (Échap)">×</button>' +

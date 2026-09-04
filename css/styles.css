@@ -157,7 +157,13 @@ code { font-family: var(--mono); font-size: .86em; color: var(--gold-soft); }
   padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
   animation: viewIn .28s ease both;
 }
-@keyframes viewIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+/* Opacité seule, jamais transform : un transform animé sur .view (même
+   fill-mode "both" terminé sur transform:none) fait de .view le containing
+   block de toutes ses descendantes position:fixed — la fenêtre de choix de
+   carte des Tirages et la fiche plein écran du Grimoire (toutes deux à
+   l'intérieur de #view) perdaient alors leur position/dimension réelles par
+   rapport à l'écran, d'où liste bloquée et fiche qui « buguait ». */
+@keyframes viewIn { from { opacity: 0; } to { opacity: 1; } }
 .view-head { margin-bottom: 20px; }
 .view-head h1 { margin-bottom: 4px; }
 .view-head > .muted { max-width: 62ch; }
@@ -779,6 +785,7 @@ button.planet-sym:hover { color: var(--gold-soft); text-shadow: 0 0 10px current
 .sp-modal[hidden] { display: none !important; }
 .sp-modal-panel {
   width: min(560px, 100%); max-height: 88vh; overflow-y: auto;
+  -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
   background: var(--panel); border: 1px solid var(--gold); border-radius: var(--radius);
   padding: 20px; position: relative; box-shadow: 0 20px 60px rgba(0, 0, 0, .55);
 }
@@ -814,17 +821,30 @@ button.planet-sym:hover { color: var(--gold-soft); text-shadow: 0 0 10px current
 .sp-combo-list {
   position: fixed; z-index: 90;
   max-height: 340px; overflow-y: auto; overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   background: var(--bg); border: 1px solid var(--gold); border-radius: 9px;
   box-shadow: 0 14px 40px rgba(0, 0, 0, .5);
 }
 .sp-combo-list[hidden] { display: none !important; }
+/* Mobile : la liste reste dans le flux normal, sous le champ — pas de
+   position flottante à recalculer contre un clavier virtuel qui ne réduit
+   pas toujours window.innerHeight (c'était la cause du "défilement bloqué"). */
+@media (max-width: 640px) {
+  .sp-combo-list {
+    position: static !important; left: auto !important; right: auto !important;
+    top: auto !important; bottom: auto !important; width: 100% !important;
+    max-height: 48vh !important; margin-top: 8px;
+  }
+  .sp-modal-panel { max-height: 94vh; }
+}
 .sp-opt {
-  width: 100%; display: flex; align-items: center; gap: 10px; text-align: left;
-  padding: 8px 12px; background: none; border: none; color: var(--ink); font-size: .9rem;
-  border-bottom: 1px solid var(--line);
+  width: 100%; min-height: 46px; display: flex; align-items: center; gap: 10px; text-align: left;
+  padding: 11px 12px; background: none; border: none; color: var(--ink); font-size: .92rem;
+  border-bottom: 1px solid var(--line); -webkit-tap-highlight-color: transparent;
 }
 .sp-opt:last-child { border-bottom: none; }
-.sp-opt:hover { background: var(--panel-2); }
+.sp-opt:active { background: var(--panel-2); }
+@media (hover: hover) { .sp-opt:hover { background: var(--panel-2); } }
 .sp-opt.on { background: rgba(217, 178, 107, .16); }
 .sp-opt.used { opacity: .5; }
 .sp-opt-n { flex: none; width: 24px; text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
@@ -1197,6 +1217,7 @@ button.planet-sym:hover { color: var(--gold-soft); text-shadow: 0 0 10px current
 /* ---------- Grimoire : la fiche en pleine page ---------- */
 .grim-page {
   position: fixed; inset: 0; z-index: 45; overflow-y: auto;
+  -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
   background: var(--bg);
   padding: 0;
 }

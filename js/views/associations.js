@@ -57,7 +57,7 @@ BELLINE.Views.associations = function (root) {
 
   /* ---------- moteur de combinaisons (2652 paires) ---------- */
 
-  var TIER_LABEL = { curee: 'lecture attestée', dossier: 'sourcée — Dossier', calculee: 'calculée' };
+  var TIER_LABEL = { curee: 'lecture attestée', dictionnaire: 'dictionnaire des 2652', dossier: 'sourcée — Dossier', calculee: 'calculée' };
 
   function cardOptions(selected) {
     return (BELLINE.SEED_CARDS || []).filter(function (c) { return c.number !== 53; }).map(function (c) {

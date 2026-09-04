@@ -190,7 +190,7 @@ BELLINE.cardByNumber = function (n) {
    légèrement différentes (risque de désynchronisation), unifiées ici. */
 BELLINE.isTemplateText = function (s) {
   if (!s) return true;
-  return /transpose son noyau sémantique|qualifie le climat du foyer par son sens central|constitue une ressource, une possibilité utile ou le mécanisme|logique profonde de la situation tient à/.test(s);
+  return /transpose son noyau sémantique|qualifie le climat du foyer par son sens|constitue une ressource, une possibilité utile ou le mécanisme|logique profonde de la situation tient à/.test(s);
 };
 
 /* Pourcentage lisible, virgule française (0,133 -> "13,3 %"). */

@@ -748,6 +748,7 @@ button.planet-sym:hover { color: var(--gold-soft); text-shadow: 0 0 10px current
   padding: 2px 8px; border-radius: 999px; color: var(--muted); border: 1px solid var(--line);
 }
 .combo-tier.tier-curee { color: var(--gold-soft); border-color: var(--gold); }
+.combo-tier.tier-dictionnaire { color: var(--pos); border-color: var(--pos); }
 .combo-tier.tier-dossier { color: hsl(200 45% 68%); border-color: hsl(200 45% 40%); }
 .combo-reading-text { margin: 0; font-size: .96rem; line-height: 1.5; }
 .combo-reading-actions { margin-top: 10px; }

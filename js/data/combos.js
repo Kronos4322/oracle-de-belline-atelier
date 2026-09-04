@@ -279,6 +279,44 @@ BELLINE.CLASSIC_COMBOS = [
     return 'precise';
   }
 
+  /* Dictionnaire des 2652 associations binaires (Camille, sept. 2026,
+     js/data/pair-dictionary.js) : chaque paire a sa propre lecture dirigée
+     écrite, plutôt qu'une synthèse mécanique. Chaque entrée « général »
+     suit toujours le même patron : « Dans cet ordre, le thème « A » [ce qui
+     arrive à A]. [Étiquette] : [rôle structurel de B, avec A/B en lettres
+     nues comme des variables] » — on en extrait le sens, on remplace les
+     variables par les vrais noms, et le patron d'ouverture redondant avec
+     frame() est retiré. */
+  var GENERAL_PREFIX_RE = /^Dans cet ordre, le thème\s*«[^»]*»\s*/;
+  var GENERAL_SENS_LABELS = [
+    ['Renforcement constructif', 'renforce'],
+    ['Cumul de tensions', 'renforce'],
+    ['Tendance favorable', 'renforce'],
+    ['Qualification restrictive', 'retourne'],
+    ['Dynamique réparatrice', 'retourne'],
+    ['Tendance restrictive', 'retourne'],
+    ['Dynamique mixte', 'precise'],
+    ['Qualification contextuelle', 'precise']
+  ];
+  function dictionaryReading(subNum, adjNum, subC, adjC) {
+    var e = (BELLINE.PAIR_DICT || {})[subNum + '-' + adjNum];
+    if (!e || !e.general) return null;
+    var parts = e.general.split('. ');
+    var payload = parts[0].replace(GENERAL_PREFIX_RE, '');
+    var clause = parts[1] || '';
+    var colon = clause.indexOf(':');
+    var label = colon !== -1 ? clause.slice(0, colon).trim() : '';
+    var tail = (colon !== -1 ? clause.slice(colon + 1) : clause).trim()
+      .replace(/\bA\b/g, subC.name).replace(/\bB\b/g, adjC.name);
+    var sens = null;
+    for (var i = 0; i < GENERAL_SENS_LABELS.length; i++) {
+      if (label.indexOf(GENERAL_SENS_LABELS[i][0]) !== -1) { sens = GENERAL_SENS_LABELS[i][1]; break; }
+    }
+    if (!sens) sens = sensFromValences(subC.valence, adjC.valence);
+    var text = frame(subC, adjC) + lower1(payload) + '. ' + tail + '.';
+    return { source: 'dictionnaire', text: text, sens: sens, dict: e };
+  }
+
   function computedReading(subC, adjC, subD, adjD) {
     subD = subD || {}; adjD = adjD || {};
     // Le Dossier capitalise chaque mot-clé comme s'il ouvrait sa propre puce
@@ -322,7 +360,14 @@ BELLINE.CLASSIC_COMBOS = [
       return { source: 'curee', text: frame(subC, adjC) + lower1(curated.note), sens: curated.sens, subNum: subNum, adjNum: adjNum };
     }
 
-    // 2) dossier — l'adjectif est un modificateur universel documenté
+    // 2) dictionnaire — les 2652 paires ont chacune leur propre lecture écrite
+    var dict = dictionaryReading(subNum, adjNum, subC, adjC);
+    if (dict) {
+      dict.subNum = subNum; dict.adjNum = adjNum;
+      return dict;
+    }
+
+    // 3) dossier — l'adjectif est un modificateur universel documenté
     var note = null, sens2 = null;
     if (MODIFIER_LABEL[adjNum]) {
       note = dossierComboNote(subNum, new RegExp('\\+\\s*' + MODIFIER_LABEL[adjNum].replace('.', '\\.') + '\\s*$', 'i'));
@@ -334,7 +379,8 @@ BELLINE.CLASSIC_COMBOS = [
       return { source: 'dossier', text: frame(subC, adjC) + lower1(note), sens: sens2, subNum: subNum, adjNum: adjNum };
     }
 
-    // 3) calculée — synthèse grammaticale
+    // 4) calculée — synthèse grammaticale (filet de sécurité ; le dictionnaire
+    // couvre déjà les 2652 paires, cette strate ne devrait plus jamais servir)
     var D = BELLINE.CARD_DOSSIER || {};
     var r = computedReading(subC, adjC, D[subNum], D[adjNum]);
     r.subNum = subNum; r.adjNum = adjNum;

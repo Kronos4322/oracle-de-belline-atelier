@@ -46,9 +46,16 @@ puis ouvrir <http://localhost:8000>.
 
 ## Images des cartes
 
-Optionnelles. Placer les visuels dans `assets/cartes/` nommés `01.jpg` … `53.jpg`
-(voir `assets/cartes/README.md`). En leur absence, l'application affiche le numéro de
-la carte.
+Optionnelles. Placer les visuels dans `assets/cartes/` — chaque nom de fichier doit
+**commencer par le numéro de la carte** (`01 DESTINEE.jpg`, `07. HONNEURS.jpg`,
+`00 CARTE BLEUE.jpg`…). Puis lancer le scanner :
+
+```bash
+powershell -File tools\scan-cartes.ps1
+```
+
+Il régénère `js/data/card-images.js` (numéro → fichier). En l'absence d'image, la
+fiche affiche le numéro de la carte. Détails : `assets/cartes/README.md`.
 
 ## Structure
 
@@ -57,9 +64,11 @@ index.html
 css/styles.css
 js/
   data/cards.js        les 53 cartes (référence)
+  data/card-images.js  correspondance numéro → image (généré par le scanner)
   storage.js           lecture/écriture + sauvegarde/restauration
   app.js               routeur + démarrage
   views/               une vue par module
+tools/scan-cartes.ps1  régénère card-images.js d'après assets/cartes/
 assets/cartes/         visuels des cartes (à fournir)
 ```
 

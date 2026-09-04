@@ -31,7 +31,13 @@ BELLINE.Views.entrainement = function (root) {
 
   function draw() {
     var planet = P[card.planet];
+    var img = BELLINE.imageFor(card.number);
     var kw = (card.keywords || []);
+
+    var figure = '<div class="flash-figure' + (img ? ' has-img' : '') + '" style="--hue:' + planet.hue + '">' +
+      '<span>' + card.number + '</span>' +
+      (img ? '<img src="' + img + '" alt="" onerror="this.remove()">' : '') +
+      '</div>';
     var faceRevealed =
       '<h2>' + esc(card.name) + '</h2>' +
       '<p class="muted">' + planet.symbol + ' Série ' + planet.name + '</p>' +
@@ -53,7 +59,7 @@ BELLINE.Views.entrainement = function (root) {
 
       '<div class="flash" style="--hue:' + planet.hue + '">' +
         '<div class="flash-card">' +
-          '<div class="flash-num">' + card.number + '</div>' +
+          figure +
           (revealed ? faceRevealed : faceHidden) +
         '</div>' +
         '<div class="flash-actions">' +

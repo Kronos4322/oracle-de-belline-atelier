@@ -61,11 +61,15 @@ BELLINE.Views.grimoire = function (root) {
       return '<div class="planet-group">' +
         '<h3 class="planet-title" style="--hue:' + planet.hue + '"><span>' + planet.symbol + '</span> ' + planet.name + '</h3>' +
         '<ul>' + items.map(function (c) {
+          var img = BELLINE.imageFor(c.number);
           return '<li><button class="card-row' +
             (selected === c.number ? ' is-active' : '') +
             (S.isCardComplete(c) ? ' is-done' : '') +
             '" data-num="' + c.number + '">' +
-            '<span class="card-num">' + c.number + '</span>' +
+            '<span class="card-figure">' +
+              '<span class="card-num">' + c.number + '</span>' +
+              (img ? '<img src="' + img + '" alt="" loading="lazy" onerror="this.remove()">' : '') +
+            '</span>' +
             '<span class="card-name">' + esc(c.name) + '</span>' +
             (S.isCardComplete(c) ? '<span class="dot" title="Fiche complétée">●</span>' : '') +
             '</button></li>';
@@ -98,15 +102,15 @@ BELLINE.Views.grimoire = function (root) {
     selected = num;
     var c = S.getCard(num);
     var planet = P[c.planet];
-    var pad = String(c.number).length < 2 ? '0' + c.number : c.number;
+    var img = BELLINE.imageFor(c.number);
 
     detailEl.classList.add('is-open');
     detailEl.innerHTML =
       '<button class="back-btn" id="grimBack">← Liste</button>' +
       '<header class="fiche-head" style="--hue:' + planet.hue + '">' +
         '<div class="fiche-visual">' +
-          '<img src="assets/cartes/' + pad + '.jpg" alt="" loading="lazy" onerror="this.style.display=\'none\'">' +
           '<span class="fiche-visual-num">' + c.number + '</span>' +
+          (img ? '<img src="' + img + '" alt="' + esc(c.name) + '" loading="lazy" onerror="this.remove()">' : '') +
         '</div>' +
         '<div class="fiche-head-txt">' +
           '<h2>' + esc(c.name) + '</h2>' +

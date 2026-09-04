@@ -97,3 +97,12 @@ BELLINE.SEED_CARDS = [
 
   _c(53, "La Carte Bleue",        'none')
 ];
+
+/* Chemin de l'image d'une carte, ou null si aucune image n'est associée.
+   La correspondance numéro -> fichier vient de card-images.js
+   (régénéré par tools/scan-cartes.ps1). */
+BELLINE.imageFor = function (number) {
+  var map = BELLINE.CARD_IMAGES || {};
+  var file = map[number] || map[String(number)];
+  return file ? 'assets/cartes/' + encodeURIComponent(file) : null;
+};

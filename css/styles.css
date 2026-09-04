@@ -131,7 +131,15 @@ em { font-style: italic; }
 /* ---------- Grimoire ---------- */
 
 .grimoire { display: grid; gap: 18px; grid-template-columns: 1fr; }
-@media (min-width: 900px) { .grimoire { grid-template-columns: 300px 1fr; align-items: start; } }
+@media (min-width: 900px) {
+  .view:has(.grimoire) { max-width: 1120px; overflow: hidden; }
+  .grimoire {
+    grid-template-columns: 340px 1fr;
+    height: calc(100vh - 160px); min-height: 420px;
+  }
+  .grim-list { overflow-y: auto; padding-right: 8px; }
+  .grim-detail { overflow-y: auto; height: 100%; }
+}
 
 #grimSearch {
   width: 100%; padding: 10px 12px; margin-bottom: 12px; border-radius: 10px;
@@ -149,17 +157,22 @@ em { font-style: italic; }
 
 .card-row {
   width: 100%; display: flex; align-items: center; gap: 10px;
-  padding: 9px 10px; margin-bottom: 3px; border-radius: 9px;
+  padding: 6px 10px; margin-bottom: 3px; border-radius: 9px;
   background: var(--panel); border: 1px solid transparent; color: var(--ink); text-align: left;
 }
 .card-row:hover { border-color: var(--line); background: var(--panel-2); }
 .card-row.is-active { border-color: var(--gold); background: var(--panel-2); }
-.card-num {
-  flex: none; width: 26px; height: 26px; display: grid; place-items: center;
-  border-radius: 7px; background: var(--bg); font-size: .8rem; color: var(--muted);
+.card-figure {
+  flex: none; position: relative; width: 30px; height: 44px;
+  border-radius: 6px; overflow: hidden; background: var(--bg);
 }
+.card-figure .card-num {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  font-size: .72rem; color: var(--muted);
+}
+.card-figure img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .card-name { flex: 1; font-size: .92rem; }
-.card-row.is-done .card-num { color: var(--gold-soft); }
+.card-row.is-done .card-figure .card-num { color: var(--gold-soft); }
 .dot { color: var(--gold); font-size: .6rem; }
 
 .grim-detail { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; }
@@ -197,7 +210,6 @@ em { font-style: italic; }
   .grim-detail.is-open { transform: none; }
   .grim-detail .back-btn { display: inline-block; }
 }
-@media (min-width: 900px) { .grim-detail { position: sticky; top: 76px; } }
 
 /* ---------- Entraînement ---------- */
 
@@ -206,11 +218,13 @@ em { font-style: italic; }
   padding: 26px 20px; text-align: center; margin-bottom: 14px;
 }
 .flash-card { min-height: 210px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; }
-.flash-num {
-  width: 54px; height: 54px; display: grid; place-items: center; border-radius: 12px;
+.flash-figure {
+  position: relative; width: 104px; height: 162px; margin-bottom: 8px;
+  border-radius: 10px; overflow: hidden; display: grid; place-items: center;
   background: hsl(var(--hue) 35% 24%); border: 1px solid hsl(var(--hue) 45% 50%);
-  font-family: var(--serif); font-size: 1.4rem; color: var(--gold-soft); margin-bottom: 6px;
 }
+.flash-figure > span { font-family: var(--serif); font-size: 1.5rem; color: var(--gold-soft); }
+.flash-figure img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .flash-card h2 { margin: 0; }
 .flash-hint { color: var(--muted); font-style: italic; }
 .flash-kw { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 4px; }

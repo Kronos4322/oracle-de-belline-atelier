@@ -122,7 +122,7 @@ code { font-family: var(--mono); font-size: .86em; color: var(--gold-soft); }
 }
 
 /* Étiquettes utilitaires en petites capitales espacées, sur mono. */
-.eyebrow, .u-label {
+.u-label {
   font-family: var(--mono); font-size: .68rem; font-weight: 500;
   letter-spacing: .16em; text-transform: uppercase; color: var(--gold);
 }
@@ -130,16 +130,6 @@ code { font-family: var(--mono); font-size: .86em; color: var(--gold-soft); }
 .muted { color: var(--muted); }
 .small { font-size: .85rem; }
 .pad { padding: 20px; }
-
-/* Fioriture : filet fin avec ✦ central — sépare une section sans l'encadrer. */
-.ornament {
-  display: flex; align-items: center; gap: 12px; margin: 22px 0;
-  color: var(--gold-deep); font-size: .8rem;
-}
-.ornament::before, .ornament::after {
-  content: ''; flex: 1; height: 1px;
-  background: linear-gradient(90deg, transparent, var(--line-lit), transparent);
-}
 
 /* Surface à liseré d'or décoré aux coins — pour les zones qu'on veut élever. */
 .plate {
@@ -323,7 +313,6 @@ button.planet-sym:hover { color: var(--gold-soft); text-shadow: 0 0 10px current
 .card-row.is-done .card-figure .card-num { color: var(--gold-soft); }
 .dot { color: var(--gold); font-size: .6rem; text-shadow: 0 0 6px rgba(217,178,107,.6); }
 
-.detail-empty { text-align: center; padding: 60px 16px; color: var(--muted); }
 .big-symbol { font-size: 2.6rem; color: var(--gold); margin: 0 0 10px;
   animation: twinkle 5s ease-in-out infinite; display: inline-block; }
 
@@ -380,29 +369,6 @@ button.planet-sym:hover { color: var(--gold-soft); text-shadow: 0 0 10px current
 .save-hint { color: var(--gold-soft); font-size: .85rem; }
 
 /* ---------- Entraînement / Exercices ---------- */
-
-.flash {
-  background: linear-gradient(180deg, var(--panel), var(--bg-2)); border: 1px solid var(--line);
-  border-radius: var(--radius); padding: 26px 20px; text-align: center; margin-bottom: 14px;
-  box-shadow: var(--shadow);
-}
-.flash-card { min-height: 210px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; }
-.flash-figure {
-  position: relative; width: 104px; height: 162px; margin-bottom: 8px;
-  border-radius: 10px; overflow: hidden; display: grid; place-items: center;
-  background: hsl(var(--hue) 35% 24%); border: 1px solid hsl(var(--hue) 45% 50%);
-  box-shadow: 0 14px 30px -12px hsl(var(--hue) 50% 40% / .8);
-}
-.flash-figure > span { font-family: var(--serif); font-size: 1.5rem; color: var(--gold-soft); }
-.flash-figure img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.flash-card h2 { margin: 0; }
-.flash-hint { color: var(--muted); font-style: italic; }
-.flash-kw { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 4px; }
-.flash-kw span { padding: 4px 10px; border-radius: 999px; background: var(--bg-2); border: 1px solid var(--line); font-size: .85rem; }
-.flash-sens { max-width: 46ch; margin: 6px auto 0; color: var(--ink); }
-.flash-from-ref { margin-top: 8px; font-style: italic; opacity: .8; }
-.flash-actions { display: flex; gap: 10px; justify-content: center; margin-top: 20px; }
-.session-line { text-align: center; }
 
 /* ---------- Pages « à venir » ---------- */
 
@@ -605,8 +571,6 @@ button.planet-sym:hover { color: var(--gold-soft); text-shadow: 0 0 10px current
 }
 .method-tab:hover { border-color: var(--gold-soft); color: var(--ink); }
 .method-tab.is-active { background: var(--panel-2); border-color: var(--gold); color: var(--gold-soft); }
-
-.method-book { font-family: var(--mono); font-size: .7rem; letter-spacing: .14em; text-transform: uppercase; color: var(--amethyst-soft); margin: 0 0 6px; }
 
 .method { display: grid; gap: 16px; grid-template-columns: 1fr; }
 @media (min-width: 900px) { .method { grid-template-columns: 1fr 1fr; align-items: start; } }
@@ -1029,8 +993,6 @@ button.planet-sym:hover { color: var(--gold-soft); text-shadow: 0 0 10px current
 .sp-modal-logic, .sp-modal-read { margin: 0 0 12px; font-size: .92rem; }
 .sp-modal-read { color: var(--gold-soft); }
 
-.sp-modal-sens { display: block; margin-top: 4px; }
-
 /* combobox */
 .sp-combo { position: relative; }
 #spComboInput {
@@ -1085,7 +1047,6 @@ button.planet-sym:hover { color: var(--gold-soft); text-shadow: 0 0 10px current
   margin: 12px 0; padding: 12px 34px 12px 14px; border-radius: 10px;
   background: var(--bg-2); border: 1px solid var(--gold); font-size: .9rem;
 }
-.sp-modal-current-btns { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .sp-modal-current .val-tag { display: inline-block; margin-top: 6px; }
 .sp-contraire {
   margin: 0 0 10px; padding: 9px 12px; border-radius: 8px; font-size: .86rem;
@@ -1148,9 +1109,6 @@ button.planet-sym:hover { color: var(--gold-soft); text-shadow: 0 0 10px current
   .nav-more .nav-icon { font-size: 17px; line-height: 1; }
   .nav-more.is-active { color: var(--gold-soft); border-top-color: var(--gold); }
 }
-@media (min-width: 900px) {
-  .nav-more { display: none; }
-}
 .sheet-modal {
   position: fixed; inset: 0; z-index: 70; display: flex; align-items: flex-end;
   background: rgba(9, 8, 13, .6);
@@ -1173,7 +1131,6 @@ button.planet-sym:hover { color: var(--gold-soft); text-shadow: 0 0 10px current
 .sheet-link .nav-icon { font-size: 18px; }
 
 /* ---------- Carte du jour ---------- */
-.cj-wrap { display: grid; gap: 18px; }
 .cj-draw {
   background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
   padding: 22px 20px; text-align: center;
@@ -1215,8 +1172,7 @@ button.planet-sym:hover { color: var(--gold-soft); text-shadow: 0 0 10px current
 .cj-mini.on { background: var(--gold); color: #241c0c; border-color: var(--gold); font-weight: 600; }
 .cj-streak { font-family: var(--mono); color: var(--gold-soft); }
 
-/* ---------- Badge « fragile » + relevés de concordance ---------- */
-.val-fragile { color: hsl(35 55% 62%); border-color: hsl(35 45% 46%); background: hsl(35 40% 14%); }
+/* ---------- Relevés de concordance ---------- */
 .conc-block {
   margin: 10px 0 0; padding: 12px 14px; border-radius: 10px;
   background: var(--bg-2); border: 1px solid var(--line); font-size: .9rem;
@@ -1487,5 +1443,4 @@ button.planet-sym:hover { color: var(--gold-soft); text-shadow: 0 0 10px current
   .grimoire { grid-template-columns: 1fr; height: auto; min-height: 0; }
   .grim-list { overflow: visible; padding-right: 0; }
 }
-.grim-detail-legacy { display: none; }
 

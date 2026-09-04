@@ -34,7 +34,8 @@ window.BELLINE = window.BELLINE || {};
       return true;
     } catch (e) {
       console.error('[storage] écriture impossible :', name, e);
-      alert("Impossible d'enregistrer : l'espace de stockage du navigateur est plein ou bloqué.");
+      var msg = "Impossible d'enregistrer : l'espace de stockage du navigateur est plein ou bloqué.";
+      if (window.BELLINE && BELLINE.toast) BELLINE.toast(msg, 'error'); else alert(msg);
       return false;
     }
   }
@@ -108,11 +109,6 @@ window.BELLINE = window.BELLINE || {};
   }
 
   function editedCount() { return Object.keys(cardEdits()).length; }
-
-  // Ancienne notion « complète » : garde un sens (mots-clés + sens général présents).
-  function isCardComplete(c) {
-    return !!(c && c.keywords && c.keywords.length && c.sens && c.sens.general && c.sens.general.trim());
-  }
 
   /* --- Associations : dossiers (arborescents) + combinaisons de cartes ---
    *   folders      : [{ id, name, parentId }]      parentId = null -> racine
@@ -199,7 +195,6 @@ window.BELLINE = window.BELLINE || {};
     resetCard: resetCard,
     isCardEdited: isCardEdited,
     editedCount: editedCount,
-    isCardComplete: isCardComplete,
     getFolders: getFolders,
     saveFolders: saveFolders,
     getAssociations: getAssociations,

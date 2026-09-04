@@ -13,24 +13,14 @@ BELLINE.Views.journalier = function (root) {
   var S = BELLINE.Storage;
   var P = BELLINE.PLANETS;
 
-  function esc(s) {
-    return String(s == null ? '' : s).replace(/[&<>"']/g, function (m) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
-    });
-  }
-  function todayKey() {
-    var d = new Date();
-    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-  }
+  var esc = BELLINE.esc;
+  var todayKey = BELLINE.todayKey;
   function fmt(key) {
     var p = key.split('-');
     var d = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
     return d.toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit', month: 'short' });
   }
-  function cardName(n) {
-    var c = BELLINE.cardByNumber(n);
-    return c ? c.name : ('Carte ' + n);
-  }
+  var cardName = BELLINE.cardName;
 
   var log = S.getCarteJour();
   var tk = todayKey();
@@ -42,7 +32,7 @@ BELLINE.Views.journalier = function (root) {
     var n = 0;
     var d = new Date();
     for (;;) {
-      var k = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      var k = BELLINE.dateKey(d);
       if (days[k]) { n++; d.setDate(d.getDate() - 1); }
       else if (k === tk) { d.setDate(d.getDate() - 1); }   // aujourd'hui pas encore tiré : on ne casse pas la série
       else break;

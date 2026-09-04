@@ -4,11 +4,7 @@
 window.BELLINE = window.BELLINE || {};
 
 (function () {
-  function esc(s) {
-    return String(s == null ? '' : s).replace(/[&<>"']/g, function (m) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
-    });
-  }
+  var esc = BELLINE.esc;
 
   var ROUTES = {
     journalier:   { label: 'Jour',         icon: '☀' },

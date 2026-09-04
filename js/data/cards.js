@@ -183,6 +183,43 @@ BELLINE.cardByNumber = function (n) {
   return (BELLINE.SEED_CARDS || []).find(function (c) { return c.number === n; }) || null;
 };
 
+/* Un champ du Dossier (rubrique par domaine) est-il resté un renvoi générique
+   au noyau/à la lecture standard plutôt qu'un texte propre au domaine ?
+   Sert à masquer ces rubriques non spécifiques dans Grimoire, Tirages et
+   Entraînement — les trois vues partageaient jusqu'ici trois regex
+   légèrement différentes (risque de désynchronisation), unifiées ici. */
+BELLINE.isTemplateText = function (s) {
+  if (!s) return true;
+  return /transpose son noyau sémantique|qualifie le climat du foyer par son sens central|constitue une ressource, une possibilité utile ou le mécanisme|logique profonde de la situation tient à/.test(s);
+};
+
+/* Pourcentage lisible, virgule française (0,133 -> "13,3 %"). */
+BELLINE.pct = function (x) { return (x * 100).toFixed(1).replace('.', ',') + ' %'; };
+
+/* Clé de date locale AAAA-MM-JJ (jamais l'ISO en UTC, qui glisse d'un jour
+   selon le fuseau) — journalier, entraînement et progression comparaient
+   chacun leur propre copie de ce calcul. */
+BELLINE.dateKey = function (d) {
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+};
+BELLINE.todayKey = function () { return BELLINE.dateKey(new Date()); };
+
+/* Échappement HTML minimal — dupliqué à l'identique dans chaque vue avant
+   cette factorisation ; désormais une seule source. */
+BELLINE.esc = function (s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (m) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
+  });
+};
+
+/* Nom d'une carte par numéro, ou repli générique si le numéro est inconnu
+   (le nom n'est jamais éditable depuis le Grimoire, donc identique quelle
+   que soit la couche de données interrogée). */
+BELLINE.cardName = function (n) {
+  var c = BELLINE.cardByNumber(n);
+  return c ? c.name : ('Carte ' + n);
+};
+
 /* Valence effective d'une carte, lames fragiles éventuellement neutralisées. */
 BELLINE.valenceOf = function (n, neutralizeFragile) {
   var c = BELLINE.cardByNumber(n);

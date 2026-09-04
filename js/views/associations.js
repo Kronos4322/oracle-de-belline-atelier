@@ -17,16 +17,9 @@ BELLINE.Views.associations = function (root) {
   var engineSub = 1;   // La Destinée — substantif par défaut du moteur
   var engineAdj = 5;   // Réussite — adjectif par défaut du moteur
 
-  function esc(s) {
-    return String(s == null ? '' : s).replace(/[&<>"']/g, function (m) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
-    });
-  }
+  var esc = BELLINE.esc;
   function persist() { S.saveFolders(folders); S.saveAssociations(assocs); }
-  function cardName(n) {
-    var c = (BELLINE.SEED_CARDS || []).find(function (x) { return x.number === n; });
-    return c ? c.name : ('Carte ' + n);
-  }
+  var cardName = BELLINE.cardName;
   function childrenOf(pid) { return folders.filter(function (f) { return (f.parentId || null) === pid; }); }
   function assocOf(fid) { return assocs.filter(function (a) { return a.folderId === fid; }); }
 

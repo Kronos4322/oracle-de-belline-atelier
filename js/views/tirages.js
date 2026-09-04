@@ -34,12 +34,8 @@ BELLINE.Views.tirages = function (root) {
   var boardRO = null;
   var onKey = null;
 
-  function esc(s) {
-    return String(s == null ? '' : s).replace(/[&<>"']/g, function (m) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
-    });
-  }
-  function cardName(n) { var c = S.getCard(n); return c ? c.name : ('Carte ' + n); }
+  var esc = BELLINE.esc;
+  var cardName = BELLINE.cardName;
 
   /* Filtre de domaine : ne montrer, à la lecture d'une carte, que ce qui
      concerne le sujet du tirage (professionnel, affectif, santé…). */
@@ -69,7 +65,7 @@ BELLINE.Views.tirages = function (root) {
     // dossier — uniquement les rubriques du sujet verrouillé
     d[2].forEach(function (field) {
       var v = dossier[field];
-      if (v && !/transpose son noyau|qualifie le climat|constitue une ressource|logique profonde de la situation/.test(v)) {
+      if (v && !BELLINE.isTemplateText(v)) {
         var lbl = { noyau: 'Dossier — noyau', amour: 'Dossier — amour', sexualite: 'Dossier — intimité',
           travail: 'Dossier — travail', etudes: 'Dossier — études', argent: 'Dossier — argent',
           sante: 'Dossier — santé', psycho: 'Dossier — psychologie', spiritualite: 'Dossier — cheminement' }[field] || 'Dossier';
@@ -952,7 +948,7 @@ BELLINE.Views.tirages = function (root) {
 
   /* ---------- concordance (tranchée + fragiles neutralisées) ---------- */
 
-  function pct(x) { return (x * 100).toFixed(1).replace('.', ',') + ' %'; }
+  var pct = BELLINE.pct;
   function concordanceHTML(a) {
     var c = a.concordance, cn = a.concordanceNeutral;
     if (!c || !c.total) return '<p class="muted">Aucune position polaire renseignée — pas de mesure pour ce tirage.</p>';

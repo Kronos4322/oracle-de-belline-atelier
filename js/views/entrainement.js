@@ -26,19 +26,12 @@ BELLINE.Views.entrainement = function (root) {
   var current = null;      // { card, kind, question, options, answer }
   var answered = null;     // index choisi (QCM) ou 'oui'/'non' (révision)
 
-  function esc(s) {
-    return String(s == null ? '' : s).replace(/[&<>"']/g, function (m) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
-    });
-  }
-  function today() {
-    var d = new Date();
-    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-  }
+  var esc = BELLINE.esc;
+  var today = BELLINE.todayKey;
   function addDays(k, n) {
     var p = k.split('-'); var d = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
     d.setDate(d.getDate() + n);
-    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    return BELLINE.dateKey(d);
   }
   function rec(n) {
     if (!tc[n]) tc[n] = { box: 0, seen: 0, ok: 0, ko: 0, due: today() };
@@ -183,16 +176,13 @@ BELLINE.Views.entrainement = function (root) {
   /* Réponse enrichie : au-delà du mot-clé, ce qu'il y a à savoir sur la
      carte — ombre, clé de lecture, une association traditionnelle. Puisée
      dans le Grimoire (ta version), le dossier et les planches. */
-  function isTemplate(s) {
-    return !s || /transpose son noyau sémantique|qualifie le climat du foyer|constitue une ressource|logique profonde de la situation/.test(s);
-  }
   function richAnswerHTML(c) {
     if (!c) return '';
     var dossier = (BELLINE.CARD_DOSSIER || {})[c.number] || {};
     var planche = BELLINE.plancheFor ? BELLINE.plancheFor(c.number) : null;
     var combos = BELLINE.combosFor ? BELLINE.combosFor(c.number) : { pairs: [] };
     var rows = [];
-    if (!isTemplate(dossier.ombre)) rows.push(['Ombre / revers', dossier.ombre]);
+    if (!BELLINE.isTemplateText(dossier.ombre)) rows.push(['Ombre / revers', dossier.ombre]);
     if (planche && planche.cle) rows.push(['Clé de lecture', planche.cle]);
     else if (dossier.noyau) rows.push(['Noyau', dossier.noyau]);
     if (dossier.ouinon) rows.push(['Oui / Non', dossier.ouinon]);

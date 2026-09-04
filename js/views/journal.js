@@ -22,11 +22,7 @@ BELLINE.Views.journal = function (root) {
   var js = S.read('journal.justSaved', null);
   if (js) { openId = js; S.write('journal.justSaved', null); }
 
-  function esc(s) {
-    return String(s == null ? '' : s).replace(/[&<>"']/g, function (m) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
-    });
-  }
+  var esc = BELLINE.esc;
   function fmtDate(iso) {
     try {
       var d = new Date(iso);
@@ -42,10 +38,7 @@ BELLINE.Views.journal = function (root) {
     } catch (e) { return ''; }
   }
   function spreadName(id) { return (BELLINE.SPREADS[id] || {}).name || id; }
-  function cardName(n) {
-    var c = (BELLINE.SEED_CARDS || []).find(function (x) { return x.number === n; });
-    return c ? c.name : ('Carte ' + n);
-  }
+  var cardName = BELLINE.cardName;
   function carnetOf(t) {
     t.carnet = t.carnet || {};
     var k = t.carnet;
@@ -54,7 +47,7 @@ BELLINE.Views.journal = function (root) {
     return k;
   }
   function save(t) { S.updateTirage(t.id, { carnet: t.carnet, retour: t.retour }); }
-  function pct(x) { return (x * 100).toFixed(1).replace('.', ',') + ' %'; }
+  var pct = BELLINE.pct;
   function enoncesDone(t) {
     var k = t.carnet || {};
     var list = k.enonces || [];

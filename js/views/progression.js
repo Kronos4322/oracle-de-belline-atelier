@@ -13,8 +13,8 @@ BELLINE.Views.progression = function (root) {
   var S = BELLINE.Storage;
   var P = BELLINE.PLANETS;
 
-  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (m) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]; }); }
-  function pct(x) { return (x * 100).toFixed(1).replace('.', ',') + ' %'; }
+  var esc = BELLINE.esc;
+  var pct = BELLINE.pct;
 
   function fisherCombine(ps) {
     ps = ps.filter(function (p) { return p > 0 && p <= 1; });
@@ -34,14 +34,14 @@ BELLINE.Views.progression = function (root) {
   var tc = S.getTrainingCards();
 
   /* --- carte du jour : série + taux --- */
-  function todayKey() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  var todayKey = BELLINE.todayKey;
   var cjChecked = cj.filter(function (e) { return e.verifie === 'oui' || e.verifie === 'non'; });
   var cjOk = cj.filter(function (e) { return e.verifie === 'oui'; }).length;
   function cjStreak() {
     var days = {}; cj.forEach(function (e) { days[e.date] = true; });
     var n = 0, d = new Date(), tk = todayKey();
     for (;;) {
-      var k = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      var k = BELLINE.dateKey(d);
       if (days[k]) { n++; d.setDate(d.getDate() - 1); }
       else if (k === tk) { d.setDate(d.getDate() - 1); }
       else break;

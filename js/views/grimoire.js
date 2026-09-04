@@ -52,11 +52,7 @@ BELLINE.Views.grimoire = function (root) {
     renderList();
   }
 
-  function esc(s) {
-    return String(s == null ? '' : s).replace(/[&<>"']/g, function (m) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
-    });
-  }
+  var esc = BELLINE.esc;
 
   function renderProgress() {
     var n = S.editedCount();
@@ -119,11 +115,8 @@ BELLINE.Views.grimoire = function (root) {
   }
 
   /* --- Dossier complet (lecture seule, depuis card-dossier.js) --- */
-  function isTemplate(s) {
-    return !s || /transpose son noyau sémantique|qualifie le climat du foyer par son sens central|constitue une ressource, une possibilité utile ou le mécanisme|logique profonde de la situation tient à/.test(s);
-  }
   function dossierRow(label, text) {
-    if (isTemplate(text)) return '';
+    if (BELLINE.isTemplateText(text)) return '';
     return '<div class="dos-row"><strong>' + label + '</strong> ' + esc(text) + '</div>';
   }
   function chips(arr) {

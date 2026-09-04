@@ -59,11 +59,11 @@ BELLINE.Views.grimoire = function (root) {
       });
       if (!items.length) return '';
       var pImg = BELLINE.planetImageFor(pk);
-      var pIco = pImg
-        ? '<img class="planet-ico" src="' + pImg + '" alt="" onerror="this.remove()">'
-        : '<span>' + planet.symbol + '</span>';
+      var pSym = pImg
+        ? '<button type="button" class="planet-sym" data-planet="' + pk + '" title="Voir la carte planétaire">' + planet.symbol + '</button>'
+        : '<span class="planet-sym">' + planet.symbol + '</span>';
       return '<div class="planet-group">' +
-        '<h3 class="planet-title" style="--hue:' + planet.hue + '">' + pIco + ' ' + planet.name + '</h3>' +
+        '<h3 class="planet-title" style="--hue:' + planet.hue + '">' + pSym + ' ' + planet.name + '</h3>' +
         '<ul>' + items.map(function (c) {
           var img = BELLINE.imageFor(c.number);
           return '<li><button class="card-row' +
@@ -84,6 +84,12 @@ BELLINE.Views.grimoire = function (root) {
     groupsEl.innerHTML = html || '<p class="muted pad">Aucune carte ne correspond.</p>';
     groupsEl.querySelectorAll('.card-row').forEach(function (b) {
       b.addEventListener('click', function () { select(Number(b.dataset.num)); });
+    });
+    groupsEl.querySelectorAll('.planet-sym[data-planet]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var pk = b.dataset.planet;
+        BELLINE.lightbox(BELLINE.planetImageFor(pk), 'Série ' + P[pk].name);
+      });
     });
   }
 
@@ -176,9 +182,9 @@ BELLINE.Views.grimoire = function (root) {
     var planet = P[c.planet];
     var img = BELLINE.imageFor(c.number);
     var pImg = BELLINE.planetImageFor(c.planet);
-    var pIco = pImg
-      ? '<img class="planet-ico" src="' + pImg + '" alt="" onerror="this.remove()">'
-      : planet.symbol;
+    var pSym = pImg
+      ? '<button type="button" class="planet-sym" id="fichePlanet" title="Voir la carte planétaire">' + planet.symbol + '</button>'
+      : '<span class="planet-sym">' + planet.symbol + '</span>';
     var ref = (BELLINE.CARD_REFERENCE || {})[num];
 
     detailEl.classList.add('is-open');
@@ -191,7 +197,7 @@ BELLINE.Views.grimoire = function (root) {
         '</div>' +
         '<div class="fiche-head-txt">' +
           '<h2>' + esc(c.name) + '</h2>' +
-          '<p class="muted">' + pIco + ' Série ' + planet.name + '</p>' +
+          '<p class="muted">' + pSym + ' Série ' + planet.name + '</p>' +
           '<p class="muted small">' + planet.desc + '</p>' +
         '</div>' +
       '</header>' +
@@ -226,9 +232,8 @@ BELLINE.Views.grimoire = function (root) {
       fv.classList.add('is-zoom');
       fv.addEventListener('click', function () { BELLINE.lightbox(img, c.number + ' · ' + c.name); });
     }
-    var fpi = detailEl.querySelector('.fiche-head-txt .planet-ico');
+    var fpi = detailEl.querySelector('#fichePlanet');
     if (fpi && pImg) {
-      fpi.classList.add('is-zoom');
       fpi.addEventListener('click', function () { BELLINE.lightbox(pImg, 'Série ' + planet.name); });
     }
 

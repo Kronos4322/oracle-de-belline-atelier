@@ -32,7 +32,12 @@ BELLINE.Views.entrainement = function (root) {
   function draw() {
     var planet = P[card.planet];
     var img = BELLINE.imageFor(card.number);
-    var kw = (card.keywords || []);
+    var ref = (BELLINE.CARD_REFERENCE || {})[card.number] || {};
+
+    var ownKw = (card.keywords || []);
+    var kw = ownKw.length ? ownKw : (ref.keywords || []);
+    var fromRef = !ownKw.length && kw.length;
+    var sens = (card.sens && card.sens.general) || (ref.sens && ref.sens.general) || '';
 
     var figure = '<div class="flash-figure' + (img ? ' has-img' : '') + '" style="--hue:' + planet.hue + '">' +
       '<span>' + card.number + '</span>' +
@@ -44,10 +49,10 @@ BELLINE.Views.entrainement = function (root) {
       '<div class="flash-kw">' +
         (kw.length
           ? kw.map(function (k) { return '<span>' + esc(k) + '</span>'; }).join('')
-          : '<em class="muted">Aucun mot-clé enregistré — complète la fiche dans le Grimoire.</em>') +
+          : '<em class="muted">Aucun mot-clé — complète la fiche dans le Grimoire.</em>') +
       '</div>' +
-      (card.sens && card.sens.general
-        ? '<p class="flash-sens">' + esc(card.sens.general) + '</p>' : '');
+      (sens ? '<p class="flash-sens">' + esc(sens) + '</p>' : '') +
+      (fromRef ? '<p class="muted small flash-from-ref">d’après les repères — ta fiche n’est pas encore remplie</p>' : '');
 
     var faceHidden =
       '<p class="muted">' + planet.symbol + ' Série ' + planet.name + '</p>' +

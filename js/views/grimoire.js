@@ -1,0 +1,176 @@
+/* ---------------------------------------------------------------------------
+ * Vue « Grimoire » — les 53 fiches de cartes, éditables et enregistrées.
+ * ------------------------------------------------------------------------- */
+window.BELLINE = window.BELLINE || {};
+BELLINE.Views = BELLINE.Views || {};
+
+BELLINE.Views.grimoire = function (root) {
+  var S = BELLINE.Storage;
+  var P = BELLINE.PLANETS;
+
+  var DOMAINS = [
+    ['general',   'Sens général'],
+    ['amour',     'Amour & relations'],
+    ['travail',   'Travail & argent'],
+    ['sante',     'Santé & énergie'],
+    ['evolution', 'Évolution intérieure']
+  ];
+
+  var selected = null;
+
+  root.innerHTML =
+    '<div class="view-head">' +
+      '<h1>Grimoire</h1>' +
+      '<p class="muted" id="grimProgress"></p>' +
+    '</div>' +
+    '<div class="grimoire">' +
+      '<aside class="grim-list">' +
+        '<input type="search" id="grimSearch" placeholder="Rechercher : nom, numéro, planète…" autocomplete="off">' +
+        '<div id="grimGroups" class="planet-groups"></div>' +
+      '</aside>' +
+      '<section class="grim-detail" id="grimDetail"></section>' +
+    '</div>';
+
+  var groupsEl = root.querySelector('#grimGroups');
+  var detailEl = root.querySelector('#grimDetail');
+  var searchEl = root.querySelector('#grimSearch');
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (m) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
+    });
+  }
+
+  function renderProgress() {
+    var done = S.getCards().filter(S.isCardComplete).length;
+    root.querySelector('#grimProgress').textContent = done + ' / 53 fiches complétées';
+  }
+
+  function renderList() {
+    var f = (searchEl.value || '').trim().toLowerCase();
+    var cards = S.getCards();
+    var html = BELLINE.PLANET_ORDER.map(function (pk) {
+      var planet = P[pk];
+      var items = cards.filter(function (c) { return c.planet === pk; }).filter(function (c) {
+        if (!f) return true;
+        return c.name.toLowerCase().indexOf(f) !== -1 ||
+               String(c.number) === f ||
+               planet.name.toLowerCase().indexOf(f) !== -1;
+      });
+      if (!items.length) return '';
+      return '<div class="planet-group">' +
+        '<h3 class="planet-title" style="--hue:' + planet.hue + '"><span>' + planet.symbol + '</span> ' + planet.name + '</h3>' +
+        '<ul>' + items.map(function (c) {
+          return '<li><button class="card-row' +
+            (selected === c.number ? ' is-active' : '') +
+            (S.isCardComplete(c) ? ' is-done' : '') +
+            '" data-num="' + c.number + '">' +
+            '<span class="card-num">' + c.number + '</span>' +
+            '<span class="card-name">' + esc(c.name) + '</span>' +
+            (S.isCardComplete(c) ? '<span class="dot" title="Fiche complétée">●</span>' : '') +
+            '</button></li>';
+        }).join('') + '</ul>' +
+      '</div>';
+    }).join('');
+
+    groupsEl.innerHTML = html || '<p class="muted pad">Aucune carte ne correspond.</p>';
+    groupsEl.querySelectorAll('.card-row').forEach(function (b) {
+      b.addEventListener('click', function () { select(Number(b.dataset.num)); });
+    });
+  }
+
+  function textField(label, id, value, ph) {
+    return '<label class="field"><span>' + label + '</span>' +
+      '<textarea id="' + id + '" rows="3" placeholder="' + esc(ph || '') + '">' + esc(value) + '</textarea></label>';
+  }
+
+  function emptyDetail() {
+    detailEl.classList.remove('is-open');
+    detailEl.innerHTML =
+      '<div class="detail-empty">' +
+        '<p class="big-symbol">✷</p>' +
+        '<p>Choisis une carte pour ouvrir sa fiche.</p>' +
+        '<p class="muted">On remplit les 53 fiches ensemble, une par une.</p>' +
+      '</div>';
+  }
+
+  function select(num) {
+    selected = num;
+    var c = S.getCard(num);
+    var planet = P[c.planet];
+    var pad = String(c.number).length < 2 ? '0' + c.number : c.number;
+
+    detailEl.classList.add('is-open');
+    detailEl.innerHTML =
+      '<button class="back-btn" id="grimBack">← Liste</button>' +
+      '<header class="fiche-head" style="--hue:' + planet.hue + '">' +
+        '<div class="fiche-visual">' +
+          '<img src="assets/cartes/' + pad + '.jpg" alt="" loading="lazy" onerror="this.style.display=\'none\'">' +
+          '<span class="fiche-visual-num">' + c.number + '</span>' +
+        '</div>' +
+        '<div class="fiche-head-txt">' +
+          '<h2>' + esc(c.name) + '</h2>' +
+          '<p class="muted">' + planet.symbol + ' Série ' + planet.name + '</p>' +
+          '<p class="muted small">' + planet.desc + '</p>' +
+        '</div>' +
+      '</header>' +
+
+      '<label class="field"><span>Mots-clés <em class="muted">(séparés par des virgules)</em></span>' +
+        '<input type="text" id="f-keywords" value="' + esc((c.keywords || []).join(', ')) + '" ' +
+        'placeholder="ex. rupture, révélation, vérité qui éclate"></label>' +
+
+      textField("Symbolisme de l'image", 'f-symbolisme', c.symbolisme,
+        "Ce que montre la carte : personnages, décor, couleurs, gestes…") +
+
+      '<h3 class="fiche-sub">Significations par domaine</h3>' +
+      DOMAINS.map(function (d) {
+        return textField(d[1], 'f-sens-' + d[0], c.sens ? c.sens[d[0]] : '', '');
+      }).join('') +
+
+      textField('Notes personnelles', 'f-notes', c.notes,
+        "Ressentis, tirages marquants, associations d'idées, combinaisons…") +
+
+      '<div class="fiche-actions">' +
+        '<button class="btn-primary" id="grimSave">Enregistrer</button>' +
+        '<button class="btn-ghost" id="grimReset">Réinitialiser</button>' +
+        '<span class="save-hint" id="grimHint"></span>' +
+      '</div>';
+
+    detailEl.querySelector('#grimBack').addEventListener('click', emptyDetail);
+
+    detailEl.querySelector('#grimSave').addEventListener('click', function () {
+      var patch = {
+        keywords: detailEl.querySelector('#f-keywords').value.split(',')
+          .map(function (s) { return s.trim(); }).filter(Boolean),
+        symbolisme: detailEl.querySelector('#f-symbolisme').value.trim(),
+        notes: detailEl.querySelector('#f-notes').value.trim(),
+        sens: {}
+      };
+      DOMAINS.forEach(function (d) {
+        patch.sens[d[0]] = detailEl.querySelector('#f-sens-' + d[0]).value.trim();
+      });
+      if (S.saveCard(num, patch)) {
+        var hint = detailEl.querySelector('#grimHint');
+        hint.textContent = 'Enregistré ✓';
+        setTimeout(function () { if (hint) hint.textContent = ''; }, 2000);
+        renderList();
+        renderProgress();
+      }
+    });
+
+    detailEl.querySelector('#grimReset').addEventListener('click', function () {
+      if (!confirm('Effacer tout le contenu saisi pour « ' + c.name + ' » ?')) return;
+      S.resetCard(num);
+      select(num);
+      renderList();
+      renderProgress();
+    });
+
+    renderList();
+  }
+
+  searchEl.addEventListener('input', renderList);
+  renderList();
+  emptyDetail();
+  renderProgress();
+};

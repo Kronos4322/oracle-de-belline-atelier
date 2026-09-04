@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Oracle de Belline — Atelier</title>
+  <meta name="description" content="Application personnelle d'étude et de pratique de l'Oracle de Belline.">
+  <meta name="theme-color" content="#14121c">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2314121c'/%3E%3Ctext x='16' y='23' font-size='20' text-anchor='middle' fill='%23d9b26b'%3E%E2%9C%A6%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark">✦</span> Oracle de Belline <em>— atelier</em></div>
+      <div class="topbar-actions">
+        <button class="btn-icon" id="btnExport" title="Télécharger une sauvegarde de mes données">⬇</button>
+        <label class="btn-icon" title="Importer une sauvegarde">⬆
+          <input type="file" id="fileImport" accept="application/json" hidden>
+        </label>
+      </div>
+    </header>
+
+    <nav id="nav" class="nav" aria-label="Navigation principale"></nav>
+
+    <main id="view" class="view" tabindex="-1"></main>
+  </div>
+
+  <!-- Données de référence -->
+  <script src="js/data/cards.js"></script>
+  <!-- Couche de stockage -->
+  <script src="js/storage.js"></script>
+  <!-- Vues -->
+  <script src="js/views/grimoire.js"></script>
+  <script src="js/views/entrainement.js"></script>
+  <script src="js/views/tirages.js"></script>
+  <script src="js/views/journal.js"></script>
+  <script src="js/views/progression.js"></script>
+  <!-- Routeur / démarrage -->
+  <script src="js/app.js"></script>
+</body>
+</html>

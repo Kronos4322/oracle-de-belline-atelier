@@ -32,12 +32,26 @@ BELLINE.Views.grimoire = function (root) {
         '<input type="search" id="grimSearch" placeholder="Rechercher : nom, numéro, planète…" autocomplete="off">' +
         '<div id="grimGroups" class="planet-groups"></div>' +
       '</aside>' +
-      '<section class="grim-detail" id="grimDetail"></section>' +
-    '</div>';
+    '</div>' +
+    '<div class="grim-page" id="grimPage" hidden></div>';
 
   var groupsEl = root.querySelector('#grimGroups');
-  var detailEl = root.querySelector('#grimDetail');
+  var detailEl = root.querySelector('#grimPage');
   var searchEl = root.querySelector('#grimSearch');
+
+  var onEsc = function (e) {
+    if (!document.body.contains(detailEl)) { document.removeEventListener('keydown', onEsc); return; }
+    if (e.key === 'Escape' && !detailEl.hidden) closePage();
+  };
+  document.addEventListener('keydown', onEsc);
+
+  function closePage() {
+    selected = null;
+    detailEl.hidden = true;
+    detailEl.innerHTML = '';
+    document.body.style.overflow = '';
+    renderList();
+  }
 
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (m) {
@@ -117,21 +131,23 @@ BELLINE.Views.grimoire = function (root) {
     return '<p class="pl-chips">' + (arr || []).map(function (x) { return '<span>' + esc(x) + '</span>'; }).join('') + '</p>';
   }
   function plancheHTML(num) {
-    var p = (BELLINE.CARD_PLANCHE || {})[num];
+    var p = BELLINE.plancheFor ? BELLINE.plancheFor(num) : (BELLINE.CARD_PLANCHE || {})[num];
     if (!p) return '';
-    return '<details class="fiche-planche">' +
-      '<summary>Planche de lecture symbolique</summary>' +
-      (p.devise ? '<p class="pl-devise">' + p.devise.map(esc).join('<br>') + '</p>' : '') +
-      '<div class="dos-row"><strong>Iconographie</strong><ul class="jr-plain">' +
-        (p.iconographie || []).map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul></div>' +
+    var derived = p.source === 'dossier';
+    return '<details class="fiche-planche"' + (derived ? ' data-derived="1"' : '') + '>' +
+      '<summary>Planche de lecture symbolique' + (derived ? ' <span class="muted small">— dérivée du dossier</span>' : '') + '</summary>' +
+      ((p.devise && p.devise.length) ? '<p class="pl-devise">' + p.devise.map(esc).join('<br>') + '</p>' : '') +
+      ((p.iconographie && p.iconographie.length)
+        ? '<div class="dos-row"><strong>Iconographie</strong><ul class="jr-plain">' +
+          p.iconographie.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul></div>' : '') +
       (p.sensTraditionnel ? '<div class="dos-row"><strong>Sens traditionnel</strong> ' + esc(p.sensTraditionnel) + '</div>' : '') +
-      (p.elements || []).map(function (e) {
+      (p.elements || []).filter(function (e) { return e.points && e.points.length; }).map(function (e) {
         return '<div class="dos-row"><strong>' + esc(e.nom) + '</strong>' + chips(e.points) +
           (e.note ? '<p class="muted small">' + esc(e.note) + '</p>' : '') + '</div>';
       }).join('') +
       (p.definition ? '<div class="dos-row"><strong>Définition symbolique</strong> ' + esc(p.definition) + '</div>' : '') +
-      (p.lecturesPositives ? '<div class="dos-row"><strong>Lectures positives</strong>' + chips(p.lecturesPositives) + '</div>' : '') +
-      (p.lecturesOmbre ? '<div class="dos-row"><strong>Lectures d\'ombre</strong>' + chips(p.lecturesOmbre) + '</div>' : '') +
+      ((p.lecturesPositives && p.lecturesPositives.length) ? '<div class="dos-row"><strong>Lectures positives</strong>' + chips(p.lecturesPositives) + '</div>' : '') +
+      ((p.lecturesOmbre && p.lecturesOmbre.length) ? '<div class="dos-row"><strong>Lectures d\'ombre</strong>' + chips(p.lecturesOmbre) + '</div>' : '') +
       (p.cle ? '<div class="dos-row dos-oui"><strong>Clé de lecture</strong> ' + esc(p.cle) + '</div>' : '') +
       (p.couleur ? '<div class="dos-row"><strong>Couleur — ' + esc(p.couleur.nom) + '</strong>' + chips(p.couleur.points) +
         (p.couleur.note ? '<p class="muted small">' + esc(p.couleur.note) + '</p>' : '') + '</div>' : '') +
@@ -166,15 +182,26 @@ BELLINE.Views.grimoire = function (root) {
       '</details>';
   }
 
-  function emptyDetail() {
-    detailEl.classList.remove('is-open');
-    detailEl.innerHTML =
-      '<div class="detail-empty">' +
-        '<p class="big-symbol">✷</p>' +
-        '<p>Choisis une carte pour ouvrir sa fiche.</p>' +
-        '<p class="muted">Les fiches sont pré-remplies : à toi de les réécrire avec tes mots.</p>' +
-      '</div>';
+  var SENS_ASCII = { 'renforce': 'renforce', 'retourne': 'retourne', 'temporise': 'temporise', 'précise': 'precise', 'precise': 'precise' };
+
+  function combosHTML(num) {
+    if (!BELLINE.combosFor) return '';
+    var info = BELLINE.combosFor(num);
+    var modLine = info.isModifier
+      ? '<p class="combo-mod"><b>Modificateur universel.</b> Cette lame re-colore le thème des autres cartes du tirage, quel que soit le reste.</p>'
+      : '<p class="combo-mod muted">Quelques lames re-colorent tout thème : ' +
+        BELLINE.MODIFIERS.map(function (m) { return m.card + ' ' + esc(m.name); }).join(' · ') + '.</p>';
+    var pairs = info.pairs.length
+      ? '<ul class="combo-list">' + info.pairs.map(function (x) {
+          var a = SENS_ASCII[x.sens] || 'precise';
+          return '<li><span class="combo-pair">' + esc(x.label) + '</span>' + esc(x.note) +
+            (x.sens ? ' <span class="combo-sens ' + a + '">' + esc(x.sens) + '</span>' : '') + '</li>';
+        }).join('') + '</ul>'
+      : '<p class="muted small">Pas encore de paire traditionnelle référencée pour cette carte. Ajoute-les dans <em>Associations</em>.</p>';
+    return '<div class="fiche-combos"><h3>Combinaisons traditionnelles</h3>' + modLine + pairs + '</div>';
   }
+
+  function emptyDetail() { closePage(); }
 
   function select(num) {
     selected = num;
@@ -191,9 +218,12 @@ BELLINE.Views.grimoire = function (root) {
       ? '<p class="fiche-status is-mine">Ta version enregistrée.</p>'
       : '<p class="fiche-status">Texte de départ (recherche) — réécris-le avec tes mots, puis enregistre.</p>';
 
-    detailEl.classList.add('is-open');
+    detailEl.hidden = false;
+    document.body.style.overflow = 'hidden';
+    detailEl.scrollTop = 0;
     detailEl.innerHTML =
-      '<button class="back-btn" id="grimBack">← Liste</button>' +
+      '<button class="grim-page-close" id="grimClose" aria-label="Fermer la fiche" title="Fermer (Échap)">×</button>' +
+      '<div class="grim-page-inner">' +
       '<header class="fiche-head" style="--hue:' + planet.hue + '">' +
         '<div class="fiche-visual">' +
           '<span class="fiche-visual-num">' + c.number + '</span>' +
@@ -208,7 +238,9 @@ BELLINE.Views.grimoire = function (root) {
               (BELLINE.VALENCE[c.valence] ? BELLINE.VALENCE[c.valence].label : c.valence) + '</span>' +
             (c.majeure ? '<span class="val-tag val-maj-' + c.majeure + '" title="Carte majeure : elle domine son voisinage (très favorable ou très défavorable)">carte majeure</span>' : '') +
             (c.forte ? '<span class="val-tag val-forte" title="Une des 5 lames fortes de la tradition (opérateur d\'intensité fixe) : 11, 34, 38, 42, 48">carte forte</span>' : '') +
+            (c.fragile ? '<span class="val-tag val-fragile" title="Classement contesté (marqueur † du manuel) : toute mesure qui repose sur cette lame seule est fragile ; le test de concordance la neutralise">classement fragile</span>' : '') +
           '</p>' +
+          (c.supreme ? '<p class="muted small fiche-pol">Note : le livret d\'origine n\'en faisait qu\'une lame de substitution ; l\'usage lui a donné un rôle propre. Elle est ici tenue pour la meilleure du jeu — un ciel bleu sans nuage, une éclaircie après l\'orage.</p>' : '') +
           (c.polarite ? '<p class="muted small fiche-pol">Polarité de travail : ' + esc(c.polarite) + '</p>' : '') +
           '<p class="muted small">' + planet.desc + '</p>' +
         '</div>' +
@@ -235,6 +267,7 @@ BELLINE.Views.grimoire = function (root) {
       textField('Notes personnelles', 'f-notes', c.notes,
         "Ressentis, tirages marquants, ce que la carte t’évoque…") +
 
+      combosHTML(num) +
       plancheHTML(num) +
       dossierHTML(num) +
 
@@ -246,9 +279,10 @@ BELLINE.Views.grimoire = function (root) {
         '<button class="btn-primary" id="grimSave">Enregistrer</button>' +
         (edited ? '<button class="btn-ghost" id="grimReset">Revenir au texte de référence</button>' : '') +
         '<span class="save-hint" id="grimHint"></span>' +
+      '</div>' +
       '</div>';
 
-    detailEl.querySelector('#grimBack').addEventListener('click', emptyDetail);
+    detailEl.querySelector('#grimClose').addEventListener('click', closePage);
 
     if (img) {
       var fv = detailEl.querySelector('.fiche-visual');
@@ -308,4 +342,7 @@ BELLINE.Views.grimoire = function (root) {
   renderList();
   emptyDetail();
   renderProgress();
+
+  var openN = S.read('grimoire.open', null);
+  if (openN) { S.write('grimoire.open', null); select(Number(openN)); }
 };

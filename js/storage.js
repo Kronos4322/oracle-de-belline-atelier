@@ -54,6 +54,7 @@ window.BELLINE = window.BELLINE || {};
       planet: seed.planet,
       valence: seed.valence,
       forte: seed.forte,
+      fragile: seed.fragile,
       polarite: seed.polarite,
       majeure: seed.majeure,
       supreme: seed.supreme,
@@ -150,6 +151,25 @@ window.BELLINE = window.BELLINE || {};
     return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   }
 
+  /* --- Carte du jour ---
+   *   belline.cartejour  : [{ date:'YYYY-MM-DD', card:n, phrase, verifie:'oui'|'non'|null }]
+   */
+  function getCarteJour() { return read('cartejour', []); }
+  function saveCarteJour(list) { return write('cartejour', list); }
+
+  /* --- Tirages personnels (éditeur, ch. 16) ---
+   *   belline.spreads.custom : [{ id, name, subtitle, intro, count, layout, positions:[…], createdAt }]
+   */
+  function getCustomSpreads() { return read('spreads.custom', []); }
+  function saveCustomSpreads(list) { return write('spreads.custom', list); }
+
+  /* --- Entraînement : maîtrise par carte (répétition espacée légère) ---
+   *   belline.training.cards : { <n>: { box:0..5, seen, ok, ko, due:'YYYY-MM-DD' } }
+   *   box = intervalle de Leitner ; due = prochaine échéance.
+   */
+  function getTrainingCards() { return read('training.cards', {}); }
+  function saveTrainingCards(map) { return write('training.cards', map); }
+
   /* --- Sauvegarde / restauration complète --- */
 
   function exportAll() {
@@ -192,6 +212,12 @@ window.BELLINE = window.BELLINE || {};
     updateTirage: updateTirage,
     deleteTirage: deleteTirage,
     uid: uid,
+    getCarteJour: getCarteJour,
+    saveCarteJour: saveCarteJour,
+    getCustomSpreads: getCustomSpreads,
+    saveCustomSpreads: saveCustomSpreads,
+    getTrainingCards: getTrainingCards,
+    saveTrainingCards: saveTrainingCards,
     exportAll: exportAll,
     importAll: importAll
   };

@@ -5,3 +5,8 @@ desktop.ini
 .vscode/
 .idea/
 node_modules/
+
+# Scans des cartes et symboles planétaires — gardés en local (droits d'auteur).
+# L'application les lit depuis assets/cartes/ ; ils ne sont pas versionnés.
+assets/cartes/
+

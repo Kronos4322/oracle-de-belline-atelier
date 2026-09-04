@@ -66,6 +66,36 @@ BELLINE.Views.methode = function (root) {
     "Photographie du premier niveau : les substantifs seuls, avant tout ajout d'adjectif."
   ];
 
+  var DESACCORDS = [
+    ["Le statut de Honneurs (Pivot)", "Fonctionne comme carte d'orientation, mais son entrée est une promotion consignée après coup — jamais une position permanente d'Hécate."],
+    ["La lecture de Beauté", "« On ne voit plus ce qui était beau » et « crise d'idéalisation » décrivent le même mécanisme par ses deux bouts. Énoncer d'abord le plus littéral. En présent négatif : relève du test de valence contraire."],
+    ["La lecture de Trahison", "Descendante : trahir l'ancien contrat d'abord, puis dissimulation protectrice, puis trahison subie et dépassée. Ascendante : sens littéral de fidélité rompue. Aucune ne rend la carte heureuse."],
+    ["La lecture de Trafic", "Toujours « mauvaise circulation », jamais « absence de communication ». On parle sans se rencontrer."],
+    ["Retard est-elle une mauvaise carte", "Oui : le danger n'est ni le temps ni la distance, c'est le retour sans changement. Une union indéfiniment ajournée n'est pas une union préservée."],
+    ["La nature du dispositif", "Ni pur oracle, ni pur projectif : un instrument de délibération. Le consultant reste libre — le tirage énonce des possibles et une orientation, jamais un pronostic."],
+    ["Le statut d'Union", "Pas seulement « union retardée » : un lien préservé mais jamais stabilisé est le mécanisme même de la répétition. Chercher son ombre quand elle est en colonne négative."]
+  ];
+
+  var CONCEVOIR = [
+    "Les positions sont définies et écrites AVANT le premier tirage, avec leur fonction exacte. Une position ajoutée après coup n'en est pas une.",
+    "Le genre de chaque position est déclaré : polaire, fonctionnelle ou temporelle. C'est lui qui détermine ce qui pourra être mesuré.",
+    "Le nombre de cartes est fixé, ainsi que la profondeur d'adjectifs. Un dispositif où l'on ajoute des cartes jusqu'à obtenir une lecture satisfaisante ne prouve rien.",
+    "Une carte apparue hors des positions prévues peut être admise, mais sa promotion est consignée comme telle — elle ne devient jamais une position permanente."
+  ];
+
+  var REFERENT = [
+    "<strong>Deux branches.</strong> Une carte-personne (Étoile de l'Homme, Étoile de la Femme) désigne soit le consultant lui-même, soit une personne de son entourage. La branche se déclare AVANT le tirage — sinon la lame désigne après coup celui que la lecture arrange.",
+    "<strong>Procuration.</strong> Le référent suit le consultant au sens du jeu, jamais celui qui tire.",
+    "<strong>Carte focus.</strong> Pratique avancée : choisir sa carte-personne avant de mélanger, la poser à part, lire tout le tirage comme un commentaire sur elle. Règle d'un coup l'ambiguïté du référent (elle est retirée du jeu — ajuster les effectifs des calculs)."
+  ];
+
+  function ptable(head, rows) {
+    return '<div class="tbl-scroll"><table class="proba-table"><thead><tr>' +
+      head.map(function (h) { return '<th>' + h + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      rows.map(function (r) { return '<tr>' + r.map(function (c) { return '<td>' + c + '</td>'; }).join('') + '</tr>'; }).join('') +
+      '</tbody></table></div>';
+  }
+
   function li(arr) { return '<ul>' + arr.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul>'; }
   function ol(arr) { return '<ol>' + arr.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ol>'; }
 
@@ -126,6 +156,55 @@ BELLINE.Views.methode = function (root) {
         '<p class="muted">Sept exigences portent sur la même chose : ce qui pourrait être ajusté après le tirage doit être fixé avant.</p>' +
         li(DECLARER) +
         '<p class="muted small">Aucune règle ne rend le lecteur neutre. Toutes réduisent sa marge de manœuvre après le tirage — c\'est le seul objectif atteignable.</p>' +
+      '</section>' +
+
+      '<section class="method-card"><h2>Cartes-personnes &amp; carte focus</h2>' + li(REFERENT) + '</section>' +
+
+      '<section class="method-card"><h2>Les classements fragiles</h2>' +
+        '<p>Trois lames à valence forte sont contestées par les répertoires publiés (marqueur † de la table) : ' +
+        '<strong>37 Feu</strong> (le classement le plus fragile), <strong>41 Héritage</strong>, <strong>48 Fatalité</strong>.</p>' +
+        '<p>Toute concordance qui repose sur elles se donne en deux versions : tranchée, et recalculée en les neutralisant. ' +
+        'Reclasser une seule peut faire varier un résultat du simple au triple. La Progression et le Journal affichent les deux.</p>' +
+        '<p class="muted small">Trois autres se classent mal mais sont déjà neutres, donc sans effet sur la mesure : 36 Pourparlers, 28 Famille, 31 Passions.</p>' +
+      '</section>' +
+
+      '<section class="method-card"><h2>Concevoir un tirage nouveau</h2>' +
+        '<p class="muted">Quatre exigences (ch. 16). L\'éditeur de la vue Tirages les applique.</p>' + ol(CONCEVOIR) + '</section>' +
+
+      '<section class="method-card"><h2>Tables de référence — cartes fortes</h2>' +
+        '<p class="muted small">Nombre de cartes fortes (5/53) selon le nombre de cartes tirées. Loi hypergéométrique.</p>' +
+        ptable(['Cartes tirées', 'Espérance', 'P(3 ou +)', 'P(4 ou +)'], [
+          ['10', '0,94', '4,1 %', '0,3 %'], ['15', '1,42', '13,1 %', '1,9 %'], ['17', '1,60', '18,1 %', '3,2 %'],
+          ['20', '1,89', '27,1 %', '6,1 %'], ['22', '2,08', '33,8 %', '8,8 %'], ['29', '2,74', '59,1 %', '24,0 %']
+        ]) +
+      '</section>' +
+
+      '<section class="method-card"><h2>Tables de référence — concordance &amp; familles</h2>' +
+        '<p class="muted small">Concordance parfaite selon le nombre de lames fortes en positions polaires.</p>' +
+        ptable(['Lames fortes polaires', 'P(concordance parfaite)'], [
+          ['5', '10,0 %'], ['6', '5,0 %'], ['8', '1,4 %'], ['10', '0,4 %'], ['13', '0,1 %']
+        ]) +
+        '<p class="muted small">Famille de 7 lames au complet — désignée à l\'avance vs constatée après coup (l\'écart est instructif).</p>' +
+        ptable(['Cartes tirées', 'Famille désignée', 'Une famille quelconque'], [
+          ['20', '0,05 %', '0,4 %'], ['25', '0,31 %', '2,2 %'], ['29', '1,01 %', '6,9 %'], ['35', '4,36 %', '26,8 %']
+        ]) +
+        '<p class="muted small">Combinaison de tirages indépendants : un résultat isolé à 7–8 % n\'est pas concluant ; deux passent sous 5 % ; quatre sous 1 %. L\'indépendance est rarement remplie.</p>' +
+      '</section>' +
+
+      '<section class="method-card"><h2>Les sept désaccords, tranchés</h2>' +
+        '<p class="muted small">D\'après <em>L\'Oracle et la grille</em>, ch. 14 — arbitrages sur des points qui, sinon, se décideraient au cas par cas selon la commodité.</p>' +
+        '<table class="method-table"><tbody>' +
+          DESACCORDS.map(function (d) { return '<tr><td><strong>' + d[0] + '</strong></td><td>' + d[1] + '</td></tr>'; }).join('') +
+        '</tbody></table>' +
+      '</section>' +
+
+      '<section class="method-card"><h2>Ce qu\'il reste à faire</h2>' +
+        '<p class="muted">Trois travaux, dans l\'ordre (traité, ch. 52). « Rien ne manque à la méthode. Il manque des données. »</p>' +
+        ol([
+          "Tenir la carte du jour trente jours, en déclarant à l'avance que le nombre de cartes fortes sera relevé.",
+          "Relever, tels qu'écrits, les énoncés falsifiables de chaque tirage à la date de délai — sans en ajouter ni reformuler aucun.",
+          "Tenter une fois la lecture à l'aveugle : une remontée pour quelqu'un dont on ignore l'histoire, consignée avant tout échange."
+        ]) +
       '</section>' +
 
     '</div>';

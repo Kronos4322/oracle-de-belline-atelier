@@ -41,7 +41,7 @@ BELLINE.SEED_CARDS = [
 
   _c(4,  "La Nativité",           'soleil'),
   _c(5,  "La Réussite",           'soleil'),
-  _c(6,  "L'Élévation",           'soleil'),
+  _c(6,  "L'Élévation",           'soleil'),   // « Élévation » dans la table du manuel
   _c(7,  "Honneurs",              'soleil'),
   _c(8,  "Pensée — Amitié",       'soleil'),
   _c(9,  "Campagne — Santé",      'soleil'),
@@ -57,7 +57,7 @@ BELLINE.SEED_CARDS = [
 
   _c(18, "Changement",            'mercure'),
   _c(19, "Argent",                'mercure'),
-  _c(20, "Intelligence",          'mercure'),
+  _c(20, "L'Intelligence",        'mercure'),
   _c(21, "Vol — Perte",           'mercure'),
   _c(22, "Entreprises",           'mercure'),
   _c(23, "Trafic",                'mercure'),
@@ -84,7 +84,7 @@ BELLINE.SEED_CARDS = [
   _c(41, "Héritage",              'jupiter'),
   _c(42, "Sagesse",               'jupiter'),
   _c(43, "La Renommée",           'jupiter'),
-  _c(44, "Le Hazard",             'jupiter'),
+  _c(44, "Le Hasard",             'jupiter'),
   _c(45, "Bonheur",               'jupiter'),
 
   _c(46, "Infortune",             'saturne'),
@@ -137,24 +137,49 @@ BELLINE.POLARITE = {
   52: "Défavorable à protectrice selon contexte"
 };
 
+/* Lames à classement FRAGILE (marqueur † de la table, ch. 2.1).
+   Elles portent une valence forte mais contestée par les répertoires publiés.
+   Le traité (ch. 24.3, 47.4) impose de recalculer toute concordance en les
+   neutralisant : reclasser une seule peut faire varier un résultat du simple
+   au triple. 37 Feu est « le classement le plus fragile de toute la table ». */
+BELLINE.FRAGILE = [37, 41, 48];
+
+/* Cartes fortes de la tradition : opérateur d'intensité unique et fixe. */
+BELLINE.FORTES = [11, 34, 38, 42, 48];
+
 (function () {
   // Carte 53 = La Carte Bleue, « la carte du ciel » : tenue pour la plus
   // favorable du jeu (un ciel bleu sans nuage, une éclaircie après l'orage).
   var POS = [4, 5, 6, 7, 8, 9, 10, 14, 20, 25, 26, 27, 29, 39, 40, 41, 42, 43, 45, 49, 53];
   var NEG = [11, 13, 17, 21, 32, 33, 34, 35, 37, 38, 46, 47, 48, 50, 51];
-  var FORTE = [11, 34, 38, 42, 48];              // opérateur d'intensité traditionnel, fixe
+  var FORTE = BELLINE.FORTES;                    // opérateur d'intensité traditionnel, fixe
   var MAJ_POS = [5, 26, 27, 29, 39, 42, 43, 44, 45, 49, 53]; // très favorables
   var MAJ_NEG = [38, 47, 48, 50];                            // très défavorables
   BELLINE.SEED_CARDS.forEach(function (c) {
     c.valence = POS.indexOf(c.number) !== -1 ? 'positive'
       : NEG.indexOf(c.number) !== -1 ? 'negative' : 'neutre';
     c.forte = FORTE.indexOf(c.number) !== -1;
+    c.fragile = BELLINE.FRAGILE.indexOf(c.number) !== -1;
     c.polarite = BELLINE.POLARITE[c.number] || '';
     c.majeure = MAJ_POS.indexOf(c.number) !== -1 ? 'positive'
       : MAJ_NEG.indexOf(c.number) !== -1 ? 'negative' : null;
     c.supreme = c.number === 53;
   });
 })();
+
+/* Accès direct à une carte-graine par numéro (structure seule, non éditée). */
+BELLINE.cardByNumber = function (n) {
+  n = Number(n);
+  return (BELLINE.SEED_CARDS || []).find(function (c) { return c.number === n; }) || null;
+};
+
+/* Valence effective d'une carte, lames fragiles éventuellement neutralisées. */
+BELLINE.valenceOf = function (n, neutralizeFragile) {
+  var c = BELLINE.cardByNumber(n);
+  if (!c) return 'neutre';
+  if (neutralizeFragile && c.fragile) return 'neutre';
+  return c.valence;
+};
 
 /* Chemin de l'image d'une carte, ou null si aucune image n'est associée.
    La correspondance numéro -> fichier vient de card-images.js

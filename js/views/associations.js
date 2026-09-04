@@ -34,7 +34,12 @@ BELLINE.Views.associations = function (root) {
     root.innerHTML =
       '<div class="view-head"><h1>Associations</h1>' +
         '<p class="muted">Range tes combinaisons de cartes dans des dossiers et sous-dossiers.</p></div>' +
-      '<div class="assoc-toolbar"><button class="btn-ghost btn-sm" id="assocAddRoot">+ Dossier</button></div>' +
+      '<div class="assoc-toolbar">' +
+        '<button class="btn-ghost btn-sm" id="assocAddRoot">+ Dossier</button>' +
+        (assocs.length ? '' : '<button class="btn-ghost btn-sm" id="assocSeed">Importer les combinaisons traditionnelles</button>') +
+      '</div>' +
+      '<p class="muted small">« Une carte isolée n\'a qu\'une valeur provisoire — c\'est la couverture qui signe le verdict. » ' +
+      'Deux dynamiques : <em>renforcement</em> (même polarité qui s\'ajoute) et <em>destruction</em> (une négative retourne la promesse).</p>' +
       '<div id="assocTree"></div>' +
       '<div id="assocEditor"></div>';
 
@@ -45,8 +50,20 @@ BELLINE.Views.associations = function (root) {
       : '<p class="muted pad">Aucun dossier. Crée-en un pour commencer — par ex. « Amour », « Blocages », « Trios ».</p>';
 
     root.querySelector('#assocAddRoot').addEventListener('click', function () { addFolder(null); });
+    var seedBtn = root.querySelector('#assocSeed');
+    if (seedBtn) seedBtn.addEventListener('click', seedTraditional);
     wireTree();
     renderEditor();
+  }
+
+  function seedTraditional() {
+    if (!BELLINE.seedAssociations) return;
+    var fid = S.uid();
+    folders.push({ id: fid, name: 'Combinaisons traditionnelles', parentId: null });
+    BELLINE.seedAssociations().forEach(function (x) {
+      assocs.push({ id: S.uid(), folderId: fid, cards: x.cards, text: x.text });
+    });
+    persist(); render();
   }
 
   function folderNode(f, depth) {
@@ -86,17 +103,19 @@ BELLINE.Views.associations = function (root) {
   /* ---------- actions dossiers ---------- */
 
   function addFolder(parentId) {
-    var name = (prompt(parentId ? 'Nom du sous-dossier :' : 'Nom du dossier :') || '').trim();
-    if (!name) return;
-    folders.push({ id: S.uid(), name: name, parentId: parentId || null });
-    persist(); render();
+    BELLINE.prompt(parentId ? 'Nom du sous-dossier' : 'Nom du dossier').then(function (name) {
+      if (!name) return;
+      folders.push({ id: S.uid(), name: name, parentId: parentId || null });
+      persist(); render();
+    });
   }
   function renameFolder(id) {
     var f = folders.find(function (x) { return x.id === id; });
     if (!f) return;
-    var name = (prompt('Renommer le dossier :', f.name) || '').trim();
-    if (!name) return;
-    f.name = name; persist(); render();
+    BELLINE.prompt('Renommer le dossier', f.name).then(function (name) {
+      if (!name) return;
+      f.name = name; persist(); render();
+    });
   }
   function deleteFolder(id) {
     var toRemove = [id];
@@ -104,11 +123,13 @@ BELLINE.Views.associations = function (root) {
       childrenOf(pid).forEach(function (c) { toRemove.push(c.id); collect(c.id); });
     })(id);
     var n = assocs.filter(function (a) { return toRemove.indexOf(a.folderId) !== -1; }).length;
-    if (!confirm('Supprimer ce dossier' + (toRemove.length > 1 ? ' et ses sous-dossiers' : '') +
-      (n ? ' ainsi que ' + n + ' association(s)' : '') + ' ?')) return;
-    folders = folders.filter(function (f) { return toRemove.indexOf(f.id) === -1; });
-    assocs = assocs.filter(function (a) { return toRemove.indexOf(a.folderId) === -1; });
-    persist(); render();
+    BELLINE.confirm('Supprimer ce dossier' + (toRemove.length > 1 ? ' et ses sous-dossiers' : '') +
+      (n ? ' et ' + n + ' association(s)' : '') + ' ?').then(function (ok) {
+      if (!ok) return;
+      folders = folders.filter(function (f) { return toRemove.indexOf(f.id) === -1; });
+      assocs = assocs.filter(function (a) { return toRemove.indexOf(a.folderId) === -1; });
+      persist(); render();
+    });
   }
 
   function wireTree() {
@@ -124,9 +145,11 @@ BELLINE.Views.associations = function (root) {
           if (a) { editing = { folderId: a.folderId, assocId: a.id, cards: a.cards.slice(), text: a.text || '' }; renderEditor(); }
         }
         else if (act === 'del-assoc') {
-          if (!confirm('Supprimer cette association ?')) return;
-          assocs = assocs.filter(function (x) { return x.id !== id; });
-          persist(); render();
+          BELLINE.confirm('Supprimer cette association ?').then(function (ok) {
+            if (!ok) return;
+            assocs = assocs.filter(function (x) { return x.id !== id; });
+            persist(); render();
+          });
         }
       });
     });

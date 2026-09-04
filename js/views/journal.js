@@ -86,27 +86,41 @@ BELLINE.Views.journal = function (root) {
       (current === value ? ' checked' : '') + '> ' + label + '</label>';
   }
 
+  function pct(x) { return (x * 100).toFixed(1).replace('.', ',') + ' %'; }
+
   function relevesHTML(t) {
     var a = BELLINE.analyzeTirage(t.spreadId, t.cards);
     if (!a || !a.placed) return '<p class="muted small">Aucune carte placée dans ce tirage.</p>';
     var fam = BELLINE.PLANET_ORDER.filter(function (pk) { return a.planets[pk]; })
       .map(function (pk) { return P[pk].symbol + ' ' + P[pk].name + ' ×' + a.planets[pk]; }).join(' · ');
     var v = a.valences;
-    var conc = a.concordance;
+    var conc = a.concordance, cn = a.concordanceNeutral;
+    var diverge = conc.p != null && cn.p != null && Math.abs(conc.p - cn.p) > 0.1;
     return '<dl class="jr-releves">' +
       '<dt>Familles</dt><dd>' + (fam || '—') + '</dd>' +
       '<dt>Valences</dt><dd>' + v.positive + ' positive' + (v.positive > 1 ? 's' : '') + ' · ' +
         v.negative + ' négative' + (v.negative > 1 ? 's' : '') + ' · ' + v.neutre + ' neutre' + (v.neutre > 1 ? 's' : '') + '</dd>' +
       '<dt>Cartes fortes</dt><dd>' + (a.fortes.length
         ? a.fortes.map(function (e) { return e.card.number + ' ' + esc(e.card.name); }).join(' · ') : '— aucune') + '</dd>' +
+      (t.sens ? '<dt>Sens de lecture</dt><dd>' + esc(t.sens) + '</dd>' : '') +
       '<dt>Positions contraires</dt><dd>' + (a.contraires.length
         ? a.contraires.map(function (e) {
             return esc(e.pos.label) + ' : ' + e.card.number + ' ' + esc(e.card.name) +
-              ' (' + BELLINE.VALENCE[e.card.valence].label + ')';
+              ' (' + BELLINE.VALENCE[e.card.valence].label + ')' + (e.card.fragile ? ' — fragile' : '');
           }).join('<br>')
         : '— aucune') + '</dd>' +
+      (a.doublons && a.doublons.length
+        ? '<dt>Doublon de Coupe</dt><dd>' + a.doublons.map(function (e) { return e.card.number + ' ' + esc(e.card.name); }).join(' · ') +
+          ' <span class="muted small">(attendu au-delà de ~20 cartes — pas un signe)</span></dd>' : '') +
       (conc.total
-        ? '<dt>Concordance</dt><dd>' + conc.concord + ' / ' + conc.total + ' lames fortes du bon côté</dd>'
+        ? '<dt>Concordance</dt><dd>' +
+            conc.concord + ' / ' + conc.total + (conc.p != null ? ' — P(≥ obs.) ' + pct(conc.p) : '') +
+            (a.fragiles && a.fragiles.length
+              ? '<br><span class="muted small">Lames fragiles neutralisées (' + a.fragiles.map(function (e) { return e.card.number; }).join(', ') +
+                ') : ' + cn.concord + ' / ' + cn.total + (cn.p != null ? ' — ' + pct(cn.p) : '') +
+                (diverge ? ' — <strong>divergence forte, résultat non exploitable seul.</strong>' : '') + '</span>'
+              : '<br><span class="muted small">Aucune lame fragile en jeu.</span>') +
+          '</dd>'
         : '') +
       '</dl>';
   }
@@ -117,9 +131,14 @@ BELLINE.Views.journal = function (root) {
     var subs = [], adjs = [];
     spread.positions.forEach(function (p) {
       var n = t.cards[p.id];
-      if (!n) return;
-      var line = '<li><span class="muted">' + esc(p.label) + '</span> — ' + n + ' ' + esc(cardName(n)) + '</li>';
-      (p.kind === 'substantif' ? subs : adjs).push(line);
+      if (n) {
+        var line = '<li><span class="muted">' + esc(p.label) + '</span> — ' + n + ' ' + esc(cardName(n)) + '</li>';
+        (p.kind === 'substantif' ? subs : adjs).push(line);
+      }
+      for (var i = 1; i <= (p.adj || 0); i++) {
+        var an = t.cards[p.id + '#a' + i];
+        if (an) adjs.push('<li><span class="muted">' + esc(p.label) + ' — adj.</span> — ' + an + ' ' + esc(cardName(an)) + '</li>');
+      }
     });
     return '<div class="jr-cols">' +
       '<div><h4>Substantifs</h4><ul class="jr-plain">' + (subs.join('') || '<li class="muted">—</li>') + '</ul></div>' +

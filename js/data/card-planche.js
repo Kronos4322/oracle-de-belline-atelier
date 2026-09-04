@@ -75,3 +75,52 @@ window.BELLINE.CARD_PLANCHE = {
   }
 
 };
+
+/* ---------------------------------------------------------------------------
+ * plancheFor(num) — renvoie la planche écrite à la main si elle existe,
+ * sinon une planche allégée dérivée du Dossier encyclopédique (card-dossier.js).
+ * Permet d'« approfondir » les 53 cartes sans attendre les planches complètes.
+ * ------------------------------------------------------------------------- */
+(function () {
+  function splitPhrases(s, max) {
+    if (!s) return [];
+    return String(s).split(/(?<=[.;!?])\s+/).map(function (x) { return x.trim(); })
+      .filter(Boolean).slice(0, max || 6);
+  }
+  function listify(s, max) {
+    if (!s) return [];
+    return String(s).split(/[;,]|\.\s+/).map(function (x) { return x.trim(); })
+      .filter(function (x) { return x.length > 2; }).slice(0, max || 8);
+  }
+
+  BELLINE.plancheFor = function (num) {
+    num = Number(num);
+    var hand = (BELLINE.CARD_PLANCHE || {})[num];
+    if (hand) return Object.assign({ source: 'planche' }, hand);
+
+    var d = (BELLINE.CARD_DOSSIER || {})[num];
+    if (!d) return null;
+    var c = BELLINE.cardByNumber(num);
+    var planet = c && BELLINE.PLANETS ? BELLINE.PLANETS[c.planet] : null;
+    var mots = (d.motscles || []).slice(0, 6);
+
+    return {
+      source: 'dossier',
+      devise: [
+        (c ? c.name : '') + (mots.length ? ' — ' + mots.join(', ') : ''),
+        (planet ? 'Série ' + planet.name + ' : ' + planet.desc : '')
+      ].filter(Boolean),
+      iconographie: d.icono ? listify(d.icono, 8) : [],
+      sensTraditionnel: splitPhrases(d.noyau, 3).join(' '),
+      elements: (planet
+        ? [{ nom: 'Série ' + planet.name, points: listify(planet.desc, 6), note: '' }]
+        : []),
+      definition: d.noyau || '',
+      lecturesPositives: mots.length ? mots : listify(d.lecture && d.lecture.favorable, 6),
+      lecturesOmbre: listify(d.ombre, 8),
+      cle: (d.lecture && (d.lecture.pivot || d.lecture.explication)) || '',
+      couleur: null,
+      personnification: d.personnes || ''
+    };
+  };
+})();

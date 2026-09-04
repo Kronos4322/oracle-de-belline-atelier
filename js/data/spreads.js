@@ -131,7 +131,7 @@ window.BELLINE = window.BELLINE || {};
       id: 'miroir',
       name: "Le Miroir du Cœur",
       subtitle: "L'état psychique d'une personne (aussi appelé Tirage d'Éros, lecture des sentiments)",
-      count: 11,
+      count: 28,
       intro: "Neuf positions fonctionnelles, sans polarité ni Guide. Aucune mesure n'est " +
              "disponible : c'est un instrument d'explicitation, non de vérification. Il porte " +
              "sur l'intériorité d'un tiers absent — le représenter, ce n'est pas y accéder.",
@@ -162,15 +162,15 @@ window.BELLINE = window.BELLINE || {};
       positions: [
         { id: 'coupe_1', label: "La Coupe", kind: 'adjectif', branch: 'coupe', polarity: null, logic: "Climat, contexte. Hors positions, remise au jeu avant l'étalement." },
         { id: 'coupe_2', label: "La Coupe", kind: 'adjectif', branch: 'coupe', polarity: null, logic: "Climat, contexte. Hors positions, remise au jeu avant l'étalement." },
-        { id: 'coeur', label: "Le Cœur", kind: 'substantif', branch: 'axe', polarity: null, logic: "Le sentiment dominant.", read: "Le socle : tout le reste se lit en rapport avec elle. Premier terme de l'axe vertical." },
-        { id: 'conscient', label: "Le Conscient", kind: 'substantif', branch: 'axe', polarity: null, logic: "Ce qui est su et reconnu.", read: "À opposer à L'Enfoui : la pensée et l'affect ne racontent pas la même chose (axe horizontal)." },
-        { id: 'enfoui', label: "L'Enfoui", kind: 'substantif', branch: 'axe', polarity: null, logic: "Ce qui agit sans se dire.", read: "À opposer au Conscient : ce qui gouverne les comportements sans être reconnu." },
-        { id: 'memoire', label: "La Mémoire", kind: 'substantif', branch: 'axe', polarity: null, logic: "Ce qui demeure de l'histoire.", read: "Sur l'axe vertical : ce qui, du passé, agit encore aujourd'hui." },
-        { id: 'verrou', label: "Le Verrou", kind: 'substantif', branch: 'axe', polarity: null, logic: "Ce qui bloque : peur, blessure, contradiction.", read: "Le milieu de l'axe dedans / milieu / dehors : c'est lui qui explique pourquoi le Désir ne se traduit pas en Masque." },
-        { id: 'desir', label: "Le Désir", kind: 'substantif', branch: 'axe', polarity: null, logic: "Ce qui est voulu au fond.", read: "À opposer au Masque : l'écart entre ce qui est voulu et ce qui est montré. C'est l'axe qui donne son nom au tirage." },
-        { id: 'masque', label: "Le Masque", kind: 'substantif', branch: 'axe', polarity: null, logic: "Ce qui est montré au dehors.", read: "À opposer au Désir : la façade, ce que l'entourage voit." },
-        { id: 'nondit', label: "Le Non-dit", kind: 'substantif', branch: 'axe', polarity: null, logic: "Ce qui ne parvient pas à s'exprimer.", read: "Sur l'axe vertical : ce qui bute contre le Verrou et ne sort pas." },
-        { id: 'miroir_syn', label: "Le Miroir", kind: 'substantif', branch: 'axe', polarity: null, logic: "Synthèse du rapport entre les positions précédentes.", read: "Ne s'ajoute pas aux autres : elle dit le rapport entre elles. Se lit en dernier." }
+        { id: 'coeur', label: "Le Cœur", kind: 'substantif', branch: 'axe', polarity: null, adj: 2, logic: "Le sentiment dominant.", read: "Le socle : tout le reste se lit en rapport avec elle. Premier terme de l'axe vertical." },
+        { id: 'conscient', label: "Le Conscient", kind: 'substantif', branch: 'axe', polarity: null, adj: 2, logic: "Ce qui est su et reconnu.", read: "À opposer à L'Enfoui : la pensée et l'affect ne racontent pas la même chose (axe horizontal)." },
+        { id: 'enfoui', label: "L'Enfoui", kind: 'substantif', branch: 'axe', polarity: null, adj: 2, logic: "Ce qui agit sans se dire.", read: "À opposer au Conscient : ce qui gouverne les comportements sans être reconnu." },
+        { id: 'memoire', label: "La Mémoire", kind: 'substantif', branch: 'axe', polarity: null, adj: 2, logic: "Ce qui demeure de l'histoire.", read: "Sur l'axe vertical : ce qui, du passé, agit encore aujourd'hui." },
+        { id: 'verrou', label: "Le Verrou", kind: 'substantif', branch: 'axe', polarity: null, adj: 2, logic: "Ce qui bloque : peur, blessure, contradiction.", read: "Le milieu de l'axe dedans / milieu / dehors : c'est lui qui explique pourquoi le Désir ne se traduit pas en Masque." },
+        { id: 'desir', label: "Le Désir", kind: 'substantif', branch: 'axe', polarity: null, adj: 2, logic: "Ce qui est voulu au fond.", read: "À opposer au Masque : l'écart entre ce qui est voulu et ce qui est montré. C'est l'axe qui donne son nom au tirage." },
+        { id: 'masque', label: "Le Masque", kind: 'substantif', branch: 'axe', polarity: null, adj: 2, logic: "Ce qui est montré au dehors.", read: "À opposer au Désir : la façade, ce que l'entourage voit." },
+        { id: 'nondit', label: "Le Non-dit", kind: 'substantif', branch: 'axe', polarity: null, adj: 2, logic: "Ce qui ne parvient pas à s'exprimer.", read: "Sur l'axe vertical : ce qui bute contre le Verrou et ne sort pas." },
+        { id: 'miroir_syn', label: "Le Miroir", kind: 'substantif', branch: 'axe', polarity: null, adj: 1, logic: "Synthèse du rapport entre les positions précédentes.", read: "Ne s'ajoute pas aux autres : elle dit le rapport entre elles. Se lit en dernier." }
       ]
     },
 
@@ -179,7 +179,7 @@ window.BELLINE = window.BELLINE || {};
       id: 'verdict',
       name: "Le Verdict",
       subtitle: "Une question fermée",
-      count: 7,
+      count: 16,
       intro: "Une Coupe et cinq positions, dont deux polaires. Le dispositif le plus contraint " +
              "et le plus exposé : une question fermée sur un sujet sensible est celle où le " +
              "lecteur risque le plus de produire la réponse qu'il attend.",
@@ -205,10 +205,10 @@ window.BELLINE = window.BELLINE || {};
       positions: [
         { id: 'coupe_1', label: "La Coupe", kind: 'adjectif', branch: 'coupe', polarity: null, logic: "Climat général. Ne tranche pas la question." },
         { id: 'coupe_2', label: "La Coupe", kind: 'adjectif', branch: 'coupe', polarity: null, logic: "Climat général. Ne tranche pas la question." },
-        { id: 'pour', label: "Pour", kind: 'substantif', branch: 'pos', polarity: 'favorable', logic: "Ce qui pousse vers le oui.", read: "Avec « Contre », la seule paire mesurable (polaire). À lire en tension, pas à additionner." },
-        { id: 'contre', label: "Contre", kind: 'substantif', branch: 'neg', polarity: 'defavorable', logic: "Ce qui pousse vers le non.", read: "Avec « Pour », la seule paire mesurable. Le poids relatif des deux oriente la lecture du Verdict." },
-        { id: 'pivot', label: "Pivot", kind: 'fonctionnelle', branch: 'axe', polarity: null, logic: "Ce qui fera basculer.", read: "Ni pour ni contre : le facteur qui peut faire pencher d'un côté. Pas encore la réponse." },
-        { id: 'verdict_pos', label: "Verdict", kind: 'substantif', branch: 'axe', polarity: null, logic: "La réponse principale. Se lit selon la grille oui / neutre / non établie hors de tout tirage." },
+        { id: 'pour', label: "Pour", kind: 'substantif', branch: 'pos', polarity: 'favorable', adj: 2, logic: "Ce qui pousse vers le oui.", read: "Avec « Contre », la seule paire mesurable (polaire). À lire en tension, pas à additionner." },
+        { id: 'contre', label: "Contre", kind: 'substantif', branch: 'neg', polarity: 'defavorable', adj: 2, logic: "Ce qui pousse vers le non.", read: "Avec « Pour », la seule paire mesurable. Le poids relatif des deux oriente la lecture du Verdict." },
+        { id: 'pivot', label: "Pivot", kind: 'fonctionnelle', branch: 'axe', polarity: null, adj: 2, logic: "Ce qui fera basculer.", read: "Ni pour ni contre : le facteur qui peut faire pencher d'un côté. Pas encore la réponse." },
+        { id: 'verdict_pos', label: "Verdict", kind: 'substantif', branch: 'axe', polarity: null, adj: 3, logic: "La réponse principale. Se lit selon la grille oui / neutre / non établie hors de tout tirage." },
         { id: 'precision', label: "Précision", kind: 'adjectif', branch: 'axe', polarity: null, logic: "Explique le verdict sans le renverser." }
       ]
     },
@@ -218,7 +218,7 @@ window.BELLINE = window.BELLINE || {};
       id: 'flambeau',
       name: "Le Flambeau",
       subtitle: "La journée à venir — tiré la veille (aussi appelé Tirage d'Apollon, version journalière)",
-      count: 9,
+      count: 18,
       intro: "Une Coupe et sept positions en flamme. Le seul tirage répétable, donc le seul " +
              "par lequel la méthode peut être évaluée : il porte sur des faits, il est daté " +
              "d'avance, il permet d'accumuler.",
@@ -244,13 +244,13 @@ window.BELLINE = window.BELLINE || {};
       positions: [
         { id: 'coupe_1', label: "La Coupe", kind: 'adjectif', branch: 'coupe', polarity: null, logic: "Fond de journée." },
         { id: 'coupe_2', label: "La Coupe", kind: 'adjectif', branch: 'coupe', polarity: null, logic: "Fond de journée." },
-        { id: 'flamme', label: "Flamme", kind: 'substantif', branch: 'axe', polarity: null, logic: "L'énergie dominante du jour.", read: "Se lit en premier : donne le ton de toute la journée." },
-        { id: 'braise', label: "Braise", kind: 'substantif', branch: 'axe', polarity: null, logic: "Ce qui vient de la veille et brûle encore.", read: "À opposer au Vent : ce qui pousse de l'intérieur (l'hier) contre ce qui vient du dehors." },
-        { id: 'vent', label: "Vent", kind: 'substantif', branch: 'axe', polarity: null, logic: "Ce qui influence ou déstabilise.", read: "À opposer à la Braise : l'extérieur, ce qui peut faire dévier la journée." },
-        { id: 'foyer', label: "Foyer", kind: 'substantif', branch: 'axe', polarity: null, logic: "Le cœur concret de la journée.", read: "L'événement ou la tâche autour de quoi tout tourne." },
-        { id: 'ombre', label: "Ombre", kind: 'substantif', branch: 'axe', polarity: null, logic: "Le risque à surveiller.", read: "À opposer au Geste : le piège d'un côté, le levier de l'autre." },
-        { id: 'geste', label: "Geste", kind: 'substantif', branch: 'axe', polarity: null, logic: "Ce qu'il faut faire ou favoriser.", read: "À opposer à l'Ombre : l'action concrète qui aide la journée." },
-        { id: 'lueur', label: "Lueur", kind: 'substantif', branch: 'axe', polarity: null, logic: "L'issue du soir, la leçon du jour.", read: "Se lit en dernier : ce qu'on retient une fois la journée passée." }
+        { id: 'flamme', label: "Flamme", kind: 'substantif', branch: 'axe', polarity: null, adj: 2, logic: "L'énergie dominante du jour.", read: "Se lit en premier : donne le ton de toute la journée." },
+        { id: 'braise', label: "Braise", kind: 'substantif', branch: 'axe', polarity: null, adj: 1, logic: "Ce qui vient de la veille et brûle encore.", read: "À opposer au Vent : ce qui pousse de l'intérieur (l'hier) contre ce qui vient du dehors." },
+        { id: 'vent', label: "Vent", kind: 'substantif', branch: 'axe', polarity: null, adj: 1, logic: "Ce qui influence ou déstabilise.", read: "À opposer à la Braise : l'extérieur, ce qui peut faire dévier la journée." },
+        { id: 'foyer', label: "Foyer", kind: 'substantif', branch: 'axe', polarity: null, adj: 2, logic: "Le cœur concret de la journée.", read: "L'événement ou la tâche autour de quoi tout tourne." },
+        { id: 'ombre', label: "Ombre", kind: 'substantif', branch: 'axe', polarity: null, adj: 2, logic: "Le risque à surveiller.", read: "À opposer au Geste : le piège d'un côté, le levier de l'autre." },
+        { id: 'geste', label: "Geste", kind: 'substantif', branch: 'axe', polarity: null, adj: 2, logic: "Ce qu'il faut faire ou favoriser.", read: "À opposer à l'Ombre : l'action concrète qui aide la journée." },
+        { id: 'lueur', label: "Lueur", kind: 'substantif', branch: 'axe', polarity: null, adj: 1, logic: "L'issue du soir, la leçon du jour.", read: "Se lit en dernier : ce qu'on retient une fois la journée passée." }
       ]
     },
 
@@ -284,52 +284,215 @@ window.BELLINE = window.BELLINE || {};
         { id: 'message', label: "Message", kind: 'substantif', branch: 'axe', polarity: null, logic: "L'unique chose importante à savoir aujourd'hui.", read: "Le substantif : lis-le seul d'abord, puis qualifié par le Contexte et la Manifestation." },
         { id: 'manifestation', label: "Manifestation", kind: 'adjectif', branch: 'axe', polarity: null, logic: "Comment cela se montre ou agit.", read: "Qualifie le Message : sous quelle forme concrète le repérer dans la journée." }
       ]
+    },
+
+    /* ===================== Tirage en croix (tradition classique) ===================== */
+    croix: {
+      id: 'croix',
+      name: "Tirage en croix",
+      subtitle: "Cinq cartes — tradition classique, hors méthode d'Hécate",
+      count: 5,
+      tradition: 'classique',
+      intro: "Tirage rapide de la tradition Belline, réputé parmi les plus fiables. " +
+             "Cinq positions en croix : ce qui porte, ce qui gêne, la conduite à tenir, " +
+             "la tendance, l'évolution probable. Il ne comporte pas de Coupe et ne se mesure pas.",
+      typologie: { objet: "une situation", question: "où en est-elle, que faire ?", reversible: false, mesure: "aucune" },
+      rules: [
+        "Position centrale d'abord (la Réponse), puis les bras : atout, obstacle, conseil, puis l'évolution.",
+        "Le substantif porte le sens ; d'abord le littéral, ensuite le symbolique.",
+        "Hors méthode d'Hécate : pas de polarité positionnelle, donc pas de test de concordance."
+      ],
+      senses: [],
+      axes: [
+        "Vertical : Atout (ce qui soutient) contre Obstacle (ce qui freine) — la tension de la situation.",
+        "Horizontal : Conseil (à gauche) et Évolution (à droite) — ce qu'on peut faire, ce vers quoi cela va."
+      ],
+      layout: [
+        ['cx_atout'],
+        ['cx_conseil', 'cx_reponse', 'cx_evolution'],
+        ['cx_obstacle']
+      ],
+      positions: [
+        { id: 'cx_atout', label: "Atout", kind: 'substantif', branch: 'pos', polarity: null, logic: "Ce qui soutient, ce sur quoi s'appuyer.", read: "En haut : la ressource. À mettre en regard de l'Obstacle." },
+        { id: 'cx_conseil', label: "Conseil", kind: 'substantif', branch: 'axe', polarity: null, logic: "La conduite à tenir.", read: "À gauche de la Réponse : l'attitude juste, pas encore le résultat." },
+        { id: 'cx_reponse', label: "Réponse", kind: 'substantif', branch: 'axe', polarity: null, logic: "Le cœur de la situation, la réponse principale.", read: "Se lit en premier : tout le reste la qualifie." },
+        { id: 'cx_evolution', label: "Évolution", kind: 'substantif', branch: 'axe', polarity: null, logic: "Ce vers quoi la situation tend.", read: "À droite de la Réponse : la tendance, non un verdict." },
+        { id: 'cx_obstacle', label: "Obstacle", kind: 'substantif', branch: 'neg', polarity: null, logic: "Ce qui gêne, ralentit ou complique.", read: "En bas : le frein. À mettre en regard de l'Atout." }
+      ]
+    },
+
+    /* ===================== Trois cartes (tradition classique) ===================== */
+    trois: {
+      id: 'trois',
+      name: "Trois cartes",
+      subtitle: "Passé · Présent · Avenir — lecture rapide, hors méthode d'Hécate",
+      count: 3,
+      tradition: 'classique',
+      intro: "La lecture la plus courte : trois cartes lues comme une phrase, de gauche à droite. " +
+             "Positions temporelles — ce qui vient de la veille, l'état actuel, la tendance. " +
+             "Sans Coupe et sans mesure.",
+      typologie: { objet: "une question ouverte", question: "d'où cela vient, où cela va ?", reversible: false, mesure: "aucune" },
+      rules: [
+        "Se lit de gauche à droite comme sujet → verbe → complément.",
+        "Positions temporelles : elles portent une place dans le temps, pas une valence.",
+        "D'abord chaque carte seule, puis la phrase que les trois forment ensemble."
+      ],
+      senses: [],
+      axes: ["La phrase : Passé → Présent → Avenir. Si elle ne se dit pas simplement, la lecture n'est pas finie."],
+      layout: [['tr_passe', 'tr_present', 'tr_avenir']],
+      positions: [
+        { id: 'tr_passe', label: "Passé", kind: 'substantif', branch: 'axe', polarity: null, logic: "Ce qui vient de la veille et pèse encore.", read: "Premier terme de la phrase : la racine." },
+        { id: 'tr_present', label: "Présent", kind: 'substantif', branch: 'axe', polarity: null, logic: "L'état actuel, le nœud de la question.", read: "Terme central : la carte qui gouverne." },
+        { id: 'tr_avenir', label: "Avenir", kind: 'substantif', branch: 'axe', polarity: null, logic: "La tendance, ce vers quoi cela va.", read: "Dernier terme : une orientation, jamais un verdict." }
+      ]
+    },
+
+    /* ===================== Roue astrologique (tradition classique) ===================== */
+    roue: {
+      id: 'roue',
+      name: "Roue astrologique",
+      subtitle: "Douze maisons — vue d'ensemble, hors méthode d'Hécate",
+      count: 12,
+      tradition: 'classique',
+      intro: "Douze positions, une par maison astrologique, pour une vue d'ensemble d'une " +
+             "période (souvent l'année). Chaque carte décrit le domaine de vie de sa maison. " +
+             "Lecture longue, sans Coupe et sans mesure.",
+      typologie: { objet: "une période de vie", question: "quel climat, domaine par domaine ?", reversible: false, mesure: "aucune" },
+      rules: [
+        "Une carte par maison ; on lit d'abord chaque maison seule, puis les oppositions (I/VII, IV/X…).",
+        "Le substantif porte le domaine ; le littéral avant le symbolique.",
+        "Hors méthode d'Hécate : positions fonctionnelles, aucune mesure."
+      ],
+      senses: [],
+      axes: [
+        "Axe I / VII : soi et l'autre. Axe IV / X : le foyer et le métier. Axe II / VIII : ce qu'on a, ce qui se transforme.",
+        "Les maisons d'angle (I, IV, VII, X) donnent la structure ; les autres la nuancent."
+      ],
+      layout: [
+        ['ma_1', 'ma_2', 'ma_3', 'ma_4'],
+        ['ma_5', 'ma_6', 'ma_7', 'ma_8'],
+        ['ma_9', 'ma_10', 'ma_11', 'ma_12']
+      ],
+      positions: [
+        { id: 'ma_1', label: "I · Soi", kind: 'substantif', branch: 'axe', polarity: null, logic: "Toi, ton allure, ton élan du moment." },
+        { id: 'ma_2', label: "II · Avoirs", kind: 'substantif', branch: 'axe', polarity: null, logic: "Argent, ressources, ce que tu possèdes et gagnes." },
+        { id: 'ma_3', label: "III · Échanges", kind: 'substantif', branch: 'axe', polarity: null, logic: "Communication, fratrie, déplacements courts, apprentissages." },
+        { id: 'ma_4', label: "IV · Foyer", kind: 'substantif', branch: 'axe', polarity: null, logic: "Maison, famille, racines, vie privée." },
+        { id: 'ma_5', label: "V · Création", kind: 'substantif', branch: 'axe', polarity: null, logic: "Amour, plaisir, enfants, ce que tu crées." },
+        { id: 'ma_6', label: "VI · Travail", kind: 'substantif', branch: 'axe', polarity: null, logic: "Tâches quotidiennes, santé, hygiène de vie, service." },
+        { id: 'ma_7', label: "VII · L'Autre", kind: 'substantif', branch: 'axe', polarity: null, logic: "Couple, associations, contrats, adversaires déclarés." },
+        { id: 'ma_8', label: "VIII · Mutations", kind: 'substantif', branch: 'axe', polarity: null, logic: "Crises, transformations, argent commun, ce qui finit et renaît." },
+        { id: 'ma_9', label: "IX · Horizons", kind: 'substantif', branch: 'axe', polarity: null, logic: "Voyages lointains, études, sens, convictions, étranger." },
+        { id: 'ma_10', label: "X · Métier", kind: 'substantif', branch: 'axe', polarity: null, logic: "Carrière, statut social, réputation, réalisation publique." },
+        { id: 'ma_11', label: "XI · Alliés", kind: 'substantif', branch: 'axe', polarity: null, logic: "Amis, réseaux, projets, espérances." },
+        { id: 'ma_12', label: "XII · Retrait", kind: 'substantif', branch: 'axe', polarity: null, logic: "Épreuves cachées, solitude, inconscient, ce qui se dénoue en secret." }
+      ]
     }
 
   };
 
   /* -------------------------------------------------------------------------
-   * Analyse d'un tirage : relevés (familles, valences, cartes fortes,
-   * cartes en position contraire) + concordance des valences.
+   * Tirages personnels (éditeur, ch. 16) — fusionnés dans le registre.
    * ----------------------------------------------------------------------- */
+  BELLINE.baseSpreads = Object.assign({}, BELLINE.SPREADS);
+
+  /* Nombre total d'emplacements d'un tirage = substantifs/adjectifs fixes
+     + éclaircisseurs d'adjectifs (champ `adj` d'une position). */
+  BELLINE.spreadSlots = function (spread) {
+    if (!spread || !spread.positions) return 0;
+    return spread.positions.reduce(function (n, p) { return n + 1 + (p.adj || 0); }, 0);
+  };
+
+  /* Toutes les cartes d'un brouillon, y compris les éclaircisseurs "<id>#aN". */
+  BELLINE.spreadEntries = function (spread, cards) {
+    if (!spread) return [];
+    var posById = {};
+    spread.positions.forEach(function (p) { posById[p.id] = p; });
+    var out = [];
+    Object.keys(cards || {}).forEach(function (key) {
+      var n = cards[key];
+      if (!n) return;
+      var m = key.match(/^(.+)#a(\d+)$/);
+      var baseId = m ? m[1] : key;
+      var base = posById[baseId];
+      if (!base) return;
+      var card = BELLINE.cardByNumber(n);
+      if (!card) return;
+      var pos = m
+        ? { id: key, label: base.label + ' — adj. ' + m[2], kind: 'adjectif', branch: base.branch, polarity: null, parent: baseId }
+        : base;
+      out.push({ posId: key, pos: pos, card: card, isAdj: !!m });
+    });
+    return out;
+  };
+
+  BELLINE.refreshSpreads = function () {
+    var out = Object.assign({}, BELLINE.baseSpreads);
+    var custom = (BELLINE.Storage && BELLINE.Storage.getCustomSpreads)
+      ? BELLINE.Storage.getCustomSpreads() : [];
+    custom.forEach(function (s) {
+      if (s && s.id) out[s.id] = Object.assign({ custom: true }, s);
+    });
+    BELLINE.SPREADS = out;
+    return out;
+  };
+
+  /* -------------------------------------------------------------------------
+   * Analyse d'un tirage : relevés (familles, valences, cartes fortes,
+   * cartes en position contraire) + concordance des valences, en version
+   * tranchée ET en version « lames fragiles neutralisées » (ch. 24.3).
+   * ----------------------------------------------------------------------- */
+  function concordOf(entries, neutralizeFragile) {
+    var polar = entries.filter(function (e) {
+      if (!e.pos.polarity) return false;
+      var v = neutralizeFragile && e.card.fragile ? 'neutre' : e.card.valence;
+      return v !== 'neutre';
+    });
+    var concord = polar.filter(function (e) {
+      return (e.card.valence === 'positive') === (e.pos.polarity === 'favorable');
+    }).length;
+    var A = polar.filter(function (e) { return e.pos.polarity === 'favorable'; }).length;
+    var aPos = polar.filter(function (e) { return e.card.valence === 'positive'; }).length;
+    var r = polar.length ? BELLINE.concordanceP(polar.length, A, aPos, concord) : null;
+    return { total: polar.length, concord: concord, entries: polar, A: A, aPos: aPos, p: r ? r.p : null, expected: r ? r.expected : null };
+  }
+
   BELLINE.analyzeTirage = function (spreadId, cards) {
     var spread = BELLINE.SPREADS[spreadId];
     if (!spread) return null;
-    var posById = {};
-    spread.positions.forEach(function (p) { posById[p.id] = p; });
 
-    var placed = [];
-    Object.keys(cards || {}).forEach(function (pid) {
-      var n = cards[pid];
-      if (!n || !posById[pid]) return;
-      var c = (BELLINE.SEED_CARDS || []).find(function (x) { return x.number === n; });
-      if (c) placed.push({ posId: pid, pos: posById[pid], card: c });
-    });
+    var placed = BELLINE.spreadEntries(spread, cards);
 
-    var planets = {}, valences = { positive: 0, negative: 0, neutre: 0 }, fortes = [], contraires = [];
+    var planets = {}, valences = { positive: 0, negative: 0, neutre: 0 }, fortes = [], contraires = [], fragiles = [];
     placed.forEach(function (e) {
       planets[e.card.planet] = (planets[e.card.planet] || 0) + 1;
       valences[e.card.valence]++;
       if (e.card.forte) fortes.push(e);
+      if (e.pos.polarity && e.card.fragile) fragiles.push(e);
       if (e.pos.polarity && e.card.valence !== 'neutre') {
         var favCard = e.card.valence === 'positive';
         if (favCard !== (e.pos.polarity === 'favorable')) contraires.push(e);
       }
     });
 
-    var polarStrong = placed.filter(function (e) { return e.pos.polarity && e.card.valence !== 'neutre'; });
-    var concord = polarStrong.filter(function (e) {
-      return (e.card.valence === 'positive') === (e.pos.polarity === 'favorable');
-    }).length;
+    /* Coupe : cartes du décor qui reparaissent dans une position de l'arbre.
+       Au-delà de ~20 cartes étalées, c'est attendu — jamais un signe. */
+    var coupeNums = placed.filter(function (e) { return e.pos.branch === 'coupe'; }).map(function (e) { return e.card.number; });
+    var doublons = placed.filter(function (e) {
+      return e.pos.branch !== 'coupe' && coupeNums.indexOf(e.card.number) !== -1;
+    });
 
     return {
       placed: placed.length,
-      count: spread.count,
+      count: BELLINE.spreadSlots(spread),
       planets: planets,
       valences: valences,
       fortes: fortes,
       contraires: contraires,
-      concordance: { total: polarStrong.length, concord: concord, entries: polarStrong }
+      fragiles: fragiles,
+      doublons: doublons,
+      concordance: concordOf(placed, false),
+      concordanceNeutral: concordOf(placed, true)
     };
   };
 

@@ -464,15 +464,16 @@ BELLINE.Views.tirages = function (root) {
     });
     root.querySelector('#spSave').addEventListener('click', function () {
       if (!filledCount()) { alert('Place au moins une carte avant d’enregistrer.'); return; }
+      var id = S.uid();
       var list = S.getTirages();
       list.unshift({
-        id: S.uid(), spreadId: spread.id, createdAt: new Date().toISOString(),
-        question: draft.question, cards: JSON.parse(JSON.stringify(draft.cards)), notes: draft.notes
+        id: id, spreadId: spread.id, createdAt: new Date().toISOString(),
+        question: draft.question, cards: JSON.parse(JSON.stringify(draft.cards)),
+        notes: draft.notes, carnet: {}
       });
       S.saveTirages(list);
-      var b = root.querySelector('#spSave');
-      b.textContent = 'Enregistré ✓';
-      setTimeout(function () { if (b) b.textContent = 'Enregistrer'; }, 2000);
+      S.write('journal.justSaved', id);
+      BELLINE.go('journal');
     });
   }
 

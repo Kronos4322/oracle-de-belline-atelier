@@ -129,6 +129,19 @@ window.BELLINE = window.BELLINE || {};
   function saveDraft(spreadId, draft) { return write('tirage.' + spreadId, draft); }
   function getTirages() { return read('tirages', []); }
   function saveTirages(list) { return write('tirages', list); }
+  function getTirage(id) {
+    return getTirages().find(function (t) { return t.id === id; }) || null;
+  }
+  function updateTirage(id, patch) {
+    var list = getTirages();
+    var t = list.find(function (x) { return x.id === id; });
+    if (!t) return false;
+    Object.assign(t, patch);
+    return saveTirages(list);
+  }
+  function deleteTirage(id) {
+    return saveTirages(getTirages().filter(function (t) { return t.id !== id; }));
+  }
 
   function uid() {
     return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -172,6 +185,9 @@ window.BELLINE = window.BELLINE || {};
     saveDraft: saveDraft,
     getTirages: getTirages,
     saveTirages: saveTirages,
+    getTirage: getTirage,
+    updateTirage: updateTirage,
+    deleteTirage: deleteTirage,
     uid: uid,
     exportAll: exportAll,
     importAll: importAll

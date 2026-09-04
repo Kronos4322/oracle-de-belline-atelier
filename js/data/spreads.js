@@ -255,4 +255,68 @@ window.BELLINE = window.BELLINE || {};
     }
 
   };
+
+  /* -------------------------------------------------------------------------
+   * Analyse d'un tirage : relevés (familles, valences, cartes fortes,
+   * cartes en position contraire) + concordance des valences.
+   * ----------------------------------------------------------------------- */
+  BELLINE.analyzeTirage = function (spreadId, cards) {
+    var spread = BELLINE.SPREADS[spreadId];
+    if (!spread) return null;
+    var posById = {};
+    spread.positions.forEach(function (p) { posById[p.id] = p; });
+
+    var placed = [];
+    Object.keys(cards || {}).forEach(function (pid) {
+      var n = cards[pid];
+      if (!n || !posById[pid]) return;
+      var c = (BELLINE.SEED_CARDS || []).find(function (x) { return x.number === n; });
+      if (c) placed.push({ posId: pid, pos: posById[pid], card: c });
+    });
+
+    var planets = {}, valences = { positive: 0, negative: 0, neutre: 0 }, fortes = [], contraires = [];
+    placed.forEach(function (e) {
+      planets[e.card.planet] = (planets[e.card.planet] || 0) + 1;
+      valences[e.card.valence]++;
+      if (e.card.forte) fortes.push(e);
+      if (e.pos.polarity && e.card.valence !== 'neutre') {
+        var favCard = e.card.valence === 'positive';
+        if (favCard !== (e.pos.polarity === 'favorable')) contraires.push(e);
+      }
+    });
+
+    var polarStrong = placed.filter(function (e) { return e.pos.polarity && e.card.valence !== 'neutre'; });
+    var concord = polarStrong.filter(function (e) {
+      return (e.card.valence === 'positive') === (e.pos.polarity === 'favorable');
+    }).length;
+
+    return {
+      placed: placed.length,
+      count: spread.count,
+      planets: planets,
+      valences: valences,
+      fortes: fortes,
+      contraires: contraires,
+      concordance: { total: polarStrong.length, concord: concord, entries: polarStrong }
+    };
+  };
+
+  /* Loi hypergéométrique : P(concordance >= observée) sous répartition
+   * aléatoire des N lames fortes dans les N emplacements polaires.
+   * A = emplacements favorables, a = lames de valence positive. */
+  BELLINE.concordanceP = function (N, A, a, observed) {
+    if (!N) return null;
+    var B = N - A;
+    function logFact(x) { var s = 0; for (var i = 2; i <= x; i++) s += Math.log(i); return s; }
+    function logC(n, k) { return (k < 0 || k > n) ? -Infinity : logFact(n) - logFact(k) - logFact(n - k); }
+    var p = 0, expected = 0;
+    var xMax = Math.min(A, a);
+    for (var x = Math.max(0, a - B); x <= xMax; x++) {
+      var pr = Math.exp(logC(A, x) + logC(B, a - x) - logC(N, a)); // P(x positives en position favorable)
+      var conc = 2 * x + B - a;
+      expected += conc * pr;
+      if (conc >= observed) p += pr;
+    }
+    return { p: p, expected: expected };
+  };
 })();

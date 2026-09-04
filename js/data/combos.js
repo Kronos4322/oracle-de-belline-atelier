@@ -288,6 +288,18 @@ BELLINE.CLASSIC_COMBOS = [
      variables par les vrais noms, et le patron d'ouverture redondant avec
      frame() est retiré. */
   var GENERAL_PREFIX_RE = /^Dans cet ordre, le thème\s*«[^»]*»\s*/;
+  /* Noms de cartes sans article qui commencent par une voyelle ou un h muet :
+     le déterminant qui précède (« de A », « la A »…) doit s'élider une fois
+     A/B remplacé par le vrai nom, sous peine de « de Infortune ». */
+  var ELIDE_NAMES = { 7: 1, 13: 1, 19: 1, 22: 1, 27: 1, 29: 1, 35: 1, 38: 1, 39: 1, 41: 1, 46: 1 };
+  var ELISION = { de: "d'", le: "l'", la: "l'", que: "qu'", se: "s'", ne: "n'", ce: "c'", je: "j'", me: "m'", te: "t'" };
+  function substName(text, token, card) {
+    if (ELIDE_NAMES[card.number]) {
+      var re = new RegExp('\\b(de|le|la|que|se|ne|ce|je|me|te)\\s+' + token + '\\b', 'g');
+      text = text.replace(re, function (m, det) { return ELISION[det.toLowerCase()] + card.name; });
+    }
+    return text.replace(new RegExp('\\b' + token + '\\b', 'g'), card.name);
+  }
   var GENERAL_SENS_LABELS = [
     ['Renforcement constructif', 'renforce'],
     ['Cumul de tensions', 'renforce'],
@@ -306,8 +318,7 @@ BELLINE.CLASSIC_COMBOS = [
     var clause = parts[1] || '';
     var colon = clause.indexOf(':');
     var label = colon !== -1 ? clause.slice(0, colon).trim() : '';
-    var tail = (colon !== -1 ? clause.slice(colon + 1) : clause).trim()
-      .replace(/\bA\b/g, subC.name).replace(/\bB\b/g, adjC.name);
+    var tail = substName(substName((colon !== -1 ? clause.slice(colon + 1) : clause).trim(), 'A', subC), 'B', adjC);
     var sens = null;
     for (var i = 0; i < GENERAL_SENS_LABELS.length; i++) {
       if (label.indexOf(GENERAL_SENS_LABELS[i][0]) !== -1) { sens = GENERAL_SENS_LABELS[i][1]; break; }

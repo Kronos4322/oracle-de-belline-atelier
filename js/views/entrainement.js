@@ -15,6 +15,7 @@ BELLINE.Views = BELLINE.Views || {};
 BELLINE.Views.entrainement = function (root) {
   var S = BELLINE.Storage;
   var P = BELLINE.PLANETS;
+  var ASTRO_KEYS = BELLINE.PLANET_ORDER.filter(function (pk) { return pk !== 'none'; });
 
   var BOX_DAYS = [0, 1, 2, 4, 8, 16];
 
@@ -76,7 +77,7 @@ BELLINE.Views.entrainement = function (root) {
   }
 
   function buildQCM() {
-    var kinds = ['nom', 'motscle', 'serie', 'valence'];
+    var kinds = ['nom', 'motscle', 'serie', 'valence', 'planete'];
     var k = pick(kinds);
     var c = S.getCard(pick(pool()).number);
     var all = BELLINE.SEED_CARDS;
@@ -101,6 +102,14 @@ BELLINE.Views.entrainement = function (root) {
       current = { kind: 'qcm', sub: 'serie', card: c, showImage: true,
         q: 'À quelle série appartient « ' + c.name + ' » ?', options: shuffle(series.slice()), answer: P[c.planet].name,
         reason: P[c.planet].symbol + ' ' + P[c.planet].name + ' — ' + P[c.planet].desc };
+    } else if (k === 'planete') {
+      var pk = pick(ASTRO_KEYS);
+      var dd = BELLINE.PLANET_DOSSIER[pk];
+      var otherPk = sample(ASTRO_KEYS, 3, pk);
+      current = { kind: 'qcm', sub: 'planete', card: null, showImage: false,
+        q: '« ' + dd.lead + ' » — quelle planète ?',
+        options: shuffle([P[pk].name].concat(otherPk.map(function (x) { return P[x].name; }))),
+        answer: P[pk].name, reason: dd.noyau };
     } else {
       var polReason = 'Valence lexicale : le nom seul, hors position et hors tirage (table figée, ch. 2).' +
         (c.fragile ? ' Classement contesté (†) — l\'une des ' + BELLINE.FRAGILE.length + ' lames les plus fragiles de la table.' : '');
@@ -127,9 +136,17 @@ BELLINE.Views.entrainement = function (root) {
       answer: good.note, reason: SENS_TXT[good.sens] || '' };
   }
 
+  /* Tous les tirages qui ont au moins une position à polarité déclarée — pas
+     seulement Hécate et le Verdict — pour varier l'exercice sans figer une
+     liste qui deviendrait obsolète si un nouveau tirage polaire est ajouté. */
+  function polarSpreadKeys() {
+    return Object.keys(BELLINE.SPREADS).filter(function (k) {
+      return BELLINE.SPREADS[k].positions.some(function (p) { return p.polarity; });
+    });
+  }
+
   function buildPosition() {
-    var spreads = ['hecate', 'verdict'];
-    var sp = BELLINE.SPREADS[pick(spreads)];
+    var sp = BELLINE.SPREADS[pick(polarSpreadKeys())];
     var polar = sp.positions.filter(function (p) { return p.polarity; });
     var pos = pick(polar);
     var np = pool().filter(function (x) { return x.valence !== 'neutre'; });

@@ -13,6 +13,7 @@ window.BELLINE = window.BELLINE || {};
     journal:      { label: 'Journal',      icon: '📓' },
     entrainement: { label: 'Exercices',    icon: '🎴' },
     associations: { label: 'Associations', icon: '🔗', overflow: true },
+    astrologie:   { label: 'Astrologie',   icon: '☉', overflow: true },
     progression:  { label: 'Progression',  icon: '📈', overflow: true },
     methode:      { label: 'Méthode',      icon: '📐', overflow: true }
   };

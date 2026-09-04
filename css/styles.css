@@ -1284,6 +1284,54 @@ button.planet-sym:hover { color: var(--gold-soft); text-shadow: 0 0 10px current
 .combo-sens.temporise { color: hsl(35 50% 62%); }
 .combo-sens.precise { color: var(--muted); }
 
+/* ---------- Astrologie (dossier planétaire) ---------- */
+.astro-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 16px 0 18px; }
+.astro-tab {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 13px; border-radius: 999px; font-size: .85rem;
+  background: var(--panel); border: 1px solid var(--line); color: var(--muted);
+  transition: border-color .15s, color .15s;
+}
+.astro-tab:hover { color: var(--ink); }
+.astro-tab.on { background: linear-gradient(180deg, var(--panel-2), var(--panel)); border-color: hsl(var(--hue) 55% 55%); color: hsl(var(--hue) 60% 74%); }
+.astro-tab-sym { font-family: var(--serif); font-size: 1.1em; color: hsl(var(--hue, 265) 55% 70%); line-height: 1; }
+
+.astro-planet {
+  background: linear-gradient(165deg, var(--panel), var(--bg-2)); border: 1px solid var(--line);
+  border-radius: 16px; padding: 18px; margin-bottom: 20px;
+}
+.astro-planet-head { display: flex; align-items: center; gap: 14px; margin-bottom: 10px; }
+.astro-planet-sym {
+  flex: none; font-family: var(--serif); font-size: 2.4rem; line-height: 1;
+  color: hsl(var(--hue) 55% 65%); text-shadow: 0 0 18px hsl(var(--hue) 60% 50% / .45);
+}
+.astro-planet-head h2 { margin: 0 0 3px; }
+.astro-lead { font-family: var(--serif); font-style: italic; color: var(--gold-soft); margin: 0 0 14px; }
+
+.astro-two { display: grid; gap: 12px; grid-template-columns: 1fr 1fr; margin: 10px 0; }
+.astro-mode { padding: 11px 13px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg-2); }
+.astro-mode h4 { margin: 0 0 5px; font-family: var(--mono); font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; }
+.astro-mode p { margin: 0; font-size: .89rem; }
+.astro-mode.is-good h4 { color: var(--pos); }
+.astro-mode.is-shadow h4 { color: var(--neg); }
+@media (max-width: 620px) { .astro-two { grid-template-columns: 1fr; } }
+
+.astro-cards { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 4px; }
+.astro-card-row {
+  width: 100%; display: flex; align-items: center; gap: 11px;
+  padding: 7px 10px; border-radius: 10px;
+  background: transparent; border: 1px solid transparent; color: var(--ink); text-align: left;
+  transition: background .15s, border-color .15s;
+}
+.astro-card-row:hover { border-color: var(--line); background: var(--panel); }
+.astro-card-txt { flex: 1; display: flex; flex-direction: column; gap: 1px; }
+.astro-card-txt b { font-size: .93rem; }
+.astro-card-txt .muted { line-height: 1.35; }
+
+.astro-block { margin: 20px 0; }
+.astro-block h2 { margin: 0 0 8px; }
+.astro-foot { max-width: 68ch; margin-top: 10px; }
+
 /* ---------- Tables de probabilité (Méthode) ---------- */
 .proba-table { width: 100%; border-collapse: collapse; font-size: .88rem; font-variant-numeric: tabular-nums; }
 .proba-table th, .proba-table td { padding: 6px 10px; border-bottom: 1px solid var(--line); text-align: right; }

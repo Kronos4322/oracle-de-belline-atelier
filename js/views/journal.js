@@ -256,8 +256,8 @@ BELLINE.Views.journal = function (root) {
       '<dt>Familles</dt><dd>' + (fam || '—') + '</dd>' +
       '<dt>Valences</dt><dd>' + v.positive + ' positive' + (v.positive > 1 ? 's' : '') + ' · ' +
         v.negative + ' négative' + (v.negative > 1 ? 's' : '') + ' · ' + v.neutre + ' neutre' + (v.neutre > 1 ? 's' : '') + '</dd>' +
-      '<dt>Cartes fortes</dt><dd>' + (a.fortes.length
-        ? a.fortes.map(function (e) { return e.card.number + ' ' + esc(e.card.name); }).join(' · ') : '— aucune') + '</dd>' +
+      '<dt>Cartes fortes' + (a.fortes.length > 1 ? ' (' + a.fortes.length + ')' : '') + '</dt><dd>' + (a.fortes.length
+        ? a.fortes.map(function (e) { return esc(e.pos.label) + ' : ' + e.card.number + ' ' + esc(e.card.name); }).join('<br>') : '— aucune') + '</dd>' +
       (t.sens ? '<dt>Sens de lecture</dt><dd>' + esc(t.sens) + '</dd>' : '') +
       '<dt>Positions contraires</dt><dd>' + (a.contraires.length
         ? a.contraires.map(function (e) {

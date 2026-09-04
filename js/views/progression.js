@@ -116,8 +116,8 @@ BELLINE.Views.progression = function (root) {
 
     '<section class="jr-sec"><h2>Test de concordance des valences</h2>' +
       '<p class="muted small">Une lame forte concorde quand sa valence coïncide avec le signe de sa position. ' +
-      'Un résultat ne s\'énonce jamais seul : la colonne « fragiles neutralisées » recalcule en retirant 37, 41, 48 ' +
-      '(classements contestés). Si les deux divergent nettement, le résultat n\'est pas exploitable.</p>' +
+      'Un résultat ne s\'énonce jamais seul : la colonne « fragiles neutralisées » recalcule en retirant ' +
+      BELLINE.FRAGILE.join(', ') + ' (classements contestés). Si les deux divergent nettement, le résultat n\'est pas exploitable.</p>' +
       (concLines.length
         ? '<div class="tbl-scroll"><table class="method-table"><thead><tr><th>Tirage</th><th>Concord.</th><th>P tranchée</th><th>P fragiles neutr.</th></tr></thead>' +
           '<tbody>' + concLines.join('') + '</tbody></table></div>' +

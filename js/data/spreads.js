@@ -286,6 +286,59 @@ window.BELLINE = window.BELLINE || {};
       ]
     },
 
+    /* ===================== Tirage d'Hermès ===================== */
+    hermes: {
+      id: 'hermes',
+      name: "Tirage d'Hermès",
+      subtitle: "Lecture d'un thème",
+      count: 17,
+      intro: "Une Coupe et cinq positions : deux en tension (ce qui nourrit le thème, ce qui " +
+             "le bloque), un Nœud qui organise l'ensemble, un Noyau qui donne la réponse, " +
+             "une Racine qui l'explique. Chaque position, hors Coupe, reçoit un substantif " +
+             "puis deux adjectifs qui le qualifient.",
+      typologie: { objet: "un thème", question: "quel est l'état d'ensemble du thème ?", reversible: false,
+        mesure: "test de concordance (Force féconde / Ombre-Résistance)" },
+      rules: [
+        "La Coupe donne le climat et la porte d'entrée du thème : hors positions, ses deux cartes sont remises au jeu.",
+        "Force féconde et Ombre / Résistance sont la seule paire polaire : à lire en tension, jamais additionnées.",
+        "Le Nœud / Pivot organise l'ensemble ; le Noyau donne la réponse ; la Racine explique d'où elle vient — jamais l'inverse.",
+        "Chaque position hors Coupe reçoit un substantif puis deux adjectifs qui le qualifient, sans jamais le renverser."
+      ],
+      senses: [],
+      axes: [
+        "Force féconde contre Ombre / Résistance : la tension du thème, seule paire mesurable.",
+        "Nœud → Noyau → Racine : du mécanisme central à la réponse, puis à son explication."
+      ],
+      layout: [
+        ['he_coupe_1', 'he_coupe_2'],
+        ['he_force', 'he_ombre'],
+        ['he_noeud'],
+        ['he_noyau'],
+        ['he_racine']
+      ],
+      positions: [
+        { id: 'he_coupe_1', label: "La Coupe", kind: 'adjectif', branch: 'coupe', polarity: null,
+          logic: "Climat / porte d'entrée : le registre général du thème. Hors positions, remise au jeu avant l'étalement." },
+        { id: 'he_coupe_2', label: "La Coupe", kind: 'adjectif', branch: 'coupe', polarity: null,
+          logic: "Climat / porte d'entrée : le registre général du thème. Hors positions, remise au jeu avant l'étalement." },
+        { id: 'he_force', label: "Force féconde", kind: 'substantif', branch: 'pos', polarity: 'favorable', adj: 2,
+          logic: "Ce qui nourrit, construit ou fait évoluer le thème.",
+          read: "À mettre en tension avec l'Ombre / Résistance : la seule paire mesurable de ce tirage." },
+        { id: 'he_ombre', label: "Ombre / Résistance", kind: 'substantif', branch: 'neg', polarity: 'defavorable', adj: 2,
+          logic: "Ce qui bloque, répète, déforme ou enferme.",
+          read: "À mettre en tension avec la Force féconde : la seule paire mesurable de ce tirage." },
+        { id: 'he_noeud', label: "Nœud / Pivot", kind: 'substantif', branch: 'axe', polarity: null, adj: 2,
+          logic: "Le mécanisme central qui organise l'ensemble.",
+          read: "Se lit après la paire Force / Ombre : ce qui articule leur tension en un mécanisme unique." },
+        { id: 'he_noyau', label: "Noyau / Réponse", kind: 'substantif', branch: 'axe', polarity: null, adj: 2,
+          logic: "Ce que l'oracle affirme principalement sur le sujet.",
+          read: "La réponse : se lit après le Nœud, jamais isolément de ce qui la précède." },
+        { id: 'he_racine', label: "Racine / Explication", kind: 'substantif', branch: 'axe', polarity: null, adj: 2,
+          logic: "Pourquoi cette réponse ; d'où elle vient ; comment la comprendre.",
+          read: "Se lit en dernier : explique le Noyau, ne le renverse jamais." }
+      ]
+    },
+
     /* ===================== Tirage en croix (tradition classique) ===================== */
     croix: {
       id: 'croix',

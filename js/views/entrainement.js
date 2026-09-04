@@ -110,7 +110,7 @@ BELLINE.Views.entrainement = function (root) {
         reason: P[c.planet].symbol + ' ' + P[c.planet].name + ' — ' + P[c.planet].desc };
     } else {
       var polReason = 'Valence lexicale : le nom seul, hors position et hors tirage (table figée, ch. 2).' +
-        (c.fragile ? ' Classement contesté (†) — l\'un des trois les plus fragiles de la table.' : '');
+        (c.fragile ? ' Classement contesté (†) — l\'une des ' + BELLINE.FRAGILE.length + ' lames les plus fragiles de la table.' : '');
       current = { kind: 'qcm', sub: 'valence', card: c, showImage: false,
         q: 'Quelle est la valence lexicale de « ' + c.name + ' » ?',
         options: ['positive', 'négative', 'neutre'],

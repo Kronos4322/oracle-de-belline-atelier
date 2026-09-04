@@ -16,7 +16,7 @@ BELLINE.Views = BELLINE.Views || {};
 BELLINE.Views.tirages = function (root) {
   var S = BELLINE.Storage;
 
-  function methodIds() { return ['hecate', 'miroir', 'verdict', 'flambeau', 'apollon']; }
+  function methodIds() { return ['hecate', 'hermes', 'miroir', 'verdict', 'flambeau', 'apollon']; }
   function classicIds() { return ['croix', 'trois', 'roue']; }
   function customIds() { return (S.getCustomSpreads() || []).map(function (s) { return s.id; }); }
   function allIds() { return methodIds().concat(classicIds(), customIds()); }
@@ -628,7 +628,10 @@ BELLINE.Views.tirages = function (root) {
       return '<p>Avant d\'interpréter : familles planétaires, valences, cartes fortes, cartes en position contraire.</p>' +
         '<p><span class="muted">Familles :</span> ' + (fam || '—') + '</p>' +
         '<p><span class="muted">Valences :</span> ' + (a.valences ? a.valences.positive + ' + / ' + a.valences.negative + ' − / ' + a.valences.neutre + ' neutre' : '—') + '</p>' +
-        '<p><span class="muted">Cartes fortes :</span> ' + ((a.fortes && a.fortes.length) ? a.fortes.map(function (e) { return chip(e.card.number); }).join(' ') : '— aucune') + '</p>' +
+        '<p><span class="muted">Cartes fortes' + ((a.fortes && a.fortes.length > 1) ? ' (' + a.fortes.length + ')' : '') + ' :</span> ' +
+          ((a.fortes && a.fortes.length)
+            ? a.fortes.map(function (e) { return esc(e.pos.label) + ' — ' + chip(e.card.number); }).join('<br>')
+            : '— aucune') + '</p>' +
         '<p><span class="muted">Positions contraires :</span> ' + ((a.contraires && a.contraires.length) ? a.contraires.map(function (e) { return esc(e.pos.label) + ' (' + chip(e.card.number) + ')'; }).join('<br>') : '— aucune') + '</p>';
     }});
 
@@ -895,9 +898,8 @@ BELLINE.Views.tirages = function (root) {
 
   /* ---------- rendu global ---------- */
 
-  function tabButton(id, active) {
-    return '<button type="button" class="sp-tab' + (active ? ' is-active' : '') + '" data-spread="' + id + '">' +
-      esc(BELLINE.SPREADS[id].name) + '</button>';
+  function pickerOption(id) {
+    return '<option value="' + id + '"' + (id === spreadId ? ' selected' : '') + '>' + esc(BELLINE.SPREADS[id].name) + '</option>';
   }
 
   function render() {
@@ -914,14 +916,14 @@ BELLINE.Views.tirages = function (root) {
     root.innerHTML =
       '<div class="view-head">' +
         '<h1>Tirages</h1>' +
-        '<div class="sp-picker-tabs">' +
-          '<span class="u-label" style="align-self:center">Méthode</span>' +
-          methodIds().map(function (id) { return tabButton(id, id === spreadId); }).join('') +
-          '<span class="u-label" style="align-self:center">Tradition</span>' +
-          classicIds().map(function (id) { return tabButton(id, id === spreadId); }).join('') +
-          (custom.length ? '<span class="u-label" style="align-self:center">Mes tirages</span>' +
-            custom.map(function (id) { return tabButton(id, id === spreadId); }).join('') : '') +
-          '<button type="button" class="sp-tab" id="spNew">+ créer</button>' +
+        '<div class="sp-picker">' +
+          '<label class="sp-picker-field"><span class="u-label">Choisir un tirage</span>' +
+            '<select id="spPicker">' +
+              '<optgroup label="Méthode">' + methodIds().map(pickerOption).join('') + '</optgroup>' +
+              '<optgroup label="Tradition">' + classicIds().map(pickerOption).join('') + '</optgroup>' +
+              (custom.length ? '<optgroup label="Mes tirages">' + custom.map(pickerOption).join('') + '</optgroup>' : '') +
+            '</select></label>' +
+          '<button type="button" class="btn-ghost btn-sm" id="spNew">+ créer un tirage</button>' +
         '</div>' +
         '<h2 class="sp-name">' + esc(spread.name) +
           (spread.custom ? ' <button type="button" class="btn-link" id="spDelSpread">supprimer</button>' : '') + '</h2>' +
@@ -970,6 +972,7 @@ BELLINE.Views.tirages = function (root) {
       readingHTML() +
       '<div class="sp-modal" id="spModal" hidden></div>';
 
+    wireHeader();
     bindSlots();
     wireToolbar();
     wireGuided();
@@ -986,12 +989,15 @@ BELLINE.Views.tirages = function (root) {
     document.addEventListener('keydown', onKey);
   }
 
-  function bindSlots() {
-    root.querySelectorAll('.sp-tab[data-spread]').forEach(function (b) {
-      b.addEventListener('click', function () {
-        if (b.dataset.spread === spreadId) return;
-        loadSpread(b.dataset.spread); render();
-      });
+  /* Contrôles de l'en-tête (sélecteur de tirage, +créer, supprimer) : le DOM
+     qui les porte n'est reconstruit que par un render() complet, donc on ne
+     les câble qu'une fois par render() — jamais depuis renderBoardOnly(), qui
+     laisserait s'accumuler des écouteurs en double sur le même <select>. */
+  function wireHeader() {
+    var picker = root.querySelector('#spPicker');
+    if (picker) picker.addEventListener('change', function () {
+      if (picker.value === spreadId) return;
+      loadSpread(picker.value); render();
     });
     var neu = root.querySelector('#spNew');
     if (neu) neu.addEventListener('click', function () { editorOpen = true; render(); });
@@ -1003,6 +1009,9 @@ BELLINE.Views.tirages = function (root) {
         loadSpread('hecate'); render();
       });
     });
+  }
+
+  function bindSlots() {
     root.querySelectorAll('.sp-slot, .sp-adj').forEach(function (b) {
       b.addEventListener('click', function () {
         var key = b.dataset.pos;

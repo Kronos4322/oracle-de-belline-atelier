@@ -171,11 +171,13 @@ BELLINE.Views.methode = function (root) {
       '<p class="muted small">Un tirage riche en Mars ou en Saturne est mécaniquement sombre, sans que cela constitue une information. La distribution planétaire se lit comme un contexte, jamais comme un présage.</p>') +
 
     card('mesure', 'Les classements fragiles',
-      '<p>Trois lames à valence forte sont contestées par les répertoires publiés (marqueur † de la table) : ' +
-      '<strong>37 Feu</strong> (le classement le plus fragile), <strong>41 Héritage</strong>, <strong>48 Fatalité</strong>.</p>' +
+      '<p>Deux lames à valence forte sont contestées par les répertoires publiés (marqueur † de la table) : ' +
+      '<strong>41 Héritage</strong>, <strong>48 Fatalité</strong>.</p>' +
       '<p>Toute concordance qui repose sur elles se donne en deux versions : tranchée, et recalculée en les neutralisant. ' +
       'Reclasser une seule peut faire varier un résultat du simple au triple. La Progression et le Journal affichent les deux.</p>' +
-      '<p class="muted small">Deux autres se classent mal mais restent neutres à dessein — les sources elles-mêmes divergent, donc sans effet sur la mesure : 36 Pourparlers, 31 Passions. ' +
+      '<p class="muted small">Trois autres se classent mal mais restent neutres à dessein, donc sans effet sur la mesure : 36 Pourparlers et 31 Passions, ' +
+      'parce que les sources elles-mêmes divergent ; et 37 Feu, neutralisée sur décision personnelle de lecture — les répertoires publiés la donnent tantôt favorable, ' +
+      'tantôt défavorable, et c\'est ce choix qui tranche plutôt qu\'un classement importé. ' +
       '(28 Famille, longtemps classée neutre par erreur, est reclassée positive depuis l\'audit des sources — sept. 2026.)</p>') +
 
     card('mesure', 'Tables de référence — cartes fortes',

@@ -128,7 +128,7 @@ BELLINE.POLARITE = {
   25: "Favorable", 26: "Très favorable", 27: "Très favorable relationnellement", 28: "Favorable",
   29: "Très favorable affectivement", 30: "Favorable sociale", 31: "Favorable à risquée, très intense",
   32: "Défavorable", 33: "Défavorable à neutre, conflictuel", 34: "Défavorable", 35: "Défavorable",
-  36: "Neutre à favorable si dialogue constructif", 37: "Dynamique, favorable ou dangereuse selon contexte",
+  36: "Neutre à favorable si dialogue constructif", 37: "Neutre — dynamique, favorable ou dangereuse selon contexte",
   38: "Très défavorable / brusque",
   39: "Très favorable", 40: "Favorable", 41: "Favorable à neutre", 42: "Très favorable / modératrice",
   43: "Très favorable socialement", 44: "Très favorable mais imprévisible", 45: "Très favorable",
@@ -141,8 +141,11 @@ BELLINE.POLARITE = {
    Elles portent une valence forte mais contestée par les répertoires publiés.
    Le traité (ch. 24.3, 47.4) impose de recalculer toute concordance en les
    neutralisant : reclasser une seule peut faire varier un résultat du simple
-   au triple. 37 Feu est « le classement le plus fragile de toute la table ». */
-BELLINE.FRAGILE = [37, 41, 48];
+   au triple.
+   37 Feu n'y figure plus : classée neutre à la demande explicite de Camille
+   (choix de lecture personnel, pas une case "contestée" à recalculer —
+   une carte neutre est de toute façon déjà exclue du test de concordance). */
+BELLINE.FRAGILE = [41, 48];
 
 /* Cartes fortes de la tradition : opérateur d'intensité unique et fixe. */
 BELLINE.FORTES = [11, 34, 38, 42, 48];
@@ -154,8 +157,11 @@ BELLINE.FORTES = [11, 34, 38, 42, 48];
   // classées neutres par erreur alors que la tradition (kartomanta, oracle-
   // de-belline.com, tarot-ana, mediumnitemagnetisme…) les donne favorables
   // sans réserve — et 44 contredisait même sa propre marque « majeure ».
+  // 37 Feu : classée neutre à la demande explicite de Camille (sept. 2026) —
+  // les sources publiques la donnent presque toutes ambivalente de toute
+  // façon ; c'est sa lecture personnelle qui tranche, pas un répertoire.
   var POS = [4, 5, 6, 7, 8, 9, 10, 14, 16, 19, 20, 22, 25, 26, 27, 28, 29, 30, 39, 40, 41, 42, 43, 44, 45, 49, 53];
-  var NEG = [11, 13, 17, 21, 32, 33, 34, 35, 37, 38, 46, 47, 48, 50, 51];
+  var NEG = [11, 13, 17, 21, 32, 33, 34, 35, 38, 46, 47, 48, 50, 51];
   var FORTE = BELLINE.FORTES;                    // opérateur d'intensité traditionnel, fixe
   var MAJ_POS = [5, 26, 27, 29, 39, 42, 43, 44, 45, 49, 53]; // très favorables
   var MAJ_NEG = [38, 47, 48, 50];                            // très défavorables

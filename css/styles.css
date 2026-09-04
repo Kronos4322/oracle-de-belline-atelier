@@ -766,19 +766,19 @@ button.planet-sym:hover { color: var(--gold-soft); text-shadow: 0 0 10px current
 
 /* ---------- Tirages : plateau ---------- */
 
-.sp-picker-tabs {
-  display: flex; gap: 6px; flex-wrap: wrap; align-items: center;
+.sp-picker {
+  display: flex; gap: 12px; flex-wrap: wrap; align-items: end;
   margin: 10px 0 6px; padding: 12px; border-radius: 12px;
   background: var(--bg-2); border: 1px solid var(--line);
 }
-.sp-tab {
-  padding: 6px 13px; border-radius: 999px; font-size: .85rem;
-  background: var(--panel); border: 1px solid var(--line); color: var(--muted);
-  transition: border-color .15s, color .15s, transform .15s;
+.sp-picker-field { flex: 1 1 260px; display: flex; flex-direction: column; gap: 4px; }
+.sp-picker-field select {
+  padding: 10px 12px; border-radius: 10px; font-size: .95rem; font-family: var(--serif);
+  background: var(--panel); border: 1px solid var(--line); color: var(--ink);
+  transition: border-color .15s;
 }
-.sp-tab:hover { border-color: var(--gold-soft); color: var(--ink); transform: translateY(-1px); }
-.sp-tab.is-active { background: linear-gradient(180deg, var(--panel-2), var(--panel)); border-color: var(--gold); color: var(--gold-soft); box-shadow: 0 0 0 1px rgba(217,178,107,.15) inset; }
-#spNew { border-style: dashed; }
+.sp-picker-field select:hover { border-color: var(--gold-soft); }
+.sp-picker-field select:focus { outline: 2px solid var(--gold); outline-offset: 1px; border-color: transparent; }
 .sp-name { margin: 14px 0 4px; font-size: 1.3rem; display: flex; align-items: center; gap: 10px; }
 
 .sp-rrow { display: flex; flex-direction: column; align-items: center; gap: 3px; }

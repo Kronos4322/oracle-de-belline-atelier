@@ -73,6 +73,38 @@ BELLINE.Views.associations = function (root) {
     }).join('');
   }
 
+  // Modificateurs universels sélectionnables (Carte Bleue exclue : hors-série,
+  // absente des deux menus déroulants du moteur).
+  var SUGGEST_MODIFIERS = [1, 5, 51, 48, 19, 29, 27];
+
+  function suggestionsHTML() {
+    var seen = {};
+    var curated = [];
+    BELLINE.CLASSIC_COMBOS.forEach(function (x) {
+      if (x.cards.length !== 2 || x.cards.indexOf(engineSub) === -1) return;
+      var other = x.cards[0] === engineSub ? x.cards[1] : x.cards[0];
+      if (other === engineSub || other === 53 || seen[other]) return;
+      seen[other] = true;
+      curated.push(other);
+    });
+    var mods = SUGGEST_MODIFIERS.filter(function (n) { return n !== engineSub && !seen[n]; });
+
+    function chip(n) {
+      return '<button type="button" class="combo-sugg' + (n === engineAdj ? ' is-on' : '') + '" data-n="' + n + '">' +
+        '<b>' + n + '</b> ' + esc(cardName(n)) + '</button>';
+    }
+
+    return '<div class="combo-suggestions">' +
+      '<div class="combo-sugg-label">Pistes pour « ' + esc(cardName(engineSub)) + ' » — clique un adjectif pour voir la lecture</div>' +
+      (curated.length
+        ? '<div class="combo-sugg-group"><span class="combo-sugg-group-label">attestées</span>' + curated.map(chip).join('') + '</div>'
+        : '') +
+      (mods.length
+        ? '<div class="combo-sugg-group"><span class="combo-sugg-group-label">modificateurs universels</span>' + mods.map(chip).join('') + '</div>'
+        : '') +
+      '</div>';
+  }
+
   function renderEngine() {
     var box = root.querySelector('#comboEngine');
     if (!box) return;
@@ -90,23 +122,36 @@ BELLINE.Views.associations = function (root) {
           '<label class="field"><span>Adjectif — ce qui qualifie</span>' +
             '<select id="comboAdj">' + cardOptions(engineAdj) + '</select></label>' +
         '</div>' +
+        '<div id="comboSuggest"></div>' +
         '<div id="comboResult"></div>' +
       '</div>';
 
+    function refresh() {
+      box.querySelector('#comboSuggest').innerHTML = suggestionsHTML();
+      box.querySelector('#comboSuggest').querySelectorAll('.combo-sugg').forEach(function (b) {
+        b.addEventListener('click', function () {
+          engineAdj = Number(b.dataset.n);
+          box.querySelector('#comboAdj').value = engineAdj;
+          refresh();
+        });
+      });
+      renderComboResult();
+    }
+
     box.querySelector('#comboSub').addEventListener('change', function (e) {
-      engineSub = Number(e.target.value); renderComboResult();
+      engineSub = Number(e.target.value); refresh();
     });
     box.querySelector('#comboAdj').addEventListener('change', function (e) {
-      engineAdj = Number(e.target.value); renderComboResult();
+      engineAdj = Number(e.target.value); refresh();
     });
     box.querySelector('#comboSwap').addEventListener('click', function () {
       var t = engineSub; engineSub = engineAdj; engineAdj = t;
       box.querySelector('#comboSub').value = engineSub;
       box.querySelector('#comboAdj').value = engineAdj;
-      renderComboResult();
+      refresh();
     });
 
-    renderComboResult();
+    refresh();
   }
 
   function renderComboResult() {

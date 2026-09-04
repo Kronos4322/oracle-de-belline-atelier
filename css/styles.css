@@ -753,6 +753,25 @@ button.planet-sym:hover { color: var(--gold-soft); text-shadow: 0 0 10px current
   .combo-picker { grid-template-columns: 1fr; }
   #comboSwap { justify-self: center; transform: rotate(90deg); }
 }
+.combo-suggestions { margin-top: 12px; }
+.combo-sugg-label {
+  font-size: .78rem; color: var(--muted); margin-bottom: 6px;
+}
+.combo-sugg-group {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 6px;
+}
+.combo-sugg-group-label {
+  font-family: var(--mono); font-size: .62rem; text-transform: uppercase; letter-spacing: .07em;
+  color: var(--muted); flex: 0 0 auto; margin-right: 2px;
+}
+.combo-sugg {
+  background: var(--bg-2); border: 1px solid var(--line); color: var(--ink);
+  border-radius: 999px; padding: 4px 10px; font-size: .82rem; transition: border-color .15s, transform .15s;
+}
+.combo-sugg:hover { border-color: var(--gold-soft); transform: translateY(-1px); }
+.combo-sugg b { color: var(--gold-soft); font-weight: 600; }
+.combo-sugg.is-on { background: var(--gold); border-color: var(--gold); color: #241c0c; }
+.combo-sugg.is-on b { color: inherit; }
 .combo-reading {
   margin-top: 14px; padding: 13px 15px; border-radius: 12px;
   background: var(--bg-2); border: 1px solid var(--line-lit);

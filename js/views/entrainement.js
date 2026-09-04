@@ -180,6 +180,34 @@ BELLINE.Views.entrainement = function (root) {
     ['position', 'Positions']
   ];
 
+  /* Réponse enrichie : au-delà du mot-clé, ce qu'il y a à savoir sur la
+     carte — ombre, clé de lecture, une association traditionnelle. Puisée
+     dans le Grimoire (ta version), le dossier et les planches. */
+  function isTemplate(s) {
+    return !s || /transpose son noyau sémantique|qualifie le climat du foyer|constitue une ressource|logique profonde de la situation/.test(s);
+  }
+  function richAnswerHTML(c) {
+    if (!c) return '';
+    var dossier = (BELLINE.CARD_DOSSIER || {})[c.number] || {};
+    var planche = BELLINE.plancheFor ? BELLINE.plancheFor(c.number) : null;
+    var combos = BELLINE.combosFor ? BELLINE.combosFor(c.number) : { pairs: [] };
+    var rows = [];
+    if (!isTemplate(dossier.ombre)) rows.push(['Ombre / revers', dossier.ombre]);
+    if (planche && planche.cle) rows.push(['Clé de lecture', planche.cle]);
+    else if (dossier.noyau) rows.push(['Noyau', dossier.noyau]);
+    if (dossier.ouinon) rows.push(['Oui / Non', dossier.ouinon]);
+    var rowsHtml = rows.length
+      ? '<div class="ex-answer-rows">' + rows.slice(0, 2).map(function (r) {
+          return '<div class="ex-answer-row"><strong>' + esc(r[0]) + '</strong> ' + esc(r[1]) + '</div>';
+        }).join('') + '</div>'
+      : '';
+    var comboHtml = combos.pairs.length
+      ? '<p class="ex-combo-hint"><span class="u-label">Association</span> ' +
+        esc(combos.pairs[0].label) + ' — ' + esc(combos.pairs[0].note) + '</p>'
+      : '';
+    return rowsHtml + comboHtml;
+  }
+
   function figureHTML(c, big) {
     var planet = P[c.planet];
     var img = BELLINE.imageFor(c.number);
@@ -207,9 +235,10 @@ BELLINE.Views.entrainement = function (root) {
           (current.revealed
             ? '<p class="qcm-q">' + esc(c.name) + '</p>' +
               '<p class="qcm-sub">' + planet.symbol + ' Série ' + planet.name + ' · valence ' + BELLINE.VALENCE[c.valence].label +
-                (c.forte ? ' · carte forte' : '') + '</p>' +
+                (c.forte ? ' · carte forte' : '') + (c.fragile ? ' · classement fragile' : '') + (c.supreme ? ' · ★ meilleure carte' : '') + '</p>' +
               (kw.length ? '<div class="cj-kw">' + kw.slice(0, 6).map(function (k) { return '<span>' + esc(k) + '</span>'; }).join('') + '</div>' : '') +
               (c.sens && c.sens.general ? '<p class="cj-sens muted">' + esc(c.sens.general) + '</p>' : '') +
+              richAnswerHTML(c) +
               '<div class="qcm-next"><button type="button" class="btn-ghost" id="exKo">À revoir</button>' +
                 '<button type="button" class="btn-primary" id="exOk">Je savais</button></div>'
             : '<p class="qcm-sub">' + planet.symbol + ' Série ' + planet.name + '</p>' +
@@ -235,7 +264,12 @@ BELLINE.Views.entrainement = function (root) {
             }).join('') + '</div>' +
           '<p class="qcm-q">' + esc(current.q) + '</p>' +
           optsHTML(current.options, current.answer) +
-          (answered != null ? feedbackHTML(null, current.reason) : '') +
+          (answered != null
+            ? feedbackHTML(null, current.reason) +
+              '<p class="ex-combo-cards muted small">' +
+                current.cards.map(function (k) { var b = S.getCard(k); return b ? b.number + ' ' + b.name + ' (valence ' + BELLINE.VALENCE[b.valence].label + ')' : ''; }).join(' · ') +
+              '</p>'
+            : '') +
         '</div>';
     } else if (current && current.kind === 'position') {
       body =
@@ -243,7 +277,7 @@ BELLINE.Views.entrainement = function (root) {
           '<p class="qcm-sub">' + esc(current.posLabel) + '</p>' +
           '<p class="qcm-q">' + esc(current.q) + '</p>' +
           optsHTML(current.options, current.answer) +
-          (answered != null ? feedbackHTML(null, current.reason) : '') +
+          (answered != null ? feedbackHTML(current.card, current.reason) : '') +
         '</div>';
     }
 
@@ -293,6 +327,7 @@ BELLINE.Views.entrainement = function (root) {
         (c.fragile ? ' <span class="val-tag val-fragile">fragile</span>' : '') + '</p>'
       : '';
     return head + cardLine + (reason ? '<p class="ex-feedback-why">' + esc(reason) + '</p>' : '') +
+      (c ? richAnswerHTML(c) : '') +
       '<div class="qcm-next"><button type="button" class="btn-primary" id="exContinue">Continuer</button></div></div>';
   }
 

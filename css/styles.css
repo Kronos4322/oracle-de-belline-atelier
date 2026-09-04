@@ -149,8 +149,14 @@ code { font-family: var(--mono); font-size: .86em; color: var(--gold-soft); }
 }
 .btn-icon:hover { background: var(--panel-2); border-color: var(--gold); transform: translateY(-1px); }
 
-.view { flex: 1; padding: 22px 16px 100px; max-width: var(--maxw); width: 100%; margin: 0 auto; outline: none;
-  animation: viewIn .28s ease both; }
+.view {
+  flex: 1; max-width: var(--maxw); width: 100%; margin: 0 auto; outline: none;
+  padding: 22px 16px;
+  /* La nav mobile est fixe et sa hauteur varie (encoche, taille de texte) :
+     on réserve large plutôt qu'un chiffre fixe, pour ne jamais passer dessous. */
+  padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+  animation: viewIn .28s ease both;
+}
 @keyframes viewIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 .view-head { margin-bottom: 20px; }
 .view-head h1 { margin-bottom: 4px; }
@@ -1134,6 +1140,22 @@ button.planet-sym:hover { color: var(--gold-soft); text-shadow: 0 0 10px current
 .ex-feedback.is-wrong .ex-feedback-mark { color: var(--danger); }
 .ex-feedback-card { margin: 0 0 6px; font-size: .92rem; }
 .ex-feedback-why { margin: 0; font-size: .92rem; color: var(--ink); }
+
+.ex-answer-rows { margin-top: 12px; display: grid; gap: 8px; }
+.ex-answer-row {
+  font-size: .88rem; padding: 8px 10px; border-radius: 9px;
+  background: var(--panel); border: 1px solid var(--line);
+}
+.ex-answer-row strong {
+  display: block; font-family: var(--mono); font-size: .68rem; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--gold-deep); margin-bottom: 3px;
+}
+.ex-combo-hint {
+  margin: 10px 0 0; padding: 9px 11px; border-radius: 9px; font-size: .86rem;
+  background: hsl(275 26% 16%); border: 1px solid hsl(275 30% 40%);
+}
+.ex-combo-hint .u-label { color: var(--amethyst-soft); margin-right: 4px; }
+.ex-combo-cards { text-align: center; margin-top: 10px; }
 
 /* ---------- Menus contextuels maison (remplace prompt/confirm) ---------- */
 .mini-prompt {

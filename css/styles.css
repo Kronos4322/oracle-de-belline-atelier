@@ -808,6 +808,31 @@ button.planet-sym:hover { color: var(--gold-soft); text-shadow: 0 0 10px current
 .sp-toolbar-btns { display: flex; gap: 8px; flex-wrap: wrap; }
 #spCount { flex-basis: 100%; margin: 0; }
 
+/* --- répartition des valences (barre + légende) --- */
+.sp-valbar { flex-basis: 100%; }
+.sp-valbar-track {
+  display: flex; width: 100%; height: 8px; border-radius: 999px; overflow: hidden;
+  background: var(--panel); border: 1px solid var(--line);
+}
+.sp-valbar-seg { height: 100%; transition: width .25s ease; }
+.sp-valbar-seg.is-pos { background: var(--pos); }
+.sp-valbar-seg.is-neg { background: var(--neg); }
+.sp-valbar-seg.is-neu { background: var(--muted); opacity: .55; }
+.sp-valbar-legend {
+  display: flex; gap: 14px; flex-wrap: wrap; margin-top: 6px;
+  font-family: var(--mono); font-size: .72rem; letter-spacing: .02em; color: var(--ink);
+}
+.sp-valbar-legend span::before {
+  content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+  margin-right: 5px; vertical-align: middle;
+}
+.sp-valbar-legend .is-pos::before { background: var(--pos); }
+.sp-valbar-legend .is-neg::before { background: var(--neg); }
+.sp-valbar-legend .is-neu::before { background: var(--muted); opacity: .55; }
+.sp-valbar-legend em { font-style: normal; color: var(--muted); }
+.sp-valbar-empty .sp-valbar-track { background: var(--bg); }
+.sp-valbar-empty p { margin: 6px 0 0; }
+
 .sp-layout { display: grid; grid-template-columns: 1fr; gap: 18px; align-items: start; }
 @media (min-width: 980px) { .view:has(.sp-layout) { max-width: 1400px; } }
 @media (min-width: 1040px) {

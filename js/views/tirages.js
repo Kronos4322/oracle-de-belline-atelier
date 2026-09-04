@@ -922,6 +922,34 @@ BELLINE.Views.tirages = function (root) {
       '</div>';
   }
 
+  /* ---------- répartition des valences (barre colorée, sur 100 %) ---------- */
+
+  function valenceBarHTML() {
+    var a = filledCount() ? BELLINE.analyzeTirage(spread.id, draft.cards) : null;
+    var v = (a && a.valences) || { positive: 0, negative: 0, neutre: 0 };
+    var total = v.positive + v.negative + v.neutre;
+    if (!total) {
+      return '<div class="sp-valbar sp-valbar-empty"><div class="sp-valbar-track"></div>' +
+        '<p class="muted small">Pose des cartes pour voir la répartition positif / négatif / neutre.</p></div>';
+    }
+    // Le neutre absorbe l'arrondi pour que les trois pourcentages totalisent toujours 100 %.
+    var pPos = Math.round(v.positive / total * 100);
+    var pNeg = Math.round(v.negative / total * 100);
+    var pNeu = Math.max(0, 100 - pPos - pNeg);
+    return '<div class="sp-valbar">' +
+      '<div class="sp-valbar-track">' +
+        (pPos ? '<span class="sp-valbar-seg is-pos" style="width:' + pPos + '%" title="' + v.positive + ' carte(s) positive(s) — ' + pPos + ' %"></span>' : '') +
+        (pNeg ? '<span class="sp-valbar-seg is-neg" style="width:' + pNeg + '%" title="' + v.negative + ' carte(s) négative(s) — ' + pNeg + ' %"></span>' : '') +
+        (pNeu ? '<span class="sp-valbar-seg is-neu" style="width:' + pNeu + '%" title="' + v.neutre + ' carte(s) neutre(s) — ' + pNeu + ' %"></span>' : '') +
+      '</div>' +
+      '<div class="sp-valbar-legend">' +
+        '<span class="is-pos">' + pPos + ' % positives <em>(' + v.positive + ')</em></span>' +
+        '<span class="is-neg">' + pNeg + ' % négatives <em>(' + v.negative + ')</em></span>' +
+        '<span class="is-neu">' + pNeu + ' % neutres <em>(' + v.neutre + ')</em></span>' +
+      '</div>' +
+    '</div>';
+  }
+
   /* ---------- concordance (tranchée + fragiles neutralisées) ---------- */
 
   function pct(x) { return (x * 100).toFixed(1).replace('.', ',') + ' %'; }
@@ -1161,6 +1189,7 @@ BELLINE.Views.tirages = function (root) {
         '</div>' +
         '<p class="muted small" id="spCount">' + filledCount() + ' / ' + slotCount() +
           ' cartes placées · touche une position pour la lire et y placer une carte</p>' +
+        '<div id="spValBar">' + valenceBarHTML() + '</div>' +
       '</div>' +
 
       '<div class="sp-layout">' +
@@ -1250,6 +1279,8 @@ BELLINE.Views.tirages = function (root) {
     if (count) count.textContent = filledCount() + ' / ' + slotCount() + ' cartes placées · touche une position pour la lire et y placer une carte';
     var exp = root.querySelector('#spExportImg');
     if (exp) exp.disabled = !filledCount();
+    var vbar = root.querySelector('#spValBar');
+    if (vbar) vbar.innerHTML = valenceBarHTML();
     renderInspector();
     var gw = root.querySelector('#spGuidedWrap');
     if (gw && guidedStep >= 0) { gw.innerHTML = guidedHTML(); wireGuided(); }

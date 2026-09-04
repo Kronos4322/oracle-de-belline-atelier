@@ -46,15 +46,27 @@ BELLINE.Views.methode = function (root) {
     ["Cloître / Trafic", "retrait contre circulation", "s'arrêter ou continuer à faire circuler"]
   ];
 
-  var FAMILLES = [
-    ["Soleil", "+1,00", "intégralement favorable — vitalité, reconnaissance, extériorité"],
-    ["Jupiter", "+0,86", "valeur, ampleur, sens, ce à quoi l'on tient"],
-    ["Vénus", "+0,57", "lien, plaisir, relation, attachement"],
-    ["Mercure", "0,00", "exactement neutre — échange, circulation, information, calcul"],
-    ["Lune", "−0,29", "affect, réceptivité, ce qui est nocturne ou tu"],
-    ["Saturne", "−0,57", "temps, contrainte, limite, structure"],
-    ["Mars", "−0,86", "conflit, réaction, initiative brusque"]
-  ];
+  /* Indice = (positives − négatives) / effectif de la série, recalculé depuis
+     SEED_CARDS à chaque rendu plutôt que figé en dur — sinon un audit de
+     valence (ex. sept. 2026, cf. cards.js) rend ce tableau silencieusement
+     faux sans qu'aucun test ne le signale. */
+  var FAMILLE_DESC = {
+    soleil: "intégralement favorable — vitalité, reconnaissance, extériorité",
+    jupiter: "valeur, ampleur, sens, ce à quoi l'on tient",
+    venus: "lien, plaisir, relation, attachement",
+    mercure: "exactement neutre — échange, circulation, information, calcul",
+    lune: "affect, réceptivité, ce qui est nocturne ou tu",
+    saturne: "temps, contrainte, limite, structure",
+    mars: "conflit, réaction, initiative brusque"
+  };
+  var FAMILLES = ['soleil', 'jupiter', 'venus', 'mercure', 'lune', 'saturne', 'mars'].map(function (pk) {
+    var cards = BELLINE.SEED_CARDS.filter(function (c) { return c.planet === pk; });
+    var score = cards.reduce(function (s, c) {
+      return s + (c.valence === 'positive' ? 1 : c.valence === 'negative' ? -1 : 0);
+    }, 0) / cards.length;
+    var idx = score === 0 ? '0,00' : (score > 0 ? '+' : '−') + Math.abs(score).toFixed(2).replace('.', ',');
+    return [BELLINE.PLANETS[pk].name, idx, FAMILLE_DESC[pk]];
+  });
 
   var DECLARER = [
     "Sens de lecture (dans un dispositif réversible) : assigné par le temps, jamais choisi. Ne pas mêler les deux sens.",

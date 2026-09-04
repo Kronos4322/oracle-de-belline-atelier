@@ -16,6 +16,14 @@ BELLINE.Views.progression = function (root) {
   var esc = BELLINE.esc;
   var pct = BELLINE.pct;
 
+  /* Tous les tirages ayant au moins une position polarisée — pas une liste
+     figée qui deviendrait fausse si un nouveau tirage polaire est ajouté. */
+  function polarSpreadNames() {
+    return Object.keys(BELLINE.SPREADS).filter(function (k) {
+      return BELLINE.SPREADS[k].positions.some(function (p) { return p.polarity; });
+    }).map(function (k) { return BELLINE.SPREADS[k].name; });
+  }
+
   function fisherCombine(ps) {
     ps = ps.filter(function (p) { return p > 0 && p <= 1; });
     if (ps.length < 2) return null;
@@ -127,7 +135,7 @@ BELLINE.Views.progression = function (root) {
               (combined.p < 0.01 ? ' — significatif au seuil de 1 %.' : combined.p < 0.05 ? ' — significatif au seuil de 5 %.' : ' — non concluant.') +
               '<br><span class="muted small">Valable seulement si les tirages sont indépendants (objets distincts, pas le même jour sur la même situation).</span></p>'
             : '<p class="muted small">Il faut au moins 2 tirages à positions polaires pour combiner.</p>')
-        : '<p class="muted">Aucun tirage à positions polaires (Hécate, Verdict) encore enregistré.</p>') +
+        : '<p class="muted">Aucun tirage à positions polaires (' + esc(polarSpreadNames().join(', ')) + ') encore enregistré.</p>') +
     '</section>' +
 
     '<section class="jr-sec"><h2>Relevé des cartes fortes</h2>' +

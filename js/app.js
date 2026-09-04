@@ -126,7 +126,7 @@ window.BELLINE = window.BELLINE || {};
     BELLINE.lightbox = function (src, caption) {
       if (!src) return;
       box.innerHTML = '<figure><img src="' + src + '" alt="' + esc(caption || 'Image agrandie') + '">' +
-        (caption ? '<figcaption>' + caption + '</figcaption>' : '') + '</figure>';
+        (caption ? '<figcaption>' + esc(caption) + '</figcaption>' : '') + '</figure>';
       box.hidden = false;
     };
   }
@@ -176,13 +176,12 @@ window.BELLINE = window.BELLINE || {};
             '</div>' +
           '</div>';
         el.hidden = false;
-        function done(v) { close(); resolve(v); }
+        function onk(e) { if (e.key === 'Escape') done(false); }
+        function done(v) { close(); document.removeEventListener('keydown', onk); resolve(v); }
         el.querySelector('#mpYes').addEventListener('click', function () { done(true); });
         el.querySelector('#mpNo').addEventListener('click', function () { done(false); });
         el.onclick = function (e) { if (e.target === el) done(false); };
-        document.addEventListener('keydown', function onk(e) {
-          if (e.key === 'Escape') { document.removeEventListener('keydown', onk); done(false); }
-        });
+        document.addEventListener('keydown', onk);
       });
     };
   }

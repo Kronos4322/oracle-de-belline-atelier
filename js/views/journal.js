@@ -455,7 +455,7 @@ BELLINE.Views.journal = function (root) {
     var ul = root.querySelector('#jrEnonces');
     ul.innerHTML = k.enonces.map(function (e, i) {
       return '<li><input type="text" class="jr-enonce-txt" data-i="' + i + '" value="' + esc(e.text) + '" placeholder="Proposition vérifiable n°' + (i + 1) + '">' +
-        '<button type="button" class="jr-enonce-del btn-link danger" data-i="' + i + '">×</button></li>';
+        '<button type="button" class="jr-enonce-del btn-link danger" data-i="' + i + '" aria-label="Supprimer cet énoncé">×</button></li>';
     }).join('');
     ul.querySelectorAll('.jr-enonce-txt').forEach(function (inp) {
       inp.addEventListener('input', function () { k.enonces[inp.dataset.i].text = inp.value; save(t); });

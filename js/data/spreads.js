@@ -218,7 +218,7 @@ window.BELLINE = window.BELLINE || {};
       id: 'flambeau',
       name: "Le Flambeau",
       subtitle: "La journée à venir — tiré la veille (aussi appelé Tirage d'Apollon, version journalière)",
-      count: 18,
+      count: 20,
       intro: "Une Coupe et sept positions en flamme. Le seul tirage répétable, donc le seul " +
              "par lequel la méthode peut être évaluée : il porte sur des faits, il est daté " +
              "d'avance, il permet d'accumuler.",

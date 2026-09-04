@@ -75,7 +75,7 @@ BELLINE.Views.grimoire = function (root) {
       if (!items.length) return '';
       var pImg = BELLINE.planetImageFor(pk);
       var pSym = pImg
-        ? '<button type="button" class="planet-sym" data-planet="' + pk + '" title="Voir la carte planétaire">' + planet.symbol + '</button>'
+        ? '<button type="button" class="planet-sym" data-planet="' + pk + '" title="Voir la carte planétaire" aria-label="Voir la carte planétaire de la série ' + esc(planet.name) + '">' + planet.symbol + '</button>'
         : '<span class="planet-sym">' + planet.symbol + '</span>';
       return '<div class="planet-group">' +
         '<h3 class="planet-title" style="--hue:' + planet.hue + '" data-glyph="' + planet.symbol + '">' + pSym + ' Série ' + planet.name + '</h3>' +
@@ -203,7 +203,7 @@ BELLINE.Views.grimoire = function (root) {
     var pImg = BELLINE.planetImageFor(c.planet);
     var edited = S.isCardEdited(num);
     var pSym = pImg
-      ? '<button type="button" class="planet-sym" id="fichePlanet" title="Voir la carte planétaire">' + planet.symbol + '</button>'
+      ? '<button type="button" class="planet-sym" id="fichePlanet" title="Voir la carte planétaire" aria-label="Voir la carte planétaire de la série ' + esc(planet.name) + '">' + planet.symbol + '</button>'
       : '<span class="planet-sym">' + planet.symbol + '</span>';
 
     var statusLine = edited

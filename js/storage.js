@@ -56,6 +56,7 @@ window.BELLINE = window.BELLINE || {};
       forte: seed.forte,
       polarite: seed.polarite,
       majeure: seed.majeure,
+      supreme: seed.supreme,
       keywords: ref.keywords ? ref.keywords.slice() : [],
       symbolisme: '',
       sens: Object.assign({}, EMPTY_SENS, ref.sens || {}),

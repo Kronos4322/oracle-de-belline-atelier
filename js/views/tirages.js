@@ -11,7 +11,7 @@ BELLINE.Views = BELLINE.Views || {};
 
 BELLINE.Views.tirages = function (root) {
   var S = BELLINE.Storage;
-  var SPREAD_IDS = ['hecate', 'miroir', 'verdict', 'flambeau'];
+  var SPREAD_IDS = ['hecate', 'miroir', 'verdict', 'flambeau', 'apollon'];
 
   var spreadId = S.read('tirage.current', 'hecate');
   if (SPREAD_IDS.indexOf(spreadId) === -1) spreadId = 'hecate';

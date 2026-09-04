@@ -126,11 +126,11 @@ window.BELLINE = window.BELLINE || {};
       }
     },
 
-    /* ===================== Le Miroir du Cœur ===================== */
+    /* ===================== Le Miroir du Cœur (Éros) ===================== */
     miroir: {
       id: 'miroir',
       name: "Le Miroir du Cœur",
-      subtitle: "L'état psychique d'une personne",
+      subtitle: "L'état psychique d'une personne (aussi appelé Tirage d'Éros, lecture des sentiments)",
       count: 11,
       intro: "Neuf positions fonctionnelles, sans polarité ni Guide. Aucune mesure n'est " +
              "disponible : c'est un instrument d'explicitation, non de vérification. Il porte " +
@@ -213,11 +213,11 @@ window.BELLINE = window.BELLINE || {};
       ]
     },
 
-    /* ===================== Le Flambeau ===================== */
+    /* ===================== Le Flambeau (Apollon journalier) ===================== */
     flambeau: {
       id: 'flambeau',
       name: "Le Flambeau",
-      subtitle: "La journée à venir — tiré la veille",
+      subtitle: "La journée à venir — tiré la veille (aussi appelé Tirage d'Apollon, version journalière)",
       count: 9,
       intro: "Une Coupe et sept positions en flamme. Le seul tirage répétable, donc le seul " +
              "par lequel la méthode peut être évaluée : il porte sur des faits, il est daté " +
@@ -251,6 +251,38 @@ window.BELLINE = window.BELLINE || {};
         { id: 'ombre', label: "Ombre", kind: 'substantif', branch: 'axe', polarity: null, logic: "Le risque à surveiller.", read: "À opposer au Geste : le piège d'un côté, le levier de l'autre." },
         { id: 'geste', label: "Geste", kind: 'substantif', branch: 'axe', polarity: null, logic: "Ce qu'il faut faire ou favoriser.", read: "À opposer à l'Ombre : l'action concrète qui aide la journée." },
         { id: 'lueur', label: "Lueur", kind: 'substantif', branch: 'axe', polarity: null, logic: "L'issue du soir, la leçon du jour.", read: "Se lit en dernier : ce qu'on retient une fois la journée passée." }
+      ]
+    },
+
+    /* ===================== Apollon — le message du jour ===================== */
+    apollon: {
+      id: 'apollon',
+      name: "Apollon — Message du jour",
+      subtitle: "Trois cartes, une seule phrase",
+      count: 5,
+      intro: "Une Coupe (climat général, qui n'annonce pas à elle seule le message) et trois " +
+             "cartes qui forment une seule phrase. La carte du milieu porte le substantif ; " +
+             "les deux autres le qualifient.",
+      typologie: { objet: "la journée", question: "quelle est l'unique chose à savoir ?", reversible: false, mesure: "vérification événementielle" },
+      rules: [
+        "Les trois cartes forment une seule phrase — jamais trois messages séparés.",
+        "La carte 2 (Message) donne le substantif principal ; les cartes 1 et 3 le qualifient.",
+        "D'abord le littéral (ce que la carte montre), ensuite le symbolique."
+      ],
+      senses: [],
+      axes: [
+        "Lecture : Contexte → Message → Manifestation, comme sujet + verbe + complément."
+      ],
+      layout: [
+        ['coupe_1', 'coupe_2'],
+        ['contexte', 'message', 'manifestation']
+      ],
+      positions: [
+        { id: 'coupe_1', label: "La Coupe", kind: 'adjectif', branch: 'coupe', polarity: null, logic: "Climat général du jour. N'annonce pas à elle seule le message." },
+        { id: 'coupe_2', label: "La Coupe", kind: 'adjectif', branch: 'coupe', polarity: null, logic: "Climat général du jour. N'annonce pas à elle seule le message." },
+        { id: 'contexte', label: "Contexte", kind: 'adjectif', branch: 'axe', polarity: null, logic: "Ce qui amène le message.", read: "Qualifie le Message : d'où il vient, dans quel cadre le recevoir." },
+        { id: 'message', label: "Message", kind: 'substantif', branch: 'axe', polarity: null, logic: "L'unique chose importante à savoir aujourd'hui.", read: "Le substantif : lis-le seul d'abord, puis qualifié par le Contexte et la Manifestation." },
+        { id: 'manifestation', label: "Manifestation", kind: 'adjectif', branch: 'axe', polarity: null, logic: "Comment cela se montre ou agit.", read: "Qualifie le Message : sous quelle forme concrète le repérer dans la journée." }
       ]
     }
 

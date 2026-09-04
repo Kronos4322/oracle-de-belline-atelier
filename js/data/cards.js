@@ -138,7 +138,9 @@ BELLINE.POLARITE = {
 };
 
 (function () {
-  var POS = [4, 5, 6, 7, 8, 9, 10, 14, 20, 25, 26, 27, 29, 39, 40, 41, 42, 43, 45, 49];
+  // Carte 53 = La Carte Bleue, « la carte du ciel » : tenue pour la plus
+  // favorable du jeu (un ciel bleu sans nuage, une éclaircie après l'orage).
+  var POS = [4, 5, 6, 7, 8, 9, 10, 14, 20, 25, 26, 27, 29, 39, 40, 41, 42, 43, 45, 49, 53];
   var NEG = [11, 13, 17, 21, 32, 33, 34, 35, 37, 38, 46, 47, 48, 50, 51];
   var FORTE = [11, 34, 38, 42, 48];              // opérateur d'intensité traditionnel, fixe
   var MAJ_POS = [5, 26, 27, 29, 39, 42, 43, 44, 45, 49, 53]; // très favorables
@@ -150,6 +152,7 @@ BELLINE.POLARITE = {
     c.polarite = BELLINE.POLARITE[c.number] || '';
     c.majeure = MAJ_POS.indexOf(c.number) !== -1 ? 'positive'
       : MAJ_NEG.indexOf(c.number) !== -1 ? 'negative' : null;
+    c.supreme = c.number === 53;
   });
 })();
 

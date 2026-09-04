@@ -113,6 +113,32 @@ BELLINE.Views.grimoire = function (root) {
     if (isTemplate(text)) return '';
     return '<div class="dos-row"><strong>' + label + '</strong> ' + esc(text) + '</div>';
   }
+  function chips(arr) {
+    return '<p class="pl-chips">' + (arr || []).map(function (x) { return '<span>' + esc(x) + '</span>'; }).join('') + '</p>';
+  }
+  function plancheHTML(num) {
+    var p = (BELLINE.CARD_PLANCHE || {})[num];
+    if (!p) return '';
+    return '<details class="fiche-planche">' +
+      '<summary>Planche de lecture symbolique</summary>' +
+      (p.devise ? '<p class="pl-devise">' + p.devise.map(esc).join('<br>') + '</p>' : '') +
+      '<div class="dos-row"><strong>Iconographie</strong><ul class="jr-plain">' +
+        (p.iconographie || []).map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul></div>' +
+      (p.sensTraditionnel ? '<div class="dos-row"><strong>Sens traditionnel</strong> ' + esc(p.sensTraditionnel) + '</div>' : '') +
+      (p.elements || []).map(function (e) {
+        return '<div class="dos-row"><strong>' + esc(e.nom) + '</strong>' + chips(e.points) +
+          (e.note ? '<p class="muted small">' + esc(e.note) + '</p>' : '') + '</div>';
+      }).join('') +
+      (p.definition ? '<div class="dos-row"><strong>Définition symbolique</strong> ' + esc(p.definition) + '</div>' : '') +
+      (p.lecturesPositives ? '<div class="dos-row"><strong>Lectures positives</strong>' + chips(p.lecturesPositives) + '</div>' : '') +
+      (p.lecturesOmbre ? '<div class="dos-row"><strong>Lectures d\'ombre</strong>' + chips(p.lecturesOmbre) + '</div>' : '') +
+      (p.cle ? '<div class="dos-row dos-oui"><strong>Clé de lecture</strong> ' + esc(p.cle) + '</div>' : '') +
+      (p.couleur ? '<div class="dos-row"><strong>Couleur — ' + esc(p.couleur.nom) + '</strong>' + chips(p.couleur.points) +
+        (p.couleur.note ? '<p class="muted small">' + esc(p.couleur.note) + '</p>' : '') + '</div>' : '') +
+      (p.personnification ? '<div class="dos-row"><strong>Personnification</strong> ' + esc(p.personnification) + '</div>' : '') +
+      '</details>';
+  }
+
   function dossierHTML(num) {
     var d = (BELLINE.CARD_DOSSIER || {})[num];
     if (!d) return '';
@@ -177,6 +203,7 @@ BELLINE.Views.grimoire = function (root) {
           '<h2>' + esc(c.name) + '</h2>' +
           '<p class="muted">' + pSym + ' Série ' + planet.name + '</p>' +
           '<p class="fiche-tags">' +
+            (c.supreme ? '<span class="val-tag val-supreme" title="La carte du ciel : tenue pour la plus favorable du jeu">★ la meilleure carte du jeu</span>' : '') +
             '<span class="val-tag val-' + c.valence + '" title="Valeur lexicale, portée par le seul nom de la carte, hors position et hors tirage">valence ' +
               (BELLINE.VALENCE[c.valence] ? BELLINE.VALENCE[c.valence].label : c.valence) + '</span>' +
             (c.majeure ? '<span class="val-tag val-maj-' + c.majeure + '" title="Carte majeure : elle domine son voisinage (très favorable ou très défavorable)">carte majeure</span>' : '') +
@@ -208,6 +235,7 @@ BELLINE.Views.grimoire = function (root) {
       textField('Notes personnelles', 'f-notes', c.notes,
         "Ressentis, tirages marquants, ce que la carte t’évoque…") +
 
+      plancheHTML(num) +
       dossierHTML(num) +
 
       (c.sources && c.sources.length

@@ -300,20 +300,20 @@ window.BELLINE = window.BELLINE || {};
         mesure: "test de concordance (Force féconde / Ombre-Résistance)" },
       rules: [
         "La Coupe donne le climat et la porte d'entrée du thème : hors positions, ses deux cartes sont remises au jeu.",
-        "Force féconde et Ombre / Résistance sont la seule paire polaire : à lire en tension, jamais additionnées.",
-        "Le Nœud / Pivot organise l'ensemble ; le Noyau donne la réponse ; la Racine explique d'où elle vient — jamais l'inverse.",
-        "Chaque position hors Coupe reçoit un substantif puis deux adjectifs qui le qualifient, sans jamais le renverser."
+        "Chaque substantif (hors Coupe) est encadré par ses deux adjectifs — lus ensemble, comme un seul groupe.",
+        "Le Nœud / Pivot, en haut, organise l'ensemble ; il se lit avant la ligne du dessous.",
+        "Force féconde et Ombre / Résistance, de part et d'autre du Noyau, sont la seule paire polaire : à lire en tension, jamais additionnées.",
+        "Le Noyau / Réponse, au centre, donne la réponse ; la Racine / Explication, en bas, l'explique — elle ne la renverse jamais et se lit avec elle."
       ],
       senses: [],
       axes: [
-        "Force féconde contre Ombre / Résistance : la tension du thème, seule paire mesurable.",
-        "Nœud → Noyau → Racine : du mécanisme central à la réponse, puis à son explication."
+        "Verticale : Nœud (en haut) → Noyau (au centre) → Racine (en bas) — du mécanisme à la réponse, puis à son explication.",
+        "Horizontale : Force féconde contre Ombre / Résistance, de part et d'autre du Noyau — la tension du thème, seule paire mesurable."
       ],
       layout: [
         ['he_coupe_1', 'he_coupe_2'],
-        ['he_force', 'he_ombre'],
         ['he_noeud'],
-        ['he_noyau'],
+        ['he_force', 'he_noyau', 'he_ombre'],
         ['he_racine']
       ],
       positions: [
@@ -321,21 +321,21 @@ window.BELLINE = window.BELLINE || {};
           logic: "Climat / porte d'entrée : le registre général du thème. Hors positions, remise au jeu avant l'étalement." },
         { id: 'he_coupe_2', label: "La Coupe", kind: 'adjectif', branch: 'coupe', polarity: null,
           logic: "Climat / porte d'entrée : le registre général du thème. Hors positions, remise au jeu avant l'étalement." },
-        { id: 'he_force', label: "Force féconde", kind: 'substantif', branch: 'pos', polarity: 'favorable', adj: 2,
-          logic: "Ce qui nourrit, construit ou fait évoluer le thème.",
-          read: "À mettre en tension avec l'Ombre / Résistance : la seule paire mesurable de ce tirage." },
-        { id: 'he_ombre', label: "Ombre / Résistance", kind: 'substantif', branch: 'neg', polarity: 'defavorable', adj: 2,
-          logic: "Ce qui bloque, répète, déforme ou enferme.",
-          read: "À mettre en tension avec la Force féconde : la seule paire mesurable de ce tirage." },
         { id: 'he_noeud', label: "Nœud / Pivot", kind: 'substantif', branch: 'axe', polarity: null, adj: 2,
           logic: "Le mécanisme central qui organise l'ensemble.",
-          read: "Se lit après la paire Force / Ombre : ce qui articule leur tension en un mécanisme unique." },
+          read: "En haut, se lit juste après la Coupe : le mécanisme qui organise la tension entre Force féconde et Ombre / Résistance, sous lui." },
+        { id: 'he_force', label: "Force féconde", kind: 'substantif', branch: 'pos', polarity: 'favorable', adj: 2,
+          logic: "Ce qui nourrit, construit ou fait évoluer le thème.",
+          read: "À gauche du Noyau : à mettre en tension avec l'Ombre / Résistance, à droite — la seule paire mesurable de ce tirage." },
         { id: 'he_noyau', label: "Noyau / Réponse", kind: 'substantif', branch: 'axe', polarity: null, adj: 2,
           logic: "Ce que l'oracle affirme principalement sur le sujet.",
-          read: "La réponse : se lit après le Nœud, jamais isolément de ce qui la précède." },
+          read: "Au centre, entre Force féconde et Ombre / Résistance : la réponse, jamais isolée de la tension qui l'entoure." },
+        { id: 'he_ombre', label: "Ombre / Résistance", kind: 'substantif', branch: 'neg', polarity: 'defavorable', adj: 2,
+          logic: "Ce qui bloque, répète, déforme ou enferme.",
+          read: "À droite du Noyau : à mettre en tension avec la Force féconde, à gauche — la seule paire mesurable de ce tirage." },
         { id: 'he_racine', label: "Racine / Explication", kind: 'substantif', branch: 'axe', polarity: null, adj: 2,
           logic: "Pourquoi cette réponse ; d'où elle vient ; comment la comprendre.",
-          read: "Se lit en dernier : explique le Noyau, ne le renverse jamais." }
+          read: "En bas, se lit avec le Noyau juste au-dessus : explique la réponse, ne la renverse jamais." }
       ]
     },
 

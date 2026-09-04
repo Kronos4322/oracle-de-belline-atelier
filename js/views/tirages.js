@@ -271,7 +271,56 @@ BELLINE.Views.tirages = function (root) {
       }).join('') +
       '</div>';
   }
-  function boardHTML() { return spread.layout ? genericBoardHTML() : hecateBoardHTML(); }
+  /* Tirage d'Hermès : chaque substantif est encadré par ses deux adjectifs,
+     les trois à la même taille — un « trio » — plutôt que des éclaircisseurs
+     miniatures sous une grande carte. Pivot en haut ; Force féconde, Noyau et
+     Ombre / Résistance côte à côte ; Racine en bas. */
+  function heCardHTML(key, label, branch) {
+    var n = draft.cards[key];
+    var img = n ? BELLINE.imageFor(n) : null;
+    return '<div class="sp-slot-wrap">' +
+      '<button type="button" class="sp-slot' +
+        (selected === key ? ' is-sel' : '') + (n ? ' is-filled' : '') +
+        '" data-pos="' + key + '" data-branch="' + branch + '">' +
+        '<span class="sp-slot-label">' + esc(label) + '</span>' +
+        '<span class="sp-card">' +
+          (n
+            ? (img ? '<img src="' + img + '" alt="" loading="lazy" onerror="this.remove()">' : '') +
+              '<span class="sp-card-num">' + n + '</span>'
+            : '<span class="sp-card-empty">+</span>') +
+        '</span>' +
+        '<span class="sp-card-name">' + (n ? esc(cardName(n)) : '&nbsp;') + '</span>' +
+      '</button>' +
+      (n ? '<button type="button" class="sp-slot-remove" data-remove="' + key + '" aria-label="Retirer la carte" title="Retirer la carte">×</button>' : '') +
+      '</div>';
+  }
+  function heTrioHTML(posId) {
+    var p = posById[posId];
+    return '<div class="he-trio">' +
+      '<div class="he-trio-label">' + esc(p.label) + '</div>' +
+      '<div class="he-trio-cards">' +
+        heCardHTML(posId + '#a1', 'Adjectif', p.branch) +
+        heCardHTML(posId, 'Substantif', p.branch) +
+        heCardHTML(posId + '#a2', 'Adjectif', p.branch) +
+      '</div>' +
+      '</div>';
+  }
+  function hermesBoardHTML() {
+    return '<div class="spread he-spread">' +
+      '<div class="he-row he-row-coupe">' +
+        '<span class="sp-coupe-label">La Coupe</span>' +
+        '<div class="he-trio-cards">' + heCardHTML('he_coupe_1', 'Coupe', 'coupe') + heCardHTML('he_coupe_2', 'Coupe', 'coupe') + '</div>' +
+        '</div>' +
+      '<div class="he-row he-row-top">' + heTrioHTML('he_noeud') + '</div>' +
+      '<div class="he-row he-row-mid">' + heTrioHTML('he_force') + heTrioHTML('he_noyau') + heTrioHTML('he_ombre') + '</div>' +
+      '<div class="he-row he-row-bottom">' + heTrioHTML('he_racine') + '</div>' +
+      '</div>';
+  }
+
+  function boardHTML() {
+    if (spread.id === 'hermes') return hermesBoardHTML();
+    return spread.layout ? genericBoardHTML() : hecateBoardHTML();
+  }
 
   /* ---------- « comment lire » ---------- */
 

@@ -935,6 +935,23 @@ button.planet-sym:hover { color: var(--gold-soft); text-shadow: 0 0 10px current
 }
 .sp-coupe-cards { display: flex; gap: 12px; }
 
+/* --- Tirage d'Hermès : trios adjectif-substantif-adjectif --- */
+.he-spread { display: flex; flex-direction: column; align-items: center; gap: 22px; }
+.he-row { display: flex; gap: 20px; justify-content: center; align-items: flex-start; flex-wrap: wrap; }
+.he-row-coupe {
+  flex-direction: column; align-items: center; gap: 8px;
+  padding: 12px 16px; border: 1px dashed var(--line); border-radius: 12px;
+}
+.he-trio { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.he-trio-label {
+  font-family: var(--mono); font-size: .68rem; letter-spacing: .07em; text-transform: uppercase;
+  color: var(--gold-soft); text-align: center; max-width: 220px;
+}
+.he-trio-cards {
+  display: flex; gap: 8px; align-items: flex-start;
+  padding: 10px; border-radius: 14px; background: var(--bg-2); border: 1px solid var(--line);
+}
+
 /* --- fenêtre : rôle de la position + choix de la carte --- */
 .sp-modal {
   position: fixed; inset: 0; z-index: 60;

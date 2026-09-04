@@ -426,6 +426,70 @@ window.BELLINE = window.BELLINE || {};
     return out;
   };
 
+  /* -------------------------------------------------------------------------
+   * Couples ordonnés (substantif -> ce qui le qualifie), pour la lecture
+   * croisée (manuel, ch. 21.3, 22) : ce n'est pas la carte isolée qui revient
+   * qui vaut de signe (elle est attendue au volume du jeu), c'est un couple
+   * ordonné conservé comme unité d'un tirage à l'autre.
+   * ----------------------------------------------------------------------- */
+  BELLINE.structuralPairs = function (spread, cards) {
+    var entries = BELLINE.spreadEntries(spread, cards);
+    var byId = {};
+    entries.forEach(function (e) { byId[e.posId] = e; });
+    var pairs = [];
+    entries.forEach(function (e) {
+      var parentId = e.pos.parent;
+      if (!parentId || !byId[parentId]) return;
+      pairs.push({
+        parentCard: byId[parentId].card.number,
+        childCard: e.card.number,
+        parentLabel: byId[parentId].pos.label,
+        childLabel: e.pos.label
+      });
+    });
+    return pairs;
+  };
+
+  /* Comparaison de deux tirages consignés — ce qu'une lecture croisée peut
+     légitimement produire (ch. 22) : cartes communes, familles communes, et
+     couples ordonnés répétés. Ne dit jamais si c'est un « signe » : donne la
+     matière, le lecteur juge au vu des trois conditions (objets distincts,
+     indépendance, consultant déclaré). */
+  BELLINE.compareTirages = function (t1, t2) {
+    var a1 = BELLINE.analyzeTirage(t1.spreadId, t1.cards) || { planets: {} };
+    var a2 = BELLINE.analyzeTirage(t2.spreadId, t2.cards) || { planets: {} };
+    var e1 = BELLINE.spreadEntries(BELLINE.SPREADS[t1.spreadId], t1.cards);
+    var e2 = BELLINE.spreadEntries(BELLINE.SPREADS[t2.spreadId], t2.cards);
+
+    var nums1 = {}, nums2 = {};
+    e1.forEach(function (e) { nums1[e.card.number] = (nums1[e.card.number] || 0) + 1; });
+    e2.forEach(function (e) { nums2[e.card.number] = (nums2[e.card.number] || 0) + 1; });
+    var commonCards = Object.keys(nums1).filter(function (n) { return nums2[n]; })
+      .map(function (n) { return { number: Number(n), count1: nums1[n], count2: nums2[n] }; });
+
+    var fam1 = Object.keys(a1.planets || {}), fam2 = Object.keys(a2.planets || {});
+    var commonFamilies = fam1.filter(function (f) { return fam2.indexOf(f) !== -1; });
+
+    var p1 = BELLINE.structuralPairs(BELLINE.SPREADS[t1.spreadId], t1.cards);
+    var p2 = BELLINE.structuralPairs(BELLINE.SPREADS[t2.spreadId], t2.cards);
+    var key = function (p) { return p.parentCard + '>' + p.childCard; };
+    var k2 = {}; p2.forEach(function (p) { k2[key(p)] = p; });
+    var commonPairs = [];
+    p1.forEach(function (p) { if (k2[key(p)]) commonPairs.push(p); });
+
+    var d1 = new Date(t1.createdAt), d2 = new Date(t2.createdAt);
+    var sameDay = d1.toDateString() === d2.toDateString();
+
+    return {
+      sameSpread: t1.spreadId === t2.spreadId,
+      sameDay: sameDay,
+      commonCards: commonCards,
+      commonFamilies: commonFamilies,
+      commonPairs: commonPairs,
+      total1: e1.length, total2: e2.length
+    };
+  };
+
   BELLINE.refreshSpreads = function () {
     var out = Object.assign({}, BELLINE.baseSpreads);
     var custom = (BELLINE.Storage && BELLINE.Storage.getCustomSpreads)

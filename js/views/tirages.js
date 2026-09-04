@@ -192,8 +192,9 @@ BELLINE.Views.tirages = function (root) {
       var n = draft.cards[key];
       var img = n ? BELLINE.imageFor(n) : null;
       cells += '<button type="button" class="sp-adj' + (n ? ' is-filled' : '') + (selected === key ? ' is-sel' : '') +
-        '" data-pos="' + key + '" data-branch="' + p.branch + '" title="Éclaircisseur de ' + esc(p.label) + '">' +
-        (img ? '<img src="' + img + '" alt="" loading="lazy" onerror="this.remove()">' : '') +
+        '" data-pos="' + key + '" data-branch="' + p.branch + '" title="Éclaircisseur de ' + esc(p.label) +
+        (n ? ' — ' + esc(cardName(n)) : '') + '">' +
+        (img ? '<img src="' + img + '" alt="' + esc(n ? cardName(n) : '') + '" loading="lazy" onerror="this.remove()">' : '') +
         '<span class="sp-adj-n">' + (n ? n : '+') + '</span></button>';
     }
     return '<div class="sp-adjrow">' + cells + '</div>';
@@ -839,9 +840,9 @@ BELLINE.Views.tirages = function (root) {
       model.name = wrapEl.querySelector('#seName').value.trim();
       model.subtitle = wrapEl.querySelector('#seSub').value.trim();
       model.intro = wrapEl.querySelector('#seIntro').value.trim();
-      if (!model.name) { alert('Donne un nom au tirage.'); return; }
+      if (!model.name) { BELLINE.toast('Donne un nom au tirage.', 'error'); return; }
       var clean = model.positions.filter(function (p) { return p.label.trim(); });
-      if (clean.length < 2) { alert('Il faut au moins deux positions nommées.'); return; }
+      if (clean.length < 2) { BELLINE.toast('Il faut au moins deux positions nommées.', 'error'); return; }
       var id = 'u_' + S.uid();
       var spreadObj = {
         id: id, name: model.name, subtitle: model.subtitle || 'Tirage personnel',
@@ -1083,7 +1084,7 @@ BELLINE.Views.tirages = function (root) {
       });
     });
     root.querySelector('#spSave').addEventListener('click', function () {
-      if (!filledCount()) { alert('Place au moins une carte avant d’enregistrer.'); return; }
+      if (!filledCount()) { BELLINE.toast('Place au moins une carte avant d’enregistrer.', 'error'); return; }
       var id = S.uid();
       var list = S.getTirages();
       list.unshift({

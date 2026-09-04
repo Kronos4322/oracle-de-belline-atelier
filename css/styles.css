@@ -1182,6 +1182,26 @@ button.planet-sym:hover { color: var(--gold-soft); text-shadow: 0 0 10px current
 .ex-combo-hint .u-label { color: var(--amethyst-soft); margin-right: 4px; }
 .ex-combo-cards { text-align: center; margin-top: 10px; }
 
+/* ---------- Notifications discrètes (remplace alert()) ---------- */
+.toast-stack {
+  position: fixed; left: 50%; bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%); z-index: 120;
+  display: flex; flex-direction: column-reverse; gap: 8px; align-items: center;
+  pointer-events: none; width: min(92vw, 420px);
+}
+@media (min-width: 900px) { .toast-stack { bottom: 28px; } }
+.toast {
+  pointer-events: auto; width: 100%; text-align: center;
+  padding: 11px 16px; border-radius: 11px; font-size: .92rem;
+  background: var(--panel-2); border: 1px solid var(--line); color: var(--ink);
+  box-shadow: var(--shadow); opacity: 0; transform: translateY(8px);
+  transition: opacity .22s ease, transform .22s ease;
+}
+.toast.is-in { opacity: 1; transform: none; }
+.toast-success { border-color: var(--pos); }
+.toast-error { border-color: var(--danger); color: var(--ink); }
+@media (prefers-reduced-motion: reduce) { .toast { transition: opacity .01ms; } }
+
 /* ---------- Menus contextuels maison (remplace prompt/confirm) ---------- */
 .mini-prompt {
   position: fixed; inset: 0; z-index: 80; display: grid; place-items: center;

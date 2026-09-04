@@ -4,6 +4,12 @@
 window.BELLINE = window.BELLINE || {};
 
 (function () {
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (m) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
+    });
+  }
+
   var ROUTES = {
     journalier:   { label: 'Jour',         icon: '☀' },
     grimoire:     { label: 'Grimoire',     icon: '📖' },
@@ -98,10 +104,10 @@ window.BELLINE = window.BELLINE || {};
         try {
           BELLINE.Storage.importAll(JSON.parse(reader.result));
           if (BELLINE.refreshSpreads) BELLINE.refreshSpreads();
-          alert('Sauvegarde importée avec succès.');
+          BELLINE.toast('Sauvegarde importée avec succès.', 'success');
           render();
         } catch (err) {
-          alert("Import impossible : " + err.message);
+          BELLINE.toast('Import impossible : ' + err.message, 'error');
         }
         input.value = '';
       };
@@ -122,7 +128,7 @@ window.BELLINE = window.BELLINE || {};
 
     BELLINE.lightbox = function (src, caption) {
       if (!src) return;
-      box.innerHTML = '<figure><img src="' + src + '" alt="">' +
+      box.innerHTML = '<figure><img src="' + src + '" alt="' + esc(caption || 'Image agrandie') + '">' +
         (caption ? '<figcaption>' + caption + '</figcaption>' : '') + '</figure>';
       box.hidden = false;
     };
@@ -134,12 +140,6 @@ window.BELLINE = window.BELLINE || {};
     el.className = 'mini-prompt';
     el.hidden = true;
     document.body.appendChild(el);
-
-    function esc(s) {
-      return String(s == null ? '' : s).replace(/[&<>"']/g, function (m) {
-        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
-      });
-    }
 
     function close() { el.hidden = true; el.innerHTML = ''; }
 
@@ -187,6 +187,27 @@ window.BELLINE = window.BELLINE || {};
           if (e.key === 'Escape') { document.removeEventListener('keydown', onk); done(false); }
         });
       });
+    };
+  }
+
+  /* --- notifications discrètes (remplace alert() pour les messages courts) --- */
+  function setupToasts() {
+    var stack = document.createElement('div');
+    stack.className = 'toast-stack';
+    stack.setAttribute('role', 'status');
+    stack.setAttribute('aria-live', 'polite');
+    document.body.appendChild(stack);
+
+    BELLINE.toast = function (message, kind) {
+      var t = document.createElement('div');
+      t.className = 'toast' + (kind ? ' toast-' + kind : '');
+      t.textContent = message;
+      stack.appendChild(t);
+      requestAnimationFrame(function () { t.classList.add('is-in'); });
+      setTimeout(function () {
+        t.classList.remove('is-in');
+        setTimeout(function () { t.remove(); }, 250);
+      }, 4200);
     };
   }
 
@@ -243,6 +264,15 @@ window.BELLINE = window.BELLINE || {};
     });
   }
 
+  /* --- hors-ligne : une fois ouverte en ligne, l'app se relance sans réseau --- */
+  function setupOffline() {
+    if (!('serviceWorker' in navigator)) return;
+    // file:// et les serveurs de développement sans HTTPS n'autorisent pas les
+    // service workers (sauf localhost) — l'enregistrement échoue silencieusement,
+    // sans gêner le reste de l'app.
+    navigator.serviceWorker.register('sw.js').catch(function () {});
+  }
+
   document.addEventListener('DOMContentLoaded', function () {
     if (BELLINE.refreshSpreads) BELLINE.refreshSpreads();
     document.getElementById('nav').innerHTML = buildNav();
@@ -252,7 +282,9 @@ window.BELLINE = window.BELLINE || {};
     setupBackup();
     setupLightbox();
     setupDialogs();
+    setupToasts();
     setupSkyfield();
+    setupOffline();
     render();
   });
 

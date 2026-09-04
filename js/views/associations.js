@@ -229,7 +229,7 @@ BELLINE.Views.associations = function (root) {
     box.querySelector('#assocCancel').addEventListener('click', function () { editing = null; renderEditor(); });
     box.querySelector('#assocSave').addEventListener('click', function () {
       var text = box.querySelector('#assocText').value.trim();
-      if (editing.cards.length < 2) { alert('Choisis au moins 2 cartes.'); return; }
+      if (editing.cards.length < 2) { BELLINE.toast('Choisis au moins 2 cartes.', 'error'); return; }
       if (editing.assocId) {
         var a = assocs.find(function (x) { return x.id === editing.assocId; });
         if (a) { a.cards = editing.cards.slice(); a.text = text; }

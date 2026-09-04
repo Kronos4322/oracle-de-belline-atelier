@@ -13,6 +13,8 @@ BELLINE.Views.journal = function (root) {
   var S = BELLINE.Storage;
   var P = BELLINE.PLANETS;
   var openId = null;
+  var compareMode = false;
+  var cmpA = null, cmpB = null;
 
   var js = S.read('journal.justSaved', null);
   if (js) { openId = js; S.write('journal.justSaved', null); }
@@ -50,6 +52,9 @@ BELLINE.Views.journal = function (root) {
     root.innerHTML =
       '<div class="view-head"><h1>Journal</h1>' +
         '<p class="muted">Tes tirages enregistrés. Ouvre-en un pour remplir le carnet.</p></div>' +
+      (list.length >= 2
+        ? '<div class="assoc-toolbar"><button type="button" class="btn-ghost btn-sm" id="jrCompareBtn">Comparer deux tirages</button></div>'
+        : '') +
       (list.length
         ? '<ul class="jr-list">' + list.map(function (t) {
             var k = t.carnet || {};
@@ -70,6 +75,10 @@ BELLINE.Views.journal = function (root) {
 
     root.querySelectorAll('.jr-open').forEach(function (b) {
       b.addEventListener('click', function () { openId = b.dataset.id; render(); });
+    });
+    var cmpBtn = root.querySelector('#jrCompareBtn');
+    if (cmpBtn) cmpBtn.addEventListener('click', function () {
+      compareMode = true; cmpA = null; cmpB = null; render();
     });
     root.querySelectorAll('.jr-del').forEach(function (b) {
       b.addEventListener('click', function (e) {
@@ -277,7 +286,83 @@ BELLINE.Views.journal = function (root) {
     });
   }
 
+  /* ---------- lectures croisées (ch. 22) ---------- */
+
+  function renderCompare() {
+    var list = S.getTirages();
+    var options = '<option value="">— choisir —</option>' + list.map(function (t) {
+      return '<option value="' + t.id + '">' + esc(fmtDate(t.createdAt)) + ' · ' + esc(spreadName(t.spreadId)) +
+        (t.question ? ' — ' + esc(t.question) : '') + '</option>';
+    }).join('');
+
+    var tA = cmpA ? S.getTirage(cmpA) : null;
+    var tB = cmpB ? S.getTirage(cmpB) : null;
+    var result = (tA && tB) ? BELLINE.compareTirages(tA, tB) : null;
+
+    root.innerHTML =
+      '<div class="view-head">' +
+        '<button class="back-btn" id="jrCompareBack">← Journal</button>' +
+        '<h1>Lectures croisées</h1>' +
+        '<p class="muted">Comparer deux tirages consignés — manuel, ch. 22.</p>' +
+      '</div>' +
+
+      '<section class="jr-sec">' +
+        '<h2>Trois conditions, avant de comparer</h2>' +
+        '<ul>' +
+          '<li><strong>Objets distincts.</strong> Comparer deux tirages sur la même question ne mesure que ta propre stabilité, pas la situation.</li>' +
+          '<li><strong>Indépendance.</strong> Deux tirages posés le même jour sur la même situation ne sont pas deux observations : leurs coïncidences ne se combinent pas.</li>' +
+          '<li><strong>Consultant déclaré.</strong> Une carte-personne qui apparaît dans les deux tirages ne désigne la même personne que si le consultant est le même des deux côtés.</li>' +
+        '</ul>' +
+        '<p class="muted small">Ce qu\'une lecture croisée peut légitimement produire : des énoncés qu\'aucun tirage ne donne seul. Ce qu\'elle ne produit jamais : une preuve — la cohérence de plusieurs lectures faites par la même personne sur la même situation est exactement ce qu\'on attend.</p>' +
+      '</section>' +
+
+      '<section class="jr-sec">' +
+        '<h2>Choisir les deux tirages</h2>' +
+        '<div class="jr-grid3" style="grid-template-columns:1fr 1fr">' +
+          '<label class="field"><span>Tirage A</span><select id="cmpSelA">' + options + '</select></label>' +
+          '<label class="field"><span>Tirage B</span><select id="cmpSelB">' + options + '</select></label>' +
+        '</div>' +
+      '</section>' +
+
+      (result ? compareResultHTML(tA, tB, result) : '');
+
+    root.querySelector('#jrCompareBack').addEventListener('click', function () { compareMode = false; render(); });
+    var selA = root.querySelector('#cmpSelA'), selB = root.querySelector('#cmpSelB');
+    selA.value = cmpA || ''; selB.value = cmpB || '';
+    selA.addEventListener('change', function () { cmpA = selA.value || null; renderCompare(); });
+    selB.addEventListener('change', function () { cmpB = selB.value || null; renderCompare(); });
+  }
+
+  function compareResultHTML(tA, tB, r) {
+    return '<section class="jr-sec">' +
+      '<h2>Ce que les deux tirages ont en commun</h2>' +
+      (r.sameDay ? '<p class="sp-doublon"><strong>Même jour.</strong> Les deux tirages sont datés du même jour — leur indépendance est douteuse ; ne pas combiner leurs probabilités (Progression).</p>' : '') +
+      '<h3 class="jr-sub">Cartes communes</h3>' +
+      (r.commonCards.length
+        ? '<ul class="jr-plain">' + r.commonCards.map(function (c) {
+            return '<li>' + c.number + ' ' + esc(cardName(c.number)) +
+              (c.count1 > 1 || c.count2 > 1 ? ' <span class="muted small">(' + c.count1 + ' fois dans A, ' + c.count2 + ' dans B)</span>' : '') + '</li>';
+          }).join('') + '</ul>' +
+          '<p class="muted small">Attendu au volume du jeu : une lame donnée a couramment des chances d\'apparaître dans deux tirages distincts. Une récurrence de <em>carte</em> seule n\'est pas un signe.</p>'
+        : '<p class="muted">Aucune carte commune.</p>') +
+      '<h3 class="jr-sub">Familles communes</h3>' +
+      (r.commonFamilies.length
+        ? '<p>' + r.commonFamilies.map(function (pk) { return P[pk] ? P[pk].symbol + ' ' + P[pk].name : pk; }).join(' · ') + '</p>'
+        : '<p class="muted">Aucune famille commune.</p>') +
+      '<h3 class="jr-sub">Couples ordonnés conservés <span class="muted small">(la seule récurrence qui compte, ch. 21.3)</span></h3>' +
+      (r.commonPairs.length
+        ? '<ul class="jr-plain">' + r.commonPairs.map(function (p) {
+            return '<li><strong>' + p.parentCard + ' ' + esc(cardName(p.parentCard)) + '</strong> qualifié par <strong>' +
+              p.childCard + ' ' + esc(cardName(p.childCard)) + '</strong> dans les deux tirages ' +
+              '<span class="muted small">(' + esc(p.parentLabel) + ' → ' + esc(p.childLabel) + ')</span></li>';
+          }).join('') + '</ul>' +
+          '<p class="muted small">C\'est ce couple — pas la carte isolée — qui garde une valeur, et pour son sens, non pour sa rareté.</p>'
+        : '<p class="muted">Aucun couple substantif/adjectif ne se répète à l\'identique.</p>') +
+    '</section>';
+  }
+
   function render() {
+    if (compareMode) { renderCompare(); return; }
     var t = openId ? S.getTirage(openId) : null;
     if (t) renderCarnet(t); else { openId = null; renderList(); }
   }

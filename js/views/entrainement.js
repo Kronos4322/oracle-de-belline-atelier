@@ -208,12 +208,16 @@ BELLINE.Views.entrainement = function (root) {
     return rowsHtml + comboHtml;
   }
 
-  function figureHTML(c, big) {
+  /* revealName=false : ne pas donner le nom dans l'alt tant que c'est une
+     devinette (sinon un lecteur d'écran aurait la réponse en avance sur
+     un œil qui, lui, ne voit que le numéro). */
+  function figureHTML(c, big, revealName) {
     var planet = P[c.planet];
     var img = BELLINE.imageFor(c.number);
+    var alt = revealName ? (c.number + ' · ' + c.name) : ('Carte numéro ' + c.number + ', non révélée');
     return '<div class="qcm-figure" style="--hue:' + planet.hue + (big ? ';width:150px;height:232px' : '') + '">' +
       '<span>' + c.number + '</span>' +
-      (img ? '<img src="' + img + '" alt="" onerror="this.remove()">' : '') + '</div>';
+      (img ? '<img src="' + img + '" alt="' + esc(alt) + '" onerror="this.remove()">' : '') + '</div>';
   }
 
   function draw() {
@@ -231,7 +235,7 @@ BELLINE.Views.entrainement = function (root) {
       var kw = c.keywords || [];
       body =
         '<div class="qcm">' +
-          figureHTML(c, true) +
+          figureHTML(c, true, current.revealed) +
           (current.revealed
             ? '<p class="qcm-q">' + esc(c.name) + '</p>' +
               '<p class="qcm-sub">' + planet.symbol + ' Série ' + planet.name + ' · valence ' + BELLINE.VALENCE[c.valence].label +
@@ -248,7 +252,7 @@ BELLINE.Views.entrainement = function (root) {
     } else if (current && current.kind === 'qcm') {
       body =
         '<div class="qcm">' +
-          (current.showImage ? figureHTML(current.card, true) : '') +
+          (current.showImage ? figureHTML(current.card, true, answered != null) : '') +
           '<p class="qcm-q">' + esc(current.q) + '</p>' +
           optsHTML(current.options, current.answer) +
           (answered != null ? feedbackHTML(current.card, current.reason) : '') +
@@ -357,7 +361,10 @@ BELLINE.Views.entrainement = function (root) {
         answered = Number(b.dataset.i);
         var chosen = current.options[answered];
         var correct = chosen === current.answer;
-        if (current.card) grade(current.card.number, correct);
+        // La révision espacée (boîtes de Leitner) ne suit que la mémorisation
+        // pure (QCM) : « Positions » est un exercice de raisonnement, il ne
+        // doit pas faire baisser la boîte d'une carte qu'on connaît par cœur.
+        if (current.kind === 'qcm' && current.card) grade(current.card.number, correct);
         else { stats.seen++; if (correct) stats.known++; S.write('training.stats', stats); }
         draw();
       });

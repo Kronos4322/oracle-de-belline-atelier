@@ -81,6 +81,19 @@ window.BELLINE.CARD_PLANCHE = {
  * sinon une planche allégée dérivée du Dossier encyclopédique (card-dossier.js).
  * Permet d'« approfondir » les 53 cartes sans attendre les planches complètes.
  * ------------------------------------------------------------------------- */
+/* Correspondances traditionnelles couleur/planète — un repère de plus pour
+   la lecture symbolique, faute d'indication couleur par carte dans le dossier. */
+BELLINE.PLANET_COLOR = {
+  soleil:  { nom: 'Or',      points: ['rayonnement', 'gloire', 'vitalité', 'ce qui se montre au plein jour'] },
+  lune:    { nom: 'Argent',  points: ['reflet', 'variation', 'ce qui se tait ou se devine', 'la marée intérieure'] },
+  mercure: { nom: 'Vert vif',points: ['échange', 'agilité', 'circulation', 'calcul, information'] },
+  venus:   { nom: 'Vert tendre et rose', points: ['attache', 'plaisir', 'harmonie', 'ce qui rapproche'] },
+  mars:    { nom: 'Rouge',   points: ['énergie brute', 'conflit', 'urgence', 'ce qui tranche'] },
+  jupiter: { nom: 'Bleu et pourpre', points: ['ampleur', 'protection', 'ce à quoi l’on tient', 'la mesure du sens'] },
+  saturne: { nom: 'Gris et noir', points: ['limite', 'lenteur', 'structure', 'ce que le temps impose'] },
+  none:    { nom: 'Violet',  points: ['hors série', 'seuil', 'ce qui échappe aux familles ordinaires'] }
+};
+
 (function () {
   function splitPhrases(s, max) {
     if (!s) return [];
@@ -91,6 +104,21 @@ window.BELLINE.CARD_PLANCHE = {
     if (!s) return [];
     return String(s).split(/[;,]|\.\s+/).map(function (x) { return x.trim(); })
       .filter(function (x) { return x.length > 2; }).slice(0, max || 8);
+  }
+  /* Le champ lecture.verdict suit toujours le patron
+     « …tonalité de l'issue: X. Il faut néanmoins lire… » — on n'en garde que X. */
+  function verdictTone(lecture) {
+    var v = lecture && lecture.verdict;
+    if (!v) return '';
+    var m = v.match(/tonalit[ée] de l'issue\s*:\s*([^.]+)\./i);
+    return m ? m[1].trim() : v;
+  }
+  /* lecture.pivot suit « …se concentre sur X; les deux adjectifs… » — idem. */
+  function pivotTheme(lecture) {
+    var p = lecture && lecture.pivot;
+    if (!p) return '';
+    var m = p.match(/se concentre sur\s+([^;]+);/i);
+    return m ? m[1].trim() : '';
   }
 
   BELLINE.plancheFor = function (num) {
@@ -103,23 +131,28 @@ window.BELLINE.CARD_PLANCHE = {
     var c = BELLINE.cardByNumber(num);
     var planet = c && BELLINE.PLANETS ? BELLINE.PLANETS[c.planet] : null;
     var mots = (d.motscles || []).slice(0, 6);
+    var tone = verdictTone(d.lecture);
+    var theme = pivotTheme(d.lecture);
+    var couleur = c ? BELLINE.PLANET_COLOR[c.planet] : null;
+
+    var elements = [];
+    if (planet) elements.push({ nom: 'Série ' + planet.name, points: listify(planet.desc, 6), note: '' });
+    if (d.icono) elements.push({ nom: 'Image', points: listify(d.icono, 6), note: theme ? 'Porte le thème de : ' + theme + '.' : '' });
 
     return {
       source: 'dossier',
       devise: [
-        (c ? c.name : '') + (mots.length ? ' — ' + mots.join(', ') : ''),
-        (planet ? 'Série ' + planet.name + ' : ' + planet.desc : '')
+        d.icono ? (d.icono.charAt(0).toUpperCase() + d.icono.slice(1) + '.') : (c ? c.name : ''),
+        tone || ''
       ].filter(Boolean),
       iconographie: d.icono ? listify(d.icono, 8) : [],
       sensTraditionnel: splitPhrases(d.noyau, 3).join(' '),
-      elements: (planet
-        ? [{ nom: 'Série ' + planet.name, points: listify(planet.desc, 6), note: '' }]
-        : []),
-      definition: d.noyau || '',
+      elements: elements,
+      definition: theme ? (theme.charAt(0).toUpperCase() + theme.slice(1) + '.') : (d.noyau || ''),
       lecturesPositives: mots.length ? mots : listify(d.lecture && d.lecture.favorable, 6),
       lecturesOmbre: listify(d.ombre, 8),
-      cle: (d.lecture && (d.lecture.pivot || d.lecture.explication)) || '',
-      couleur: null,
+      cle: tone || (d.lecture && d.lecture.explication) || '',
+      couleur: couleur,
       personnification: d.personnes || ''
     };
   };

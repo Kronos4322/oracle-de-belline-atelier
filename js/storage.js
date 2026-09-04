@@ -52,6 +52,8 @@ window.BELLINE = window.BELLINE || {};
       number: seed.number,
       name: seed.name,
       planet: seed.planet,
+      valence: seed.valence,
+      forte: seed.forte,
       keywords: ref.keywords ? ref.keywords.slice() : [],
       symbolisme: '',
       sens: Object.assign({}, EMPTY_SENS, ref.sens || {}),

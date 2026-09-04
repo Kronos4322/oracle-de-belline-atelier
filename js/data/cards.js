@@ -98,6 +98,32 @@ BELLINE.SEED_CARDS = [
   _c(53, "La Carte Bleue",        'none')
 ];
 
+/* ---------------------------------------------------------------------------
+ * Valence (d'après « Lire le Belline » / « L'Oracle et la grille », table 17.2)
+ *
+ * La valence est la valeur portée par le SEUL NOM de la carte, hors position
+ * et hors tirage. Trois catégories : positive, négative, neutre/ambivalente.
+ * Elle sert au « test de valence contraire » et à la mesure de concordance.
+ *
+ * 5 cartes dites FORTES dominent leur voisinage : 11, 34, 38, 42, 48.
+ * ------------------------------------------------------------------------- */
+BELLINE.VALENCE = {
+  positive: { key: 'positive', label: 'positive', long: 'Valence positive',            hue: 140 },
+  negative: { key: 'negative', label: 'négative', long: 'Valence négative',            hue: 5   },
+  neutre:   { key: 'neutre',   label: 'neutre',   long: 'Valence neutre / ambivalente', hue: 45  }
+};
+
+(function () {
+  var POS = [4, 5, 6, 7, 8, 9, 10, 14, 20, 25, 26, 27, 29, 39, 40, 41, 42, 43, 45, 49];
+  var NEG = [11, 13, 17, 21, 32, 33, 34, 35, 37, 38, 46, 47, 48, 50, 51];
+  var FORTE = [11, 34, 38, 42, 48];
+  BELLINE.SEED_CARDS.forEach(function (c) {
+    c.valence = POS.indexOf(c.number) !== -1 ? 'positive'
+      : NEG.indexOf(c.number) !== -1 ? 'negative' : 'neutre';
+    c.forte = FORTE.indexOf(c.number) !== -1;
+  });
+})();
+
 /* Chemin de l'image d'une carte, ou null si aucune image n'est associée.
    La correspondance numéro -> fichier vient de card-images.js
    (régénéré par tools/scan-cartes.ps1). */

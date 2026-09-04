@@ -167,6 +167,10 @@ BELLINE.Views.tirages = function (root) {
           return '<div><strong>' + esc(s.label) + '</strong><br><span class="muted">' + esc(s.desc) + '</span></div>';
         }).join('') +
       '</div>' +
+      (spread.axes
+        ? '<h4>Les axes</h4><ul class="sp-rules">' +
+            spread.axes.map(function (a) { return '<li>' + esc(a) + '</li>'; }).join('') + '</ul>'
+        : '') +
       (ex
         ? '<div class="sp-example">' +
             '<h4>Lectures croisées — ' + esc(ex.title) + '</h4>' +
@@ -176,6 +180,18 @@ BELLINE.Views.tirages = function (root) {
           '</div>'
         : '') +
       '</details>';
+  }
+
+  /* Test de valence contraire : carte en désaccord avec la polarité de sa case. */
+  function contraireNote(pos, card) {
+    if (!card || !pos.polarity || card.valence === 'neutre') return '';
+    var favCard = card.valence === 'positive';
+    var favPos = pos.polarity === 'favorable';
+    if (favCard === favPos) return '';
+    var msg = favCard
+      ? 'Carte favorable en position défavorable → chercher son ombre, son excès, son blocage.'
+      : 'Carte défavorable en position favorable → chercher sa fonction constructive.';
+    return '<p class="sp-contraire"><strong>Test de valence contraire.</strong> ' + esc(msg) + '</p>';
   }
 
   /* ---------- fenêtre : rôle de la position + choix de la carte ---------- */
@@ -206,15 +222,19 @@ BELLINE.Views.tirages = function (root) {
 
     var current = '';
     if (c) {
+      var val = BELLINE.VALENCE[c.valence];
       current =
         '<div class="sp-modal-current">' +
           '<button type="button" class="sp-current-remove" id="spClear" aria-label="Retirer la carte" title="Retirer la carte">×</button>' +
           '<div><span class="muted small">Carte placée</span><br><strong>' + c.number + ' · ' + esc(c.name) + '</strong>' +
             ((c.keywords && c.keywords.length) ? ' <span class="muted small">— ' + c.keywords.slice(0, 4).map(esc).join(' · ') + '</span>' : '') +
+            '<br><span class="val-tag val-' + c.valence + '">valence ' + (val ? val.label : c.valence) + '</span>' +
+            (c.forte ? ' <span class="val-tag val-forte">carte forte</span>' : '') +
           '</div>' +
           (BELLINE.imageFor(n)
             ? '<div class="sp-modal-current-btns"><button type="button" class="btn-link" id="spZoom">agrandir</button></div>' : '') +
-        '</div>';
+        '</div>' +
+        contraireNote(p, c);
     }
 
     box.innerHTML =

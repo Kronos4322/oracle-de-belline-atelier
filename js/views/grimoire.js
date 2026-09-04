@@ -141,6 +141,11 @@ BELLINE.Views.grimoire = function (root) {
         '<div class="fiche-head-txt">' +
           '<h2>' + esc(c.name) + '</h2>' +
           '<p class="muted">' + pSym + ' Série ' + planet.name + '</p>' +
+          '<p class="fiche-tags">' +
+            '<span class="val-tag val-' + c.valence + '" title="Valeur portée par le seul nom de la carte, hors position et hors tirage">valence ' +
+              (BELLINE.VALENCE[c.valence] ? BELLINE.VALENCE[c.valence].label : c.valence) + '</span>' +
+            (c.forte ? '<span class="val-tag val-forte" title="Une des 5 lames fortes : elle domine son voisinage">carte forte</span>' : '') +
+          '</p>' +
           '<p class="muted small">' + planet.desc + '</p>' +
         '</div>' +
       '</header>' +

@@ -119,6 +119,15 @@ window.BELLINE = window.BELLINE || {};
   function getAssociations() { return read('associations', []); }
   function saveAssociations(list) { return write('associations', list); }
 
+  /* --- Tirages ---
+   *   tirage en cours (brouillon)  : belline.tirage.<spreadId>
+   *   tirages enregistrés          : belline.tirages  [{id, spreadId, createdAt, question, cards, notes}]
+   */
+  function getDraft(spreadId) { return read('tirage.' + spreadId, null); }
+  function saveDraft(spreadId, draft) { return write('tirage.' + spreadId, draft); }
+  function getTirages() { return read('tirages', []); }
+  function saveTirages(list) { return write('tirages', list); }
+
   function uid() {
     return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   }
@@ -157,6 +166,10 @@ window.BELLINE = window.BELLINE || {};
     saveFolders: saveFolders,
     getAssociations: getAssociations,
     saveAssociations: saveAssociations,
+    getDraft: getDraft,
+    saveDraft: saveDraft,
+    getTirages: getTirages,
+    saveTirages: saveTirages,
     uid: uid,
     exportAll: exportAll,
     importAll: importAll

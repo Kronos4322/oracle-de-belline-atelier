@@ -10,9 +10,14 @@ dans ses lectures.
 | **Grimoire** | fonctionnel — 53 fiches pré-remplies, à retravailler |
 | **Associations** | fonctionnel — combinaisons de cartes en dossiers / sous-dossiers |
 | **Entraînement** | première version — révision libre par flashcards |
-| **Tirages** | ossature — décrit ce qui est prévu |
+| **Tirages** | fonctionnel — **Tirage d'Hécate** (22 positions), plateau + panneau de lecture |
 | **Journal** | ossature — décrit ce qui est prévu |
 | **Progression** | ossature — 2 indicateurs branchés |
+
+Le **Tirage d'Hécate** (`js/data/spreads.js`) : plateau en arbre (axe central →
+deux voies → nœuds → éclaircisseurs + la Coupe), chaque position explique son rôle,
+placement des cartes une à une ou tirage au sort, bouton « Charger l'exemple »
+(transcription des planches de référence), section « Comment lire ce tirage ».
 
 ### Les 3 couches d'une fiche
 
@@ -76,6 +81,7 @@ js/
   data/cards.js          les 53 cartes (structure)
   data/card-images.js    numéro → image + symboles planétaires (généré)
   data/card-reference.js repères de lecture (pré-remplissage des fiches)
+  data/spreads.js        modèles de tirage (Tirage d'Hécate)
   storage.js             couches de données + sauvegarde/restauration
   app.js                 routeur + lightbox + démarrage
   views/                 une vue par module

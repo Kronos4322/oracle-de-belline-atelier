@@ -190,6 +190,159 @@ BELLINE.Views.tirages = function (root) {
     boardRO.observe(layout);
   }
 
+  /* ---------- export du plateau en image (JPG à garder ou envoyer) ---------- */
+
+  function roundRectPath(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+  function wrapLines(ctx, text, maxWidth) {
+    var words = String(text || '').split(' ');
+    var lines = [], line = '';
+    words.forEach(function (w) {
+      var test = line ? line + ' ' + w : w;
+      if (ctx.measureText(test).width > maxWidth && line) { lines.push(line); line = w; }
+      else line = test;
+    });
+    if (line) lines.push(line);
+    return lines;
+  }
+
+  function exportBoardJPG(triggerBtn) {
+    var wrap = root.querySelector('.sp-board-wrap');
+    var board = wrap && wrap.querySelector('.spread');
+    if (!board) return;
+    var label0 = triggerBtn.textContent;
+    triggerBtn.disabled = true; triggerBtn.textContent = '… génération';
+
+    var prevTransform = board.style.transform, prevMargin = board.style.marginLeft;
+    board.style.transform = 'none';
+    board.style.marginLeft = '0';
+    var boardRect = board.getBoundingClientRect();
+
+    var PAD = 30, HEADER = 92, FOOTER = 46, SCALE = 2;
+    var W = Math.max(320, Math.ceil(boardRect.width)) + PAD * 2;
+    var H = Math.ceil(boardRect.height) + PAD * 2 + HEADER + FOOTER;
+
+    var canvas = document.createElement('canvas');
+    canvas.width = W * SCALE; canvas.height = H * SCALE;
+    var ctx = canvas.getContext('2d');
+    ctx.scale(SCALE, SCALE);
+
+    // fond
+    var bg = ctx.createLinearGradient(0, 0, 0, H);
+    bg.addColorStop(0, '#181523'); bg.addColorStop(1, '#100e17');
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+
+    // en-tête : nom du tirage, question, date
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#d9b26b';
+    ctx.font = '600 21px Georgia, "Times New Roman", serif';
+    ctx.fillText(spread.name + '  ✦', W / 2, 34);
+    ctx.fillStyle = '#c9c3d8';
+    ctx.font = 'italic 13px Georgia, "Times New Roman", serif';
+    var sub = draft.question ? draft.question : spread.subtitle;
+    wrapLines(ctx, sub, W - PAD * 2).slice(0, 2).forEach(function (l, i) { ctx.fillText(l, W / 2, 54 + i * 16); });
+    ctx.fillStyle = '#7d7890';
+    ctx.font = '10.5px "Courier New", monospace';
+    var dateStr = new Date().toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
+    ctx.fillText(dateStr + (isReversible() ? '  ·  sens ' + draft.sens : ''), W / 2, HEADER - 10);
+
+    // repères de groupe (Coupe, branches Hécate, trios Hermès…)
+    ctx.fillStyle = '#b79a5a';
+    ctx.font = '600 9px "Courier New", monospace';
+    board.querySelectorAll('.sp-coupe-label, .sp-branch-title, .he-trio-label').forEach(function (el) {
+      var r = el.getBoundingClientRect();
+      ctx.fillText(el.textContent.toUpperCase(),
+        PAD + (r.left + r.width / 2 - boardRect.left),
+        HEADER + PAD + (r.top - boardRect.top) - 6);
+    });
+
+    // cartes
+    var slots = Array.from(board.querySelectorAll('.sp-slot, .sp-adj'));
+    var jobs = slots.map(function (btn) {
+      var key = btn.dataset.pos;
+      var n = draft.cards[key];
+      var cardEl = btn.classList.contains('sp-adj') ? btn : btn.querySelector('.sp-card');
+      var r = (cardEl || btn).getBoundingClientRect();
+      var x = PAD + (r.left - boardRect.left), y = HEADER + PAD + (r.top - boardRect.top);
+      var w = r.width, h = r.height;
+      var labelEl = btn.querySelector('.sp-slot-label');
+      if (labelEl && labelEl.textContent.trim()) {
+        ctx.fillStyle = '#8f89a3';
+        ctx.font = '600 7.5px "Courier New", monospace';
+        ctx.fillText(labelEl.textContent.toUpperCase(), x + w / 2, y - 4);
+      }
+
+      function drawFrame(has) {
+        ctx.save();
+        roundRectPath(ctx, x, y, w, h, 5);
+        ctx.fillStyle = has ? '#1c1929' : 'rgba(0,0,0,.15)';
+        ctx.fill();
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = has ? 'rgba(217,178,107,.55)' : 'rgba(255,255,255,.12)';
+        if (!has) ctx.setLineDash([2, 2]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.restore();
+      }
+
+      if (!n) { drawFrame(false); return Promise.resolve(); }
+      var src = BELLINE.imageFor(n);
+      var img = new Image();
+      var loaded = src
+        ? new Promise(function (res) { img.onload = res; img.onerror = res; img.src = src; })
+        : Promise.resolve();
+      return loaded.then(function () {
+        drawFrame(true);
+        ctx.save();
+        roundRectPath(ctx, x, y, w, h, 5);
+        ctx.clip();
+        if (img.complete && img.naturalWidth) ctx.drawImage(img, x, y, w, h);
+        ctx.restore();
+        ctx.fillStyle = 'rgba(16,14,23,.78)';
+        ctx.fillRect(x + 2, y + 2, Math.min(18, w - 4), 11);
+        ctx.fillStyle = '#f2eee0';
+        ctx.font = '700 8.5px "Courier New", monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText(String(n), x + 4, y + 11);
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#d8d3e6';
+        ctx.font = '8px Georgia, serif';
+        wrapLines(ctx, cardName(n), w + 6).slice(0, 2).forEach(function (l, i) {
+          ctx.fillText(l, x + w / 2, y + h + 11 + i * 9);
+        });
+      });
+    });
+
+    Promise.all(jobs).then(function () {
+      board.style.transform = prevTransform;
+      board.style.marginLeft = prevMargin;
+      ctx.fillStyle = '#5f5a72';
+      ctx.font = '9px "Courier New", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('Oracle de Belline — atelier', W / 2, H - FOOTER / 2 + 3);
+
+      canvas.toBlob(function (blob) {
+        triggerBtn.disabled = !filledCount(); triggerBtn.textContent = label0;
+        if (!blob) { BELLINE.toast('Impossible de générer l\'image.', 'error'); return; }
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        var safe = (spread.name || spread.id).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+        a.href = url;
+        a.download = 'tirage-' + safe + '-' + new Date().toISOString().slice(0, 10) + '.jpg';
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function () { URL.revokeObjectURL(url); }, 5000);
+        BELLINE.toast('Image téléchargée.', 'success');
+      }, 'image/jpeg', 0.92);
+    });
+  }
+
   /* ---------- emplacements ---------- */
 
   function adjRowHTML(posId) {
@@ -1003,6 +1156,7 @@ BELLINE.Views.tirages = function (root) {
           (spread.example
             ? '<button type="button" class="btn-ghost btn-sm" id="spExample">' + (draft.example ? 'Masquer l’exemple' : 'Charger l’exemple') + '</button>' : '') +
           '<button type="button" class="btn-ghost btn-sm" id="spClearAll">Tout effacer</button>' +
+          '<button type="button" class="btn-ghost btn-sm" id="spExportImg"' + (filledCount() ? '' : ' disabled') + '>⬇ JPG</button>' +
           '<button type="button" class="btn-primary btn-sm" id="spSave">Enregistrer</button>' +
         '</div>' +
         '<p class="muted small" id="spCount">' + filledCount() + ' / ' + slotCount() +
@@ -1094,6 +1248,8 @@ BELLINE.Views.tirages = function (root) {
     refreshBoardSel();
     var count = root.querySelector('#spCount');
     if (count) count.textContent = filledCount() + ' / ' + slotCount() + ' cartes placées · touche une position pour la lire et y placer une carte';
+    var exp = root.querySelector('#spExportImg');
+    if (exp) exp.disabled = !filledCount();
     renderInspector();
     var gw = root.querySelector('#spGuidedWrap');
     if (gw && guidedStep >= 0) { gw.innerHTML = guidedHTML(); wireGuided(); }
@@ -1157,6 +1313,11 @@ BELLINE.Views.tirages = function (root) {
         draft = { question: '', cards: {}, notes: '', example: false, sens: draft.sens || 'descendant', domaine: draft.domaine || 'general' };
         selected = null; pickerOpen = false; guidedStep = -1; persist(); render();
       });
+    });
+    var expBtn = root.querySelector('#spExportImg');
+    if (expBtn) expBtn.addEventListener('click', function () {
+      if (!filledCount() || expBtn.disabled) return;
+      exportBoardJPG(expBtn);
     });
     root.querySelector('#spSave').addEventListener('click', function () {
       if (!filledCount()) { BELLINE.toast('Place au moins une carte avant d’enregistrer.', 'error'); return; }

@@ -256,6 +256,9 @@ code { font-family: var(--mono); font-size: .86em; color: var(--gold-soft); }
 }
 .btn-ghost:hover { border-color: var(--gold); transform: translateY(-1px); }
 .btn-link { background: none; border: none; color: var(--gold-soft); text-decoration: underline; padding: 0; }
+.btn-primary:disabled, .btn-ghost:disabled, .btn-link:disabled {
+  opacity: .4; cursor: not-allowed; filter: none; transform: none; box-shadow: none;
+}
 
 .field { display: block; margin-bottom: 14px; }
 .field > span { display: block; margin-bottom: 5px; font-size: .9rem; color: var(--muted); }

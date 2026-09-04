@@ -1153,7 +1153,8 @@ BELLINE.Views.tirages = function (root) {
         '</div>' +
         '<h2 class="sp-name">' + esc(spread.name) +
           (spread.custom ? ' <button type="button" class="btn-link" id="spDelSpread">supprimer</button>' : '') + '</h2>' +
-        '<p class="muted">' + esc(spread.subtitle) + ' — ' + slotCount() + ' cartes. ' + esc(spread.intro) + '</p>' +
+        '<p class="muted">' + esc(spread.subtitle) + ' — ' + slotCount() + ' cartes.</p>' +
+        '<details class="sp-intro"><summary>À propos de ce tirage</summary><p class="muted">' + esc(spread.intro) + '</p></details>' +
       '</div>' +
 
       (isReversible()
@@ -1179,7 +1180,7 @@ BELLINE.Views.tirages = function (root) {
           '<button type="button" class="btn-ghost btn-sm" id="spRandom">Tirer au sort</button>' +
           (spread.example
             ? '<button type="button" class="btn-ghost btn-sm" id="spExample">' + (draft.example ? 'Masquer l’exemple' : 'Charger l’exemple') + '</button>' : '') +
-          '<button type="button" class="btn-ghost btn-sm" id="spClearAll">Tout effacer</button>' +
+          '<button type="button" class="btn-ghost btn-sm danger" id="spClearAll">Tout effacer</button>' +
           '<button type="button" class="btn-ghost btn-sm" id="spExportImg"' + (filledCount() ? '' : ' disabled') + '>⬇ JPG</button>' +
           '<button type="button" class="btn-primary btn-sm" id="spSave">Enregistrer</button>' +
         '</div>' +

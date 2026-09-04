@@ -647,6 +647,8 @@ button.planet-sym:hover { color: var(--gold-soft); text-shadow: 0 0 10px current
 .dos-lec { list-style: none; margin: 4px 0 0; padding: 0; }
 .dos-lec li { padding: 3px 0; }
 .btn-link.danger { color: var(--danger); }
+.btn-ghost.danger { color: var(--danger); border-color: rgba(217,138,138,.35); }
+.btn-ghost.danger:hover { border-color: var(--danger); background: rgba(217,138,138,.08); }
 
 /* ---------- Associations ---------- */
 
@@ -766,6 +768,11 @@ button.planet-sym:hover { color: var(--gold-soft); text-shadow: 0 0 10px current
 .sp-picker-field select:hover { border-color: var(--gold-soft); }
 .sp-picker-field select:focus { outline: 2px solid var(--gold); outline-offset: 1px; border-color: transparent; }
 .sp-name { margin: 14px 0 4px; font-size: 1.3rem; display: flex; align-items: center; gap: 10px; }
+.sp-intro { margin-top: 2px; }
+.sp-intro summary {
+  cursor: pointer; font-size: .85rem; color: var(--gold-soft); display: inline-block;
+}
+.sp-intro p { margin: 8px 0 0; }
 
 .sp-rrow { display: flex; flex-direction: column; align-items: center; gap: 3px; }
 .sp-rrow-cards { display: flex; gap: 14px; justify-content: center; }

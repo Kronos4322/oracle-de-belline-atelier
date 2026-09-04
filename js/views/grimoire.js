@@ -268,7 +268,7 @@ BELLINE.Views.grimoire = function (root) {
 
       '<div class="fiche-actions">' +
         '<button class="btn-primary" id="grimSave">Enregistrer</button>' +
-        (edited ? '<button class="btn-ghost" id="grimReset">Revenir au texte de référence</button>' : '') +
+        (edited ? '<button class="btn-ghost danger" id="grimReset">Revenir au texte de référence</button>' : '') +
         '<span class="save-hint" id="grimHint"></span>' +
       '</div>' +
       '</div>';
@@ -305,7 +305,7 @@ BELLINE.Views.grimoire = function (root) {
         if (st) { st.textContent = 'Ta version enregistrée.'; st.classList.add('is-mine'); }
         if (!detailEl.querySelector('#grimReset')) {
           var b = document.createElement('button');
-          b.className = 'btn-ghost'; b.id = 'grimReset';
+          b.className = 'btn-ghost danger'; b.id = 'grimReset';
           b.textContent = 'Revenir au texte de référence';
           detailEl.querySelector('#grimSave').insertAdjacentElement('afterend', b);
           b.addEventListener('click', onReset);

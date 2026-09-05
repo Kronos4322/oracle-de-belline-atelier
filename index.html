@@ -2,7 +2,12 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <!-- user-scalable=no : le pincer-zoomer casse le rendu de la barre de nav
+       (position:fixed + backdrop-filter) sur Safari/Chrome mobile — l'élément
+       se détache du viewport visuel et semble disparaître. Comme une appli
+       native, la mise en page ne se zoome pas ; le texte reste lisible via
+       les tailles de police elles-mêmes. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>Oracle de Belline — Atelier</title>
   <meta name="description" content="Application personnelle d'étude et de pratique de l'Oracle de Belline.">
   <meta name="theme-color" content="#100e17">
@@ -19,7 +24,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
   <!-- v: incrémenter à chaque modif de CSS/JS pour forcer le rechargement,
        puis lancer `node tools/gen-sw.js` pour que le cache hors-ligne suive -->
-  <link rel="stylesheet" href="css/styles.css?v=62">
+  <link rel="stylesheet" href="css/styles.css?v=63">
   <script>
     // Appliqué avant le premier rendu pour éviter un flash sombre->clair.
     try {
@@ -52,28 +57,28 @@
   <div id="sheet" class="sheet-modal" hidden></div>
 
   <!-- Données de référence -->
-  <script src="js/data/cards.js?v=62"></script>
-  <script src="js/data/card-images.js?v=62"></script>
-  <script src="js/data/card-reference.js?v=62"></script>
-  <script src="js/data/card-dossier.js?v=62"></script>
-  <script src="js/data/card-planche.js?v=62"></script>
-  <script src="js/data/pair-dictionary.js?v=62"></script>
-  <script src="js/data/planet-dossier.js?v=62"></script>
-  <script src="js/data/combos.js?v=62"></script>
+  <script src="js/data/cards.js?v=63"></script>
+  <script src="js/data/card-images.js?v=63"></script>
+  <script src="js/data/card-reference.js?v=63"></script>
+  <script src="js/data/card-dossier.js?v=63"></script>
+  <script src="js/data/card-planche.js?v=63"></script>
+  <script src="js/data/pair-dictionary.js?v=63"></script>
+  <script src="js/data/planet-dossier.js?v=63"></script>
+  <script src="js/data/combos.js?v=63"></script>
   <!-- Couche de stockage -->
-  <script src="js/storage.js?v=62"></script>
-  <script src="js/data/spreads.js?v=62"></script>
+  <script src="js/storage.js?v=63"></script>
+  <script src="js/data/spreads.js?v=63"></script>
   <!-- Vues -->
-  <script src="js/views/journalier.js?v=62"></script>
-  <script src="js/views/grimoire.js?v=62"></script>
-  <script src="js/views/associations.js?v=62"></script>
-  <script src="js/views/astrologie.js?v=62"></script>
-  <script src="js/views/entrainement.js?v=62"></script>
-  <script src="js/views/tirages.js?v=62"></script>
-  <script src="js/views/journal.js?v=62"></script>
-  <script src="js/views/progression.js?v=62"></script>
-  <script src="js/views/methode.js?v=62"></script>
+  <script src="js/views/journalier.js?v=63"></script>
+  <script src="js/views/grimoire.js?v=63"></script>
+  <script src="js/views/associations.js?v=63"></script>
+  <script src="js/views/astrologie.js?v=63"></script>
+  <script src="js/views/entrainement.js?v=63"></script>
+  <script src="js/views/tirages.js?v=63"></script>
+  <script src="js/views/journal.js?v=63"></script>
+  <script src="js/views/progression.js?v=63"></script>
+  <script src="js/views/methode.js?v=63"></script>
   <!-- Routeur / démarrage -->
-  <script src="js/app.js?v=62"></script>
+  <script src="js/app.js?v=63"></script>
 </body>
 </html>

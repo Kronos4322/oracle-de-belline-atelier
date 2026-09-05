@@ -497,6 +497,10 @@ button.planet-sym:hover { color: var(--gold-soft); text-shadow: 0 0 10px current
 .jr-summary-body { flex: 1 1 200px; display: flex; flex-direction: column; gap: 8px; }
 .jr-summary-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .jr-summary-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+@media (max-width: 480px) {
+  .jr-summary { flex-direction: column; align-items: stretch; }
+  .jr-summary .jr-thumbs { justify-content: center; }
+}
 
 /* stepper Avant / Après */
 .jr-steps { display: flex; align-items: center; gap: 10px; margin: 0 0 16px; }
@@ -673,6 +677,9 @@ button.planet-sym:hover { color: var(--gold-soft); text-shadow: 0 0 10px current
 /* ---------- Associations ---------- */
 
 .assoc-toolbar { margin-bottom: 14px; display: flex; gap: 8px; flex-wrap: wrap; }
+@media (max-width: 480px) {
+  .assoc-toolbar { flex-direction: column; align-items: stretch; }
+}
 
 .folder {
   margin-left: calc(var(--depth, 0) * 20px);
@@ -781,6 +788,12 @@ button.planet-sym:hover { color: var(--gold-soft); text-shadow: 0 0 10px current
   background: var(--bg-2); border: 1px solid var(--line);
 }
 .sp-picker-field { flex: 1 1 260px; display: flex; flex-direction: column; gap: 4px; }
+/* Sous ~480px, le bouton "+ créer un tirage" retombait seul sur sa ligne
+   avec 200px de vide à côté (le select prend toute la largeur au-dessus) —
+   empilé en pleine largeur à la place. */
+@media (max-width: 480px) {
+  .sp-picker { flex-direction: column; align-items: stretch; }
+}
 .sp-picker-field select {
   padding: 10px 12px; border-radius: 10px; font-size: .95rem; font-family: var(--serif);
   background: var(--panel); border: 1px solid var(--line); color: var(--ink);
@@ -818,6 +831,14 @@ button.planet-sym:hover { color: var(--gold-soft); text-shadow: 0 0 10px current
 }
 .sp-toolbar-btns { display: flex; gap: 8px; flex-wrap: wrap; }
 #spCount { flex-basis: 100%; margin: 0; }
+/* Sous ~480px : le champ question, le sujet et les boutons se retrouvaient
+   chacun seuls sur leur ligne avec beaucoup de vide à côté (jusqu'à la
+   moitié de la ligne pour 2 boutons). Empilés en pleine largeur, et les
+   boutons en grille 2 colonnes pour rester compacts sans ligne à moitié vide. */
+@media (max-width: 480px) {
+  .sp-toolbar { flex-direction: column; align-items: stretch; }
+  .sp-toolbar-btns { display: grid; grid-template-columns: 1fr 1fr; }
+}
 
 /* --- répartition des valences (barre + légende) --- */
 .sp-valbar { flex-basis: 100%; }
@@ -840,6 +861,9 @@ button.planet-sym:hover { color: var(--gold-soft); text-shadow: 0 0 10px current
 .sp-valbar-legend .is-pos::before { background: var(--pos); }
 .sp-valbar-legend .is-neg::before { background: var(--neg); }
 .sp-valbar-legend .is-neu::before { background: var(--muted); opacity: .55; }
+@media (max-width: 480px) {
+  .sp-valbar-legend { flex-direction: column; gap: 5px; }
+}
 .sp-valbar-legend em { font-style: normal; color: var(--muted); }
 .sp-valbar-empty .sp-valbar-track { background: var(--bg); }
 .sp-valbar-empty p { margin: 6px 0 0; }
@@ -873,6 +897,9 @@ button.planet-sym:hover { color: var(--gold-soft); text-shadow: 0 0 10px current
 .sp-insp-card-txt strong { font-family: var(--serif); font-size: 1.08rem; display: block; margin-bottom: 5px; }
 .sp-insp-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 4px; }
 .sp-insp-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+@media (max-width: 480px) {
+  .sp-insp-actions { flex-direction: column; align-items: stretch; }
+}
 .sp-insp-nav { display: flex; gap: 8px; margin-top: 10px; padding-top: 12px; border-top: 1px solid var(--line); }
 .sp-insp-nav .btn-ghost { flex: 1; }
 .spread {

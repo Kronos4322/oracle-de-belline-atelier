@@ -24,6 +24,11 @@
   --neu:       #9c92ab;
   --radius:    14px;
   --maxw:      760px;
+  /* Hauteur réelle du bandeau d'en-tête, mesurée en JS (app.js) — le
+     bandeau passe de une à deux lignes selon la largeur d'écran, une
+     valeur figée ferait chevaucher les onglets sticky qui s'alignent
+     dessous. 57px = repli avant la première mesure. */
+  --topbar-h:  57px;
   /* Titres : serif de titrage à fort contraste. Corps : serif de lecture
      littéraire — le sujet est un traité, la typo doit le dire. Utilitaire :
      mono pour les relevés, chiffres, étiquettes. */
@@ -561,11 +566,13 @@ button.planet-sym:hover { color: var(--gold-soft); text-shadow: 0 0 10px current
 /* ---------- Méthode ---------- */
 
 .method-tabs {
-  position: sticky; top: 65px; z-index: 5; display: flex; gap: 6px; flex-wrap: wrap;
+  position: sticky; top: var(--topbar-h); z-index: 5; display: flex; gap: 6px; flex-wrap: nowrap;
+  overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch;
   margin: 0 0 20px; padding: 10px 0; background: linear-gradient(var(--bg) 78%, transparent);
 }
+.method-tabs::-webkit-scrollbar { display: none; }
 .method-tab {
-  padding: 7px 14px; border-radius: 999px; font-size: .85rem;
+  flex: none; padding: 7px 14px; border-radius: 999px; font-size: .85rem;
   background: var(--panel); border: 1px solid var(--line); color: var(--muted);
   transition: border-color .15s, color .15s;
 }
@@ -1285,9 +1292,14 @@ button.planet-sym:hover { color: var(--gold-soft); text-shadow: 0 0 10px current
 .combo-sens.precise { color: var(--muted); }
 
 /* ---------- Astrologie (dossier planétaire) ---------- */
-.astro-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 16px 0 18px; }
+.astro-tabs {
+  position: sticky; top: var(--topbar-h); z-index: 5; display: flex; gap: 6px; flex-wrap: nowrap;
+  overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+  margin: 16px 0 18px; padding: 10px 0; background: linear-gradient(var(--bg) 78%, transparent);
+}
+.astro-tabs::-webkit-scrollbar { display: none; }
 .astro-tab {
-  display: inline-flex; align-items: center; gap: 6px;
+  flex: none; display: inline-flex; align-items: center; gap: 6px;
   padding: 7px 13px; border-radius: 999px; font-size: .85rem;
   background: var(--panel); border: 1px solid var(--line); color: var(--muted);
   transition: border-color .15s, color .15s;
@@ -1339,16 +1351,22 @@ button.planet-sym:hover { color: var(--gold-soft); text-shadow: 0 0 10px current
 .proba-table thead th { font-family: var(--mono); font-size: .7rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
 
 /* ---------- Exercices (QCM / révision) ---------- */
-.ex-modes { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+.ex-modes {
+  position: sticky; top: var(--topbar-h); z-index: 5; display: flex; gap: 6px; flex-wrap: nowrap;
+  overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+  padding: 10px 0; margin-bottom: 4px; background: linear-gradient(var(--bg) 78%, transparent);
+}
+.ex-modes::-webkit-scrollbar { display: none; }
 .ex-mode {
-  padding: 7px 13px; border-radius: 999px; font-size: .85rem;
+  flex: none; padding: 7px 13px; border-radius: 999px; font-size: .85rem;
   background: var(--panel); border: 1px solid var(--line); color: var(--muted);
   transition: border-color .15s, color .15s;
 }
 .ex-mode:hover { color: var(--ink); }
 .ex-mode.on { background: linear-gradient(180deg, var(--panel-2), var(--panel)); border-color: var(--gold); color: var(--gold-soft); }
-.ex-modes select {
-  margin-left: auto; padding: 7px 10px; border-radius: 10px;
+.ex-filter { margin: 0 0 14px; }
+.ex-filter select {
+  padding: 7px 10px; border-radius: 10px;
   background: var(--bg-2); border: 1px solid var(--line); color: var(--ink); font-size: .85rem;
 }
 .qcm {

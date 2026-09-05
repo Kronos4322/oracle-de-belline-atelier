@@ -300,8 +300,8 @@ BELLINE.Views.entrainement = function (root) {
         MODES.map(function (m) {
           return '<button type="button" class="ex-mode' + (mode === m[0] ? ' on' : '') + '" data-mode="' + m[0] + '">' + esc(m[1]) + '</button>';
         }).join('') +
-        '<select id="exFam" class="se-field">' + famOpts + '</select>' +
       '</div>' +
+      '<div class="ex-filter"><select id="exFam">' + famOpts + '</select></div>' +
 
       (mode === 'revision' ? '<p class="ex-due">' + dueN + ' carte' + (dueN > 1 ? 's' : '') + ' à revoir aujourd\'hui' +
         (famFilter ? ' · série ' + esc(P[famFilter].name) : '') + '</p>' : '') +

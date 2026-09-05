@@ -280,6 +280,22 @@ window.BELLINE = window.BELLINE || {};
     });
   }
 
+  /* --- hauteur réelle du bandeau, pour les onglets sticky (Méthode, Astrologie,
+     Exercices) qui s'alignent juste dessous : le bandeau passe de une à deux
+     lignes selon la largeur d'écran (le sous-titre « — atelier » retombe),
+     une valeur figée en CSS les faisait chevaucher sur mobile. */
+  function setupTopbarHeight() {
+    var topbar = document.querySelector('.topbar');
+    if (!topbar) return;
+    function sync() {
+      document.documentElement.style.setProperty('--topbar-h', topbar.getBoundingClientRect().height + 'px');
+    }
+    sync();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(sync);
+    var t = null;
+    window.addEventListener('resize', function () { clearTimeout(t); t = setTimeout(sync, 150); });
+  }
+
   /* --- hors-ligne : une fois ouverte en ligne, l'app se relance sans réseau --- */
   function setupOffline() {
     if (!('serviceWorker' in navigator)) return;
@@ -295,6 +311,7 @@ window.BELLINE = window.BELLINE || {};
     var more = document.getElementById('navMore');
     if (more) more.addEventListener('click', openSheet);
     window.addEventListener('hashchange', render);
+    setupTopbarHeight();
     setupTheme();
     setupBackup();
     setupLightbox();

@@ -526,7 +526,7 @@ BELLINE.Views.journal = function (root) {
 
       '<section class="jr-sec">' +
         '<h2>Choisir les deux tirages</h2>' +
-        '<div class="jr-grid3" style="grid-template-columns:1fr 1fr">' +
+        '<div class="jr-grid2">' +
           '<label class="field"><span>Tirage A</span><select id="cmpSelA">' + options + '</select></label>' +
           '<label class="field"><span>Tirage B</span><select id="cmpSelB">' + options + '</select></label>' +
         '</div>' +

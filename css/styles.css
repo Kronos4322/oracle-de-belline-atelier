@@ -422,6 +422,13 @@ button.planet-sym:hover { color: var(--gold-soft); text-shadow: 0 0 10px current
   padding: 8px 10px; border-radius: 9px; background: var(--panel); border: 1px solid var(--line);
   color: var(--ink); font-family: var(--reading); font-size: .88rem;
 }
+/* En dessous de ~480px, les 4 contrôles (recherche, 2 selects, bouton) ne
+   tiennent jamais proprement sur une même ligne : ils retombaient en
+   grappe asymétrique (un select seul sur sa ligne, de l'espace vide à
+   côté) plutôt qu'un empilement net. Une colonne pleine largeur règle ça. */
+@media (max-width: 480px) {
+  .jr-toolbar { flex-direction: column; align-items: stretch; }
+}
 .jr-month {
   font-family: var(--mono); font-size: .72rem; letter-spacing: .12em; text-transform: uppercase;
   color: var(--gold-deep); margin: 22px 0 10px;
@@ -514,6 +521,12 @@ button.planet-sym:hover { color: var(--gold-soft); text-shadow: 0 0 10px current
 .jr-sub { margin: 18px 0 8px; font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
 .jr-grid3 { display: grid; gap: 12px; }
 @media (min-width: 720px) { .jr-grid3 { grid-template-columns: 1fr 1fr 1fr; } }
+/* Deux champs (comparaison de tirages) : un seuil plus bas que jr-grid3 suffit
+   à les caser côte à côte sans écraser le texte des <select> — un <select>
+   avec une longue option (date + tirage + question) devient illisible sous
+   ~200px, d'où le passage à une seule colonne pleine largeur sur mobile. */
+.jr-grid2 { display: grid; gap: 12px; }
+@media (min-width: 480px) { .jr-grid2 { grid-template-columns: 1fr 1fr; } }
 .jr-delai input { max-width: 220px; }
 
 .jr-details {

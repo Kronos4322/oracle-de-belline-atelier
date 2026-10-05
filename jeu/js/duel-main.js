@@ -401,11 +401,14 @@ function indicesMain(el, id, index) {
     else if (accordDeLecture(id, o, nomDe)?.sorte && accordDeLecture(id, o, nomDe).sorte !== "lecture") n++;
   }
   const evo = d.actif === 0 && evolutionsPossibles(d, 0).some(e => e.index === index);
-  const cle = `${n}|${belline}|${evo}`;
+  // révélée maintenant, quelle association ferait-elle avec la dernière carte révélée ?
+  const prec = J.derniere?.id, suite = prec != null && prec < 100 && prec !== id && id < 100 ? accordDeLecture(prec, id, nomDe) : null;
+  const cle = `${n}|${belline}|${evo}|${suite ? suite.cle + suite.sens : ""}`;
   if (el.dataset.indices === cle) return;
   el.dataset.indices = cle;
   el.querySelectorAll(".indice-accord, .indice-evolution").forEach(x => x.remove());
   if (n) { const s = document.createElement("span"); s.className = `indice-accord${belline ? " belline" : ""}`; s.textContent = `✦${n > 1 ? n : ""}`; s.title = `${n} association${n > 1 ? "s" : ""} avec vos cartes${belline ? ", dont une règle de Belline" : ""}`; el.appendChild(s); }
+  if (suite && !belline) { const s = document.createElement("span"); s.className = `indice-suite${suite.sens < 0 ? " nefaste" : ""}`; s.textContent = `↔ ${suite.sens < 0 ? "−" : "+"}${suite.valeur}`; s.title = `Révélée maintenant, après ${nomDe(prec)} : ${suite.texte}`; el.appendChild(s); }
   if (evo) { const s = document.createElement("span"); s.className = "indice-evolution"; s.textContent = "⇧"; s.title = "Peut faire évoluer une de vos apparitions"; el.appendChild(s); }
 }
 
@@ -1221,9 +1224,9 @@ async function animer(ev, garderOccupe = false) {
           jouerElement(e.favorable ? "lumiere" : "foudre", "impact");
         }
         const combo = e.combo > 1 ? ` · combo ×${e.combo}` : "";
-        journal(`${titre}${e.terrain ? " (sur le terrain)" : ""}${combo} : ${e.texte} (${e.valeur} points)`, true);
+        journal(`${titre}${e.terrain ? " (sur le terrain)" : ""}${e.resonance ? " (résonance avec une carte en jeu)" : ""}${combo} : ${e.texte} (${e.valeur} points)`, true);
         if (e.j === 0) { accordsDuDuel.push({ titre, texte: e.texte, belline: e.sorte === "belline" }); if (e.regle) { noterRegle(carnet, e.regle); sauverCarnet(carnet); } }
-        encart(`${titre}${combo}`, `${e.texte} ${e.favorable ? (e.j === 0 ? "Vous gagnez" : `${d.joueurs[1].nom} gagne`) : (e.j === 0 ? `${d.joueurs[1].nom} perd` : "Vous perdez")} ${e.valeur} points${e.sorte === "belline" ? ", et le sort de la règle agit" : ""}.`,
+        encart(`${titre}${e.resonance ? " · résonance" : ""}${combo}`, `${e.texte} ${e.favorable ? (e.j === 0 ? "Vous gagnez" : `${d.joueurs[1].nom} gagne`) : (e.j === 0 ? `${d.joueurs[1].nom} perd` : "Vous perdez")} ${e.valeur} points${e.sorte === "belline" ? ", et le sort de la règle agit" : ""}.`,
           e.ids || [], `${e.sorte || "belline"} ${e.favorable ? "favorable" : "nefaste"}`, e.sorte === "lecture" ? 6000 : 10000);
         if (e.sorte !== "lecture") { banniere(e.sorte === "majeur" ? `${titre} : ${e.texte.split(" : ")[0]}` : titre + combo, e.sorte === "majeur" ? e.texte.split(" : ").slice(1).join(" : ") : e.texte, e.sorte === "belline" ? "belline" : e.sorte === "majeur" ? "majeur" : e.favorable ? "accord" : "sombre"); jouerSon("regle"); eclair(e.favorable ? "rgba(243,213,138,.35)" : "rgba(160,60,90,.3)"); }
         else jouerSon(e.favorable ? "gain" : "perte");
@@ -1461,12 +1464,74 @@ function terminer() {
   }, 1300);
 }
 
+/** La nature d'une carte pour l'atelier : légère, moyenne, forte, influence, terrain, présage. */
+function natureAtelier(id) {
+  const x = def(id);
+  if (x.type === "apparition") return x.niveau <= 4 ? "legere" : x.niveau <= 6 ? "moyenne" : "forte";
+  if (x.type === "presage") return "presage";
+  return x.sousType === "terrain" ? "terrain" : "influence";
+}
+const NATURES = [["legere", "Apparitions légères"], ["moyenne", "Apparitions moyennes"], ["forte", "Apparitions fortes"], ["influence", "Influences"], ["terrain", "Terrains"], ["presage", "Présages"]];
+let filtreAtelier = "toutes";
+
+/** Combien de chances (en %) d'avoir au moins une carte d'un groupe de `k` cartes dans six cartes tirées sur `n`. */
+function chanceEnMain(k, n, tirees = 6) {
+  if (n < tirees) return k ? 100 : 0;
+  let p = 1;
+  for (let i = 0; i < tirees; i++) p *= (n - k - i) / (n - i);
+  return Math.round(100 * (1 - Math.max(0, p)));
+}
+
+/** L'analyse du deck : composition, petites attaques, associations, astres, conseils. */
+function analyserDeck() {
+  const n = deck.length, ens = new Set(deck);
+  const compte = Object.fromEntries(NATURES.map(([k]) => [k, deck.filter(id => natureAtelier(id) === k).length]));
+  const jauge = (label, v, max, peu) => `<div class="deck-jauge${peu ? " peu" : ""}"><span>${label}</span><span class="deck-barre"><i style="width:${max ? Math.round(100 * Math.min(1, v / max)) : 0}%"></i></span><b>${v}</b></div>`;
+  const regles = VOISINAGE.filter(r => ens.has(r.a) && ens.has(r.b)).length;
+  const grands = GRANDS_ACCORDS.filter(g => ens.has(g.a) && ens.has(g.b)).length;
+  let lectures = 0;
+  for (const a of deck) for (const b of deck) if (a !== b && accordDeLecture(a, b, nomDe)) lectures++;
+  const paires = n * (n - 1);
+  const planetes = REGIONS.filter(r => r.famille && ASTRES[Object.keys(ASTRES).find(k => ASTRES[k].famille === r.famille)]).map(r => {
+    const cartes = deck.filter(id => familleDe(id) === r.famille), app = cartes.filter(id => def(id).type === "apparition").length;
+    return { r, cartes: cartes.length, app, astre: app >= 2 && cartes.length >= 3 };
+  });
+  const legeres = compte.legere, chance = chanceEnMain(legeres, n);
+  const conseils = [];
+  conseils.push(legeres >= 12 ? ["ok", `${legeres} apparitions légères : ${chance} % de chances d’en avoir au moins une dès la première main.`]
+    : ["attention", `Seulement ${legeres} apparitions légères (${chance} % de chances d’en avoir une en première main) : gardez-en au moins 12, sinon vous subirez les attaques.`]);
+  if (compte.forte > legeres / 2) conseils.push(["attention", "Beaucoup de cartes fortes pour peu d’apparitions légères à sacrifier : l’offrande vous coûtera des points de vie."]);
+  if (!compte.presage) conseils.push(["attention", "Aucun présage : vous ne pourrez pas répondre aux attaques adverses."]);
+  conseils.push(regles ? ["ok", `${regles} règle${regles > 1 ? "s" : ""} de Belline complète${regles > 1 ? "s" : ""} dans le deck (les deux cartes y sont).`] : ["attention", "Aucune règle de Belline complète : ajoutez les deux cartes d’une règle."]);
+  if (n > 40) conseils.push(["ok", `Votre deck a ${n} cartes : un deck plus court (35 à 40) ferait revenir plus souvent vos meilleures cartes et vos règles.`]);
+  const astres = planetes.filter(p => p.astre);
+  return `<div><h4>Composition (${n} cartes)</h4>${NATURES.map(([k, l]) => jauge(l, compte[k], n * 0.45, k === "legere" && compte[k] < 12)).join("")}</div>
+    <div><h4>Associations possibles</h4>
+      ${jauge("Règles de Belline", regles, VOISINAGE.length)}${jauge("Grands accords", grands, GRANDS_ACCORDS.length)}
+      ${jauge(dictionnaireCharge() ? "Lectures (dictionnaire)" : "Lectures", lectures, paires)}
+      <p class="petit">${dictionnaireCharge() ? `Votre dictionnaire est ouvert : ${lectures} des ${paires} suites de deux cartes de ce deck forment une lecture, presque chaque carte révélée en accomplit une.` : `Le dictionnaire des 2652 associations s’ouvre pendant le duel : presque chaque carte révélée formera alors une lecture.`}</p></div>
+    <div><h4>Planètes et astres</h4>${planetes.map(p => jauge(`${p.r.glyphe} ${p.r.nom}${p.astre ? " ★" : ""}`, p.cartes, 9)).join("")}
+      <p class="petit">${astres.length ? `★ : astre invocable (${astres.map(p => p.r.nom).join(", ")}).` : "Aucun astre invocable : réunissez trois cartes d’une planète, dont deux apparitions."}</p></div>
+    <div><h4>Conseils</h4><ul class="conseils">${conseils.map(([c, t]) => `<li class="${c}">${t}</li>`).join("")}</ul></div>`;
+}
+
 function montrerAtelier() {
   const z = $("atelier-cartes");
   const maj = () => {
-    $("atelier-compte").textContent = `${deck.length} cartes dans votre deck (30 au moins, 53 au plus). Les cartes rares (reflet) sont celles que vous avez vécues dans le Chemin.`;
+    $("atelier-compte").textContent = `${deck.length} cartes dans votre deck (30 au moins, 53 au plus). Touchez une carte pour l’ajouter ou la retirer. Les cartes rares (reflet) sont celles que vous avez vécues dans le Chemin.`;
     $("atelier-fermer").disabled = deck.length < 30;
-    for (const b of z.children) b.classList.toggle("hors", !deck.includes(+b.dataset.id));
+    for (const b of z.children) {
+      b.classList.toggle("hors", !deck.includes(+b.dataset.id));
+      b.classList.toggle("masquee", filtreAtelier !== "toutes" && natureAtelier(+b.dataset.id) !== filtreAtelier);
+    }
+    $("atelier-analyse").innerHTML = analyserDeck();
+    $("atelier-filtres").replaceChildren(...[["toutes", "Toutes"], ...NATURES].map(([k, l]) => {
+      const f = document.createElement("button");
+      f.className = `discret-clair${filtreAtelier === k ? " actif" : ""}`;
+      f.textContent = k === "toutes" ? `${l} (53)` : `${l} (${deck.filter(id => natureAtelier(id) === k).length}/${CARTES.filter(c => natureAtelier(c.id) === k).length})`;
+      f.addEventListener("click", () => { filtreAtelier = k; maj(); });
+      return f;
+    }));
   };
   z.replaceChildren(...CARTES.map(c => c.id).sort((a, b) => a - b).map(id => {
     const b = document.createElement("button");

@@ -4,8 +4,21 @@
     {
       "name": "belline",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["tools/serve.py", "4173"],
+      "runtimeArgs": [
+        "tools/serve.py",
+        "4173"
+      ],
       "port": 4173
+    },
+    {
+      "name": "atelier-http",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "4174"
+      ],
+      "port": 4174
     }
   ]
 }

@@ -281,6 +281,9 @@ button.pile:hover:not([disabled]) { background: rgba(243,213,138,.1); box-shadow
 .carte-main .indice-accord { position: absolute; top: -9px; right: -6px; z-index: 2; min-width: 22px; height: 22px; padding: 0 5px; border-radius: 999px;
   display: grid; place-items: center; font-family: "Cinzel", serif; font-size: 12px; font-weight: 700; pointer-events: none;
   background: linear-gradient(180deg, #8a5ac0, #4a2a7a); color: #fff3cf; border: 1px solid #c9a0ff; box-shadow: 0 0 10px rgba(201,160,255,.7); }
+.carte-main .indice-suite { position: absolute; bottom: -7px; left: 50%; transform: translateX(-50%); z-index: 2; padding: 0 6px; height: 16px; line-height: 16px; border-radius: 999px;
+  font-size: 11px; font-family: "EB Garamond", serif; white-space: nowrap; background: #2f6b45; color: #f2ffe9; border: 1px solid #bfe6c8; pointer-events: none; }
+.carte-main .indice-suite.nefaste { background: #6b2433; color: #ffe9ee; border-color: #e6bfc8; }
 .carte-main .indice-accord.belline { background: linear-gradient(180deg, #f3d58a, #b08d3c); color: #2a1a08; border-color: #fff1c4; }
 .carte-main .indice-evolution { position: absolute; top: -9px; left: -6px; z-index: 2; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center;
   font-size: 13px; pointer-events: none; background: linear-gradient(180deg, #6fd08a, #2f7a48); color: #fff; border: 1px solid #c8ffd6; box-shadow: 0 0 10px rgba(143,240,168,.7); }
@@ -431,6 +434,23 @@ button.atelier-carte:hover:not([disabled]) { background: rgba(243,213,138,.25) !
 .atelier-carte canvas { width: 92px; }
 .atelier-carte.hors { border-color: transparent; opacity: .35; filter: grayscale(.8); }
 .atelier-carte.verrou { border-color: transparent; opacity: .55; }
+.atelier-carte.masquee { display: none; }
+.atelier-comprendre { text-align: left; margin: 6px 0 10px; padding: 8px 12px; border: 1px solid rgba(176,141,60,.6); border-radius: 12px; background: rgba(255,255,255,.45); }
+.atelier-comprendre summary { cursor: pointer; font-family: "Cinzel", serif; color: var(--bordeaux); font-size: 15px; }
+.atelier-comprendre ul { margin: 6px 0; padding-left: 18px; }
+.atelier-analyse { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 8px 16px; margin-top: 6px; }
+.atelier-analyse h4 { margin: 4px 0 2px; font-family: "Cinzel", serif; font-size: 13px; color: var(--bordeaux); }
+.deck-jauge { display: grid; grid-template-columns: 9.5em 1fr 2.2em; align-items: center; gap: 6px; font-size: 14px; line-height: 1.5; }
+.deck-barre { height: 9px; border-radius: 5px; background: rgba(0,0,0,.1); overflow: hidden; }
+.deck-barre i { display: block; height: 100%; border-radius: 5px; background: linear-gradient(90deg, #b08d3c, #f3d58a); }
+.deck-jauge.peu .deck-barre i { background: linear-gradient(90deg, #8a2b3a, #d0697a); }
+.deck-jauge b { text-align: right; }
+.conseils { margin: 4px 0 0; padding-left: 18px; font-size: 14px; }
+.conseils li.ok { color: var(--vert); list-style: "✓ "; }
+.conseils li.attention { color: var(--bordeaux); list-style: "! "; }
+.atelier-filtres { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; margin: 4px 0; }
+.atelier-filtres button { padding: 3px 9px; font-size: 13px; }
+.atelier-filtres button.actif { background: var(--bordeaux); color: #fff8e6; }
 
 /* =============== 13. Écrans étroits =============== */
 @media (max-height: 760px) and (min-width: 1041px) {

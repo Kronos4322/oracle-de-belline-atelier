@@ -294,8 +294,9 @@ export function accordDeLecture(a, b, nom) {
   }
   if (DICO) {
     const v = lectureDuDictionnaire(a, b);
-    if (!v || !v.sens) return null;
-    return { sorte: "lecture", sens: v.sens, valeur: 200, cle: `dico:${a}-${b}`, source: "atelier",
+    if (!v) return null;
+    // une dynamique neutre (mixte, contextuelle) est une nuance : un petit gain de lecture (ajout de jeu)
+    return { sorte: "lecture", sens: v.sens || 1, valeur: v.sens > 0 ? 150 : v.sens < 0 ? 200 : 100, cle: `dico:${a}-${b}`, source: "atelier",
       texte: `${nom(a)} puis ${nom(b)} : ${v.phrase} (${v.dynamique.toLowerCase()}, d’après votre dictionnaire).` };
   }
   const l = INDEX_LECTURES.get(k);

@@ -584,6 +584,7 @@ test("Présage d'invocation : Eau met en défense et bloque l'apparition invoqu�
 });
 test("Équipement et influence continue", () => {
   const d = duelVide(18);
+  d.mec.accordsTerrain = false;   // sans résonance : on mesure l'équipement seul
   poserMonstre(d, 0, 0, 37); d.joueurs[0].main = [6, 40];
   activer(d, 0, 0, {}, creerHasard(1));
   assert.equal(d.joueurs[0].monstres[0].atk, 2600); assert.deepEqual(d.joueurs[0].monstres[0].equipements, [6]);
@@ -591,6 +592,14 @@ test("Équipement et influence continue", () => {
   assert.ok(d.joueurs[0].presages.some(p => p && p.continue));
   finTour(d, creerHasard(1)); finTour(d, creerHasard(1));
   assert.equal(d.joueurs[0].lp, 8300);
+});
+test("Résonance : une carte révélée sans accord avec la précédente se lit avec une carte en jeu", () => {
+  const d = duelVide(18);
+  poserMonstre(d, 0, 0, 43);   // la Renommée, face visible
+  d.joueurs[0].derniere = null; d.joueurs[0].main = [5];
+  const ev = invoquer(d, 0, 0, { sacrifices: [] }, creerHasard(1));
+  const acc = ev.find(e => e.type === "accord");
+  assert.ok(acc && acc.resonance && acc.sorte === "accompagnement", JSON.stringify(acc));
 });
 test("Figure d'accord : Maladie et Grâce donnent la Guérison", () => {
   const d = duelVide(19, { reserves: [[106], []] });

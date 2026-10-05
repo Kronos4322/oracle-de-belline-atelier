@@ -178,6 +178,18 @@
         <div class="ecran-corps large">
           <h2>Votre deck</h2>
           <p id="atelier-compte" class="petit"></p>
+          <details id="atelier-comprendre" class="atelier-comprendre" open>
+            <summary>Comprendre votre deck</summary>
+            <ul class="petit regles-texte">
+              <li>Le deck est mélangé au début du duel. Vous piochez <b>six cartes</b>, puis <b>deux à chaque tour</b> (sept en main au plus). Un joueur qui doit piocher dans un deck vide perd le duel.</li>
+              <li>Il faut des <b>apparitions légères</b> (niveau 1 à 4) : elles s’invoquent sans sacrifice et tiennent le terrain. Les apparitions de niveau 5 et 6 demandent un sacrifice, les cartes fortes (7 et 8) deux.</li>
+              <li>Les <b>influences</b> agissent tout de suite ou se posent face cachée, les <b>terrains</b> changent votre moitié du tapis, les <b>présages</b> répondent pendant le tour adverse.</li>
+              <li>Deux cartes révélées l’une après l’autre forment souvent une <b>association</b> : règle de Belline, Grand accord, écho, ou lecture de votre dictionnaire. Plus votre deck réunit les deux cartes d’une règle, plus elle a de chances de s’accomplir.</li>
+              <li>Trois cartes d’une même planète ouvrent l’<b>invocation céleste</b> de son astre.</li>
+            </ul>
+            <div id="atelier-analyse" class="atelier-analyse"></div>
+          </details>
+          <div id="atelier-filtres" class="atelier-filtres" role="group" aria-label="Filtrer les cartes"></div>
           <div class="boutons">
             <button id="atelier-tout" class="discret-clair">Tout prendre</button>
             <button id="atelier-rien" class="discret-clair">Tout retirer</button>
@@ -185,7 +197,7 @@
           </div>
           <div id="atelier-cartes" class="atelier-cartes"></div>
           <h3>Votre réserve de figures d’accord</h3>
-          <p class="petit">Toutes les figures sont dans votre réserve. Pour en invoquer une, réunissez ses deux cartes (en main ou sur le terrain) et touchez « Accords ».</p>
+          <p class="petit">Les figures éclairées sont dans votre réserve (quatre de départ, puis celles des règles que vous connaissez ou accomplissez en duel) ; les autres indiquent les deux cartes à réunir. Pour en invoquer une, réunissez ses deux cartes (en main ou sur le terrain) et touchez « Accords ».</p>
           <div id="atelier-reserve" class="atelier-cartes"></div>
         </div>
       </div>

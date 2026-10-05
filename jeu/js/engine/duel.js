@@ -339,9 +339,25 @@ function appliquer(ctx, e) {
  * sinon un écho, un accord d'accompagnement ou une lecture moderne (js/data/lectures.js).
  */
 function accorder(d, j, prec, courante, ev) {
-  if (!prec || prec.id >= 100 || courante.id >= 100) return;
-  const a = accordEntre(prec, courante);
-  if (a) accomplir(d, j, a, ev, false);
+  if (courante.id >= 100) return;
+  const a = prec && prec.id < 100 ? accordEntre(prec, courante) : null;
+  if (a) { accomplir(d, j, a, ev, false); return; }
+  // la résonance (ajout de jeu) : sans accord avec la carte révélée avant, la nouvelle carte se lit avec une de vos
+  // cartes face visible en jeu (celle-ci puis la nouvelle) ; échos, accompagnement et lectures seulement, une fois par carte révélée
+  if (!d.mec.accordsTerrain) return;
+  const r = resonance(d.joueurs[j], courante.id);
+  if (r) accomplir(d, j, r, ev, false);
+}
+
+/** La résonance d'une carte qu'on révèle avec les cartes face visible de son joueur : un accord hors notice, ou null. */
+function resonance(J, id) {
+  const enJeu = [...J.monstres.filter(m => m && !m.faceCachee).map(m => m.id), ...J.presages.filter(p => p?.continue).map(p => p.id)];
+  for (const autre of enJeu) {
+    if (autre >= 100 || autre === id) continue;
+    const l = accordDeLecture(autre, id, nomDe);
+    if (l) return { texte: l.texte, favorable: l.sens > 0, sorte: l.sorte, cle: l.cle, valeur: l.valeur, pioche: false, ids: [autre, id], resonance: true };
+  }
+  return null;
 }
 
 /** L'accord que forment deux cartes (`prec` puis `courante`, { id, choix }), ou null. Les règles de la notice d'abord. */
@@ -359,7 +375,7 @@ function accomplir(d, j, a, ev, terrain = false, rng = Math.random) {
   const J = d.joueurs[j];
   J.combo++;
   const bonus = 200 * (J.combo - 1), valeur = a.valeur + bonus;
-  ev.push({ type: "accord", j, texte: a.texte, favorable: a.favorable, regle: a.regle, sorte: a.sorte, cle: a.cle, terrain, ids: a.ids, combo: J.combo, valeur });
+  ev.push({ type: "accord", j, texte: a.texte, favorable: a.favorable, regle: a.regle, sorte: a.sorte, cle: a.cle, terrain, resonance: !!a.resonance, ids: a.ids, combo: J.combo, valeur });
   if (a.favorable) { changerLP(d, j, valeur, ev, J.combo > 1 ? `combo ×${J.combo}` : "accord"); if (a.pioche) piocher(d, j, 1, ev); }
   else changerLP(d, adversaire(j), -valeur, ev, J.combo > 1 ? `combo ×${J.combo}` : "accord");
   // le sort de Belline : l'effet propre de la règle

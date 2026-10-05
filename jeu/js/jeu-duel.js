@@ -1161,16 +1161,22 @@ M["js/engine/hasard.js"] = (() => {
 // Générateur pseudo-aléatoire à graine (mulberry32). Module pur.
 // Une même graine redonne le même chemin : « Chemin n° 4821 » peut se rejouer.
 
-/** Renvoie une fonction qui donne un nombre dans [0, 1[. */
-function creerHasard(graine) {
-  let s = graine >>> 0;
-  return () => {
+/**
+ * Renvoie une fonction qui donne un nombre dans [0, 1[. Son état (`f.etat()`) se sauvegarde, et
+ * `reprendreHasard(etat)` continue exactement la même suite (un duel enregistré reprend à l'identique).
+ */
+function creerHasard(graine) { return reprendreHasard(graine >>> 0); }
+function reprendreHasard(etat) {
+  let s = etat >>> 0;
+  const f = () => {
     s = (s + 0x6D2B79F5) >>> 0;
     let t = s;
     t = Math.imul(t ^ (t >>> 15), t | 1);
     t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
+  f.etat = () => s;
+  return f;
 }
 
 /** Une graine lisible, de 1 à 99 999. */
@@ -1184,7 +1190,7 @@ function melanger(tab, rng) {
 
 function choisir(tab, rng) { return tab[Math.floor(rng() * tab.length)]; }
 
-return { creerHasard, nouvelleGraine, melanger, choisir };
+return { creerHasard, reprendreHasard, nouvelleGraine, melanger, choisir };
 })();
 
 // ===== js/engine/duel.js =====
@@ -1642,9 +1648,9 @@ function revelerJouee(d, j, place, ev, rng) {
 }
 
 /** Peut-on activer l'influence `index` ? */
-function peutActiver(d, j, index) {
+function peutActiver(d, j, index, horsTour = false) {
   const J = d.joueurs[j], id = J.main[index];
-  if (d.fini || d.actif !== j || !enPrincipale(d)) return { ok: false, raison: "Pas maintenant." };
+  if (d.fini || (!horsTour && (d.actif !== j || !enPrincipale(d)))) return { ok: false, raison: "Pas maintenant." };
   if (id == null || def(id).type !== "influence") return { ok: false, raison: "Ce n’est pas une influence." };
   const x = def(id);
   if (x.sousType === "equipement" && !monstres(J).length) return { ok: false, raison: "Équipement : il faut une apparition à équiper." };
@@ -1657,7 +1663,7 @@ function peutActiver(d, j, index) {
  * (déclencheur 'influence') que l'adversaire active en réponse : c'est une chaîne.
  */
 function activer(d, j, index, options = {}, rng = Math.random) {
-  const v = peutActiver(d, j, index);
+  const v = peutActiver(d, j, index, !!options.horsTour);
   if (!v.ok) return [{ type: "refus", j, raison: v.raison }];
   const ev = [], J = d.joueurs[j], o = adversaire(j);
   const id = J.main.splice(index, 1)[0], x = def(id);
@@ -1751,6 +1757,61 @@ function revelerInfluence(d, j, place, options = {}, rng = Math.random) {
   const ev = activer(d, j, J.main.length - 1, { ...options, revelee: true }, rng);
   if (ev.length === 1 && ev[0].type === "refus") { J.main.pop(); J.presages[place] = p; }
   return ev;
+}
+
+/**
+ * Magies en réponse (ajout de jeu, comme les magies jeu-rapide) : pendant le tour adverse, une influence posée
+ * face cachée depuis au moins un tour peut être révélée en réponse (à une attaque, avant le choc). Les terrains
+ * ne se révèlent qu'à son tour.
+ */
+function influencesEnReponse(d, k) {
+  const K = d.joueurs[k];
+  if (d.fini || d.actif === k) return [];
+  return K.presages.map((p, place) => ({ p, place }))
+    .filter(x => x.p?.influence && x.p.poseTour < d.tour && def(x.p.id).sousType !== "terrain")
+    .filter(x => def(x.p.id).sousType !== "equipement" || monstres(K).length)
+    .map(x => x.place);
+}
+function revelerEnReponse(d, k, place, options = {}, rng = Math.random) {
+  if (!influencesEnReponse(d, k).includes(place)) return [{ type: "refus", j: k, raison: "Cette carte ne peut pas répondre maintenant." }];
+  const K = d.joueurs[k], p = K.presages[place];
+  K.presages[place] = null;
+  K.main.push(p.id);
+  const ev = activer(d, k, K.main.length - 1, { choix: options.choix, revelee: true, horsTour: true }, rng);
+  if (ev.length === 1 && ev[0].type === "refus") { K.main.pop(); K.presages[place] = p; }
+  else ev.unshift({ type: "texte", j: k, texte: `${K.nom} répond par une influence posée.` });
+  return ev;
+}
+
+/** Après une reprise (duel enregistré) : les nouveaux identifiants ne doivent pas croiser les anciens. */
+function preparerReprise(d) {
+  let max = 0;
+  for (const J of d.joueurs) for (const x of [...J.monstres, ...J.presages]) if (x?.uid > max) max = x.uid;
+  compteurUid = Math.max(compteurUid, max + 1);
+  return d;
+}
+
+/**
+ * L'Ombre répond-elle à une attaque par une influence posée ? Renvoie { place, choix } ou null.
+ * Elle compare la suite de l'attaque avec et sans sa réponse.
+ */
+function influenceOmbre(d, k, contexte, profil = d.joueurs[k].profil) {
+  const dispo = influencesEnReponse(d, k);
+  if (!dispo.length || (profil?.hasard ?? 0) > 0.5) return null;
+  const j = adversaire(k);
+  const apres = s => { if (ciblesAttaque(s, j, contexte.place).includes(contexte.cible)) attaquer(s, j, contexte.place, contexte.cible, neutre, null); return evaluer(s, k); };
+  const base = apres(copie(d));
+  let meilleur = null, gain = 2;
+  for (const place of dispo) {
+    const x = def(d.joueurs[k].presages[place].id);
+    for (const choix of (x.choix ? x.choix.map((_, i) => i) : [null])) {
+      const s = copie(d);
+      revelerEnReponse(s, k, place, { choix }, neutre);
+      const v = apres(s) - base;
+      if (v > gain) { gain = v; meilleur = { place, choix }; }
+    }
+  }
+  return meilleur;
 }
 
 // ---------- Techniques : alignements et associations ----------
@@ -2242,7 +2303,7 @@ function executerOmbre(d, a, rng = Math.random, reponse = null) {
   }
 }
 
-return { OFFRANDE, LP, MECANIQUES, def, nomDe, familleDe, creerDuel, apparitionDe, atkEffectif, domine, defEffectif, terrainDe, accordsTerrain, accomplirAccordTerrain, peutInvoquer, invoquer, peutActiver, activer, peutPoser, poser, peutPoserInfluence, poserInfluence, peutRevelerInfluence, revelerInfluence, avancementAssociation, associationComplete, techniquesPossibles, utiliserTechnique, evolutionsPossibles, evoluer, peutChanger, changerPosition, fusionsPossibles, fusionner, passerAuCombat, passerPrincipale2, ciblesAttaque, calculCombat, presagesActivables, attaquer, reagirInvocation, finTour, evaluer, presageOmbre, actionOmbre, executerOmbre };
+return { OFFRANDE, LP, MECANIQUES, def, nomDe, familleDe, creerDuel, apparitionDe, atkEffectif, domine, defEffectif, terrainDe, accordsTerrain, accomplirAccordTerrain, peutInvoquer, invoquer, peutActiver, activer, peutPoser, poser, peutPoserInfluence, poserInfluence, peutRevelerInfluence, revelerInfluence, influencesEnReponse, revelerEnReponse, preparerReprise, influenceOmbre, avancementAssociation, associationComplete, techniquesPossibles, utiliserTechnique, evolutionsPossibles, evoluer, peutChanger, changerPosition, fusionsPossibles, fusionner, passerAuCombat, passerPrincipale2, ciblesAttaque, calculCombat, presagesActivables, attaquer, reagirInvocation, finTour, evaluer, presageOmbre, actionOmbre, executerOmbre };
 })();
 
 // ===== js/engine/carnet.js =====
@@ -4176,12 +4237,12 @@ const { FIGURES, figuresDebloquees } = M["js/data/accords.js"];
 const { VOISINAGE, reglesDeclenchees } = M["js/data/voisinage.js"];
 const { GARDIENS, PROFILS, deckGardien, reglesEnseignees } = M["js/data/gardiens.js"];
 const { REGIONS } = M["js/config.js"];
-const { creerHasard, nouvelleGraine } = M["js/engine/hasard.js"];
+const { creerHasard, nouvelleGraine, reprendreHasard } = M["js/engine/hasard.js"];
 const {
   creerDuel, def, nomDe, familleDe, peutInvoquer, invoquer, peutActiver, activer, peutPoser, poser, peutChanger, changerPosition,
   fusionsPossibles, fusionner, passerAuCombat, passerPrincipale2, ciblesAttaque, calculCombat, attaquer,
   presagesActivables, presageOmbre, reagirInvocation, finTour, actionOmbre, executerOmbre, atkEffectif, defEffectif, LP,
-  accordsTerrain, accomplirAccordTerrain, peutPoserInfluence, poserInfluence, evolutionsPossibles, evoluer, MECANIQUES, domine, peutRevelerInfluence, revelerInfluence, techniquesPossibles, utiliserTechnique, avancementAssociation
+  accordsTerrain, accomplirAccordTerrain, peutPoserInfluence, poserInfluence, evolutionsPossibles, evoluer, MECANIQUES, domine, influencesEnReponse, revelerEnReponse, influenceOmbre, preparerReprise, peutRevelerInfluence, revelerInfluence, techniquesPossibles, utiliserTechnique, avancementAssociation
 } = M["js/engine/duel.js"];
 const { ALIGNEMENTS, ASSOCIATIONS } = M["js/data/techniques.js"];
 const { accordDeLecture, definirDictionnaire, dictionnaireCharge } = M["js/data/lectures.js"];
@@ -4310,8 +4371,7 @@ async function ajusterTaille() {
   largeurMain = window.innerWidth <= 640 ? 88 : Math.max(96, Math.min(150, window.innerHeight * 0.18));
   zone = tailleZone();
   poser(); rendre();
-  if (window.innerWidth <= 640) return;
-  for (let k = 0; k < 3; k++) {
+  for (let k = 0; k < 4; k++) {
     await image_suivante();
     if (moi !== reglage) return;
     let r = $("plateau").getBoundingClientRect().bottom + window.scrollY - (window.innerHeight - 6);
@@ -4827,6 +4887,11 @@ async function executerPosition(place) { selection = null; actions([]); await an
 
 async function executerAttaque(place, cible) {
   selection = null; actions([]);
+  const magie = influenceOmbre(d, 1, { place, cible });
+  if (magie) {
+    await animer(revelerEnReponse(d, 1, magie.place, { choix: magie.choix }, rng), true);
+    if (d.fini || !ciblesAttaque(d, 0, place).includes(cible)) { journal("Votre attaque n’a plus lieu."); finAction(); return; }
+  }
   const p = presageOmbre(d, 1, "attaque", { place, cible });
   await animer(attaquer(d, 0, place, cible, rng, p));
   finAction();
@@ -4846,7 +4911,47 @@ async function executerFusion(figure) {
   finAction();
 }
 
-function finAction() { occupe = false; cacherFleche(); rendre(); if (d.fini) terminer(); }
+function finAction() { occupe = false; cacherFleche(); rendre(); if (d.fini) terminer(); else enregistrer(); }
+
+// ---------- Enregistrement du duel en cours ----------
+// Le duel est gardé dans le navigateur après chaque coup : si l'on quitte l'application, il reprend là où il était
+// (même hasard, même tour). Il est effacé à la fin du duel.
+const CLE_DUEL = "chemin-du-mage.duel-en-cours";
+function enregistrer() {
+  if (!d || !partie || partie.demo || d.fini) return;
+  try {
+    const lignes = [...$("journal").children].slice(0, 40).map(li => [li.textContent, li.className]);
+    localStorage.setItem(CLE_DUEL, JSON.stringify({ version: 1, d, partie, hasard: rng.etat(), accordsDuDuel, lignes, quand: Date.now() }));
+  } catch { /* stockage plein ou bloqué : le duel continue sans sauvegarde */ }
+}
+function effacerEnregistrement() { try { localStorage.removeItem(CLE_DUEL); } catch { /* rien */ } }
+function lireEnregistrement() {
+  try { const s = JSON.parse(localStorage.getItem(CLE_DUEL) || "null"); return s?.version === 1 && s.d && !s.d.fini ? s : null; } catch { return null; }
+}
+async function reprendre() {
+  const s = lireEnregistrement();
+  if (!s) return;
+  d = preparerReprise(s.d); partie = s.partie; rng = reprendreHasard(s.hasard); accordsDuDuel = s.accordsDuDuel || [];
+  selection = null; occupe = false;
+  lpAffiche[0] = d.joueurs[0].lp; lpAffiche[1] = d.joueurs[1].lp;
+  $("journal").replaceChildren(...(s.lignes || []).map(([t, c]) => { const li = document.createElement("li"); li.textContent = t; if (c) li.className = c; return li; }));
+  journal("· Le duel reprend ·", true);
+  $("numero-duel").textContent = `Duel n° ${partie.graine}`;
+  for (const e of ["accueil-duel", "fin-duel", "atelier"]) $(e).classList.remove("visible");
+  $("detail").classList.add("vide"); actions([]);
+  rendre(); ajusterTaille();
+  banniere("Le duel reprend", `Tour ${d.tour}`);
+  if (d.actif === 1) {
+    occupe = true;
+    await attendre(900);
+    await tourAdverse();
+    occupe = false; rendre();
+    if (d.fini) terminer(); else enregistrer();
+  }
+}
+// en quittant l'application (onglet caché, téléphone mis en veille), on enregistre aussi
+document.addEventListener("visibilitychange", () => { if (document.hidden && !occupe) enregistrer(); });
+window.addEventListener("pagehide", () => { if (!occupe) enregistrer(); });
 
 /**
  * Le panneau des accords : les figures invocables maintenant (touchez pour invoquer), puis toutes les figures de la
@@ -4873,7 +4978,7 @@ function ouvrirAccords() {
   const aReveler = [];
   for (let x = 0; x < ids.length; x++) for (let y = x + 1; y < ids.length; y++) {
     const r = reglesDeclenchees({ id: ids[x], choix: 0 }, { id: ids[y], choix: 0 })[0] || reglesDeclenchees({ id: ids[y], choix: 0 }, { id: ids[x], choix: 0 })[0];
-    if (r) { aReveler.push(item(`☙ Règle de Belline`, r.texte, "Posez-les toutes deux en jeu (ou révélez l’une puis l’autre) : 800 points.", null, "proche")); continue; }
+    if (r) { aReveler.push(item(`☙ Règle de Belline`, r.texte, "Posez-les toutes deux en jeu (ou révélez l’une puis l’autre) : 1000 points et le sort de la règle.", null, "proche")); continue; }
     const a = accordDeLecture(ids[x], ids[y], nomDe);
     if (a) aReveler.push(item(`${a.sens > 0 ? "✦" : "☍"} ${{ echo: "Écho de la notice", accompagnement: "Accord d’accompagnement", lecture: "Lecture moderne" }[a.sorte]}`, a.texte, `Posez-les toutes deux en jeu (ou révélez l’une puis l’autre) : ${a.valeur} points.`, null, a.sorte === "lecture" ? "codex" : "proche"));
   }
@@ -4908,8 +5013,18 @@ async function tourAdverse() {
     if (a.type === "fin" || a.type === "rien") break;
     let reponse = null;
     if (a.type === "attaquer") {
-      const dispo = presagesActivables(d, 0, "attaque");
-      if (dispo.length) { montrerFleche(zoneEl(1, a.place), a.cible === "direct" ? $("lp-0") : zoneEl(0, a.cible)); reponse = await demanderReaction(dispo, attaqueTexte(a)); }
+      // vos réponses : un présage, ou une influence posée (révélée avant le choc) ; puis encore un présage si vous voulez
+      for (let tour = 0; tour < 3 && !d.fini; tour++) {
+        const dispo = presagesActivables(d, 0, "attaque"), magies = influencesEnReponse(d, 0);
+        if (!dispo.length && !magies.length) break;
+        if (!ciblesAttaque(d, 1, a.place).includes(a.cible)) break;
+        montrerFleche(zoneEl(1, a.place), a.cible === "direct" ? $("lp-0") : zoneEl(0, a.cible));
+        const r = await demanderReaction(dispo, attaqueTexte(a), magies);
+        if (r && typeof r === "object") { await animer(revelerEnReponse(d, 0, r.influence, { choix: r.choix }, rng), true); continue; }
+        reponse = r; break;
+      }
+      if (d.fini) break;
+      if (!ciblesAttaque(d, 1, a.place).includes(a.cible)) { journal("L’attaque n’a plus lieu."); await attendre(300); continue; }
     }
     if (a.type === "activer" || a.type === "revelerInfluence") {
       const dispo = presagesActivables(d, 0, "influence");
@@ -4921,6 +5036,7 @@ async function tourAdverse() {
     if (ev.length === 1 && ev[0].type === "refus") break;
     await animer(ev, true);
     if (a.type === "invoquer" || a.type === "fusionner") await apresInvocation(ev, 0);
+    enregistrer();
     await attendre(320);
   }
   if (!d.fini) await animer(finTour(d, rng), true);
@@ -4952,10 +5068,11 @@ async function finDeTour() {
   selection = null; actions([]);
   occupe = true;
   await animer(finTour(d, rng), true);
+  enregistrer();
   if (!d.fini) await tourAdverse();
   occupe = false;
   rendre();
-  if (d.fini) terminer();
+  if (d.fini) terminer(); else enregistrer();
 }
 $("bouton-fin-tour").addEventListener("click", finDeTour);
 
@@ -4967,19 +5084,30 @@ function attaqueTexte(a) {
 }
 
 /** Le joueur peut répondre par un présage. Résout l'emplacement choisi, ou null. */
-function demanderReaction(places, texte) {
+/**
+ * Le joueur peut répondre : par un présage (`places`), ou par une influence posée face cachée (`influences`,
+ * comme une magie jeu-rapide). Résout l'emplacement du présage choisi, { influence: place, choix }, ou null.
+ */
+function demanderReaction(places, texte, influences = []) {
   return new Promise(resolve => {
+    $("reaction-titre").textContent = influences.length && !places.length ? "Une réponse ?" : "Un présage ?";
     $("reaction-texte").textContent = texte;
     const zone = $("reaction-cartes");
-    zone.replaceChildren(...places.map(place => {
-      const id = d.joueurs[0].presages[place].id;
+    const carte = (id, legende, valeur) => {
       const b = document.createElement("button");
       b.className = "reaction-carte";
       b.appendChild(enveloppe(carteCanvas(id, true, 150), id, true));
-      const s = document.createElement("span"); s.textContent = `Activer ${nomDe(id)}`; b.appendChild(s);
-      b.addEventListener("click", () => { $("reaction").classList.remove("visible"); cacherFleche(); resolve(place); });
+      const s = document.createElement("span"); s.textContent = legende; b.appendChild(s);
+      b.addEventListener("click", () => { $("reaction").classList.remove("visible"); cacherFleche(); resolve(valeur); });
       return b;
-    }));
+    };
+    zone.replaceChildren(
+      ...places.map(place => { const id = d.joueurs[0].presages[place].id; return carte(id, `Présage : ${nomDe(id)}`, place); }),
+      ...influences.flatMap(place => {
+        const id = d.joueurs[0].presages[place].id, x = def(id);
+        return x.choix ? x.choix.map((ch, c) => carte(id, `Révéler ${nomDe(id)} : ${ch.label}`, { influence: place, choix: c }))
+          : [carte(id, `Révéler ${nomDe(id)}`, { influence: place, choix: null })];
+      }));
     $("reaction-non").onclick = () => { $("reaction").classList.remove("visible"); cacherFleche(); resolve(null); };
     $("reaction").classList.add("visible");
     jouerSon("choix");
@@ -5324,6 +5452,15 @@ const EFFET_TECHNIQUE = {
 };
 
 // ---------- Accueil, campagne, atelier ----------
+/** Le bouton « Reprendre le duel en cours » de l'accueil. */
+function majReprise() {
+  const s = lireEnregistrement(), b = $("bouton-reprendre");
+  if (!b) return;
+  b.hidden = !s;
+  if (s) b.textContent = `▶ Reprendre le duel en cours (contre ${s.d.joueurs[1].nom}, tour ${s.d.tour}, vos points de vie ${s.d.joueurs[0].lp})`;
+}
+$("bouton-reprendre")?.addEventListener("click", reprendre);
+
 function gardienAccessible(i) { return i === 0 || carnet.gardiens.includes(GARDIENS[i - 1].famille); }
 function majAccueil() {
   $("liste-gardiens").replaceChildren(...GARDIENS.map((g, i) => {
@@ -5406,6 +5543,7 @@ async function ouverture() {
 }
 
 function terminer() {
+  effacerEnregistrement();
   const gagne = d.gagnant === 0;
   noterDuel(carnet, gagne);
   let lecons = [];
@@ -5474,7 +5612,7 @@ $("atelier-fermer").addEventListener("click", () => { if (deck.length < 30) retu
 $("bouton-regles").addEventListener("click", () => { $("regles-duel").hidden = !$("regles-duel").hidden; });
 for (const b of document.querySelectorAll("[data-libre]")) b.addEventListener("click", () => demarrer({ mode: "libre", difficulte: b.dataset.libre }));
 $("bouton-revanche").addEventListener("click", () => demarrer(partie, partie.graine));
-$("bouton-retour-accueil").addEventListener("click", () => { $("fin-duel").classList.remove("visible"); majAccueil(); $("accueil-duel").classList.add("visible"); });
+$("bouton-retour-accueil").addEventListener("click", () => { $("fin-duel").classList.remove("visible"); majAccueil(); majReprise(); $("accueil-duel").classList.add("visible"); });
 
 window.addEventListener("keydown", e => {
   if (e.target instanceof HTMLElement && e.target.closest("input, textarea")) return;
@@ -5503,12 +5641,19 @@ function chargerDictionnaire() {
 }
 setTimeout(chargerDictionnaire, 1500);
 
+// Téléphone : le journal s'ouvre par un bouton, par-dessus le jeu
+$("bouton-journal")?.addEventListener("click", () => {
+  const b = document.querySelector(".journal-bloc"), ouvert = b.classList.toggle("ouvert");
+  $("bouton-journal").setAttribute("aria-expanded", String(ouvert));
+});
+
 // Outil de vérification (?test) : lire l'état depuis la console ou un script.
 if (new URLSearchParams(location.search).has("test")) window.__duel = { etat: () => d, occupe: () => occupe, demarrer, effet: id => effetCarte(id) };
 
 // Accueil : un duel de démonstration derrière le voile
 majAccueil();
-rng = creerHasard(1); d = creerDuel(rng, "homme", { premier: 0, terrain: "soleil" });
+rng = creerHasard(1); d = creerDuel(rng, "homme", { premier: 0, terrain: "soleil" }); partie = { demo: true };
+majReprise();
 document.fonts?.ready.then(() => ajusterTaille());
 ajusterTaille();
 

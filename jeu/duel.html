@@ -22,6 +22,7 @@
     <a class="retour" href="../index.html#/jeux" aria-label="Retour à l’Atelier">‹ Atelier</a>
     <h1>Le Duel des Apparitions</h1>
     <span id="numero-duel" class="numero-partie"></span>
+    <button id="bouton-journal" class="discret" aria-expanded="false">☰ Journal</button>
     <button id="bouton-plein-ecran" class="discret" aria-pressed="false">⤢ Plein écran</button>
     <button id="bouton-son" class="discret" aria-pressed="true">♪ Son</button>
   </header>
@@ -142,6 +143,7 @@
             </section>
           </div>
           <div class="boutons">
+            <button id="bouton-reprendre" class="reprendre" hidden>▶ Reprendre le duel en cours</button>
             <button id="bouton-deck" class="discret-clair">Votre deck et votre réserve</button>
             <button id="bouton-regles" class="discret-clair">Les règles</button>
           </div>
@@ -155,6 +157,7 @@
               <li><b>Affinité</b> : chaque apparition gagne 200 ATK par autre apparition de sa planète à vos côtés. <b>Ciel du duel</b> : les apparitions de la planète du duel gagnent 300 ATK et DEF.</li>
               <li><b>Pioche</b> : 2 cartes à chaque tour, sans dépasser 7 en main. <b>Terrains</b> (Campagne-Santé, Pénates, Table, Cloître) : un lieu de la notice qui se pose de votre côté du tapis, le change et agit tant qu’il demeure (5 tours, le Cloître 3). Un seul par joueur : un nouveau terrain casse l’ancien. L’Accident casse le terrain adverse, la lunaison (Changement) rend tous les terrains à la main.</li>
               <li><b>Accords</b> : deux cartes associées s’accomplissent quand vous les révélez l’une après l’autre, ou quand elles sont toutes deux face visible sur votre terrain (bouton « Accords », un par tour, une fois par paire). Quatre sortes : les <b>règles de Belline</b> (la notice : 1000 points, une carte, et leur <b>sort</b>, un effet tiré de leurs mots), les <b>échos de la notice</b> (le même mot dans les deux notices, 500), l’<b>accompagnement</b> (la Renommée prend le sens de sa voisine, la Trahison gâte les meilleures cartes, 500) et les <b>lectures modernes</b> (ajout du jeu, 200). Favorable : vous gagnez les points ; néfaste : l’adversaire les perd. <b>Combo</b> : chaque accord de plus dans le même tour rapporte 200 points de plus. Les badges ✦ sur vos cartes en main montrent celles qui s’associent (doré : une règle de Belline). <b>Figures d’accord</b> (cadre pourpre) : une fois par tour, envoyez au cimetière les deux cartes d’une règle de Belline (main ou terrain) pour invoquer sa figure. Votre réserve contient quatre figures de départ et celles des règles que vous connaissez ; une règle accomplie en duel y fait entrer sa figure.</li>
+              <li><b>Magies en réponse</b> (comme les magies jeu-rapide) : une influence posée face cachée depuis un tour peut être révélée pendant l’attaque adverse, avant le choc, pour retourner le combat. L’Ombre en fait autant.</li>
               <li><b>Évolution</b> (comme dans Digimon et Pokémon) : une apparition en jeu depuis un tour évolue en une apparition de votre main de la même planète et de niveau plus haut (au plus trois de plus), sans sacrifice : elle garde ses équipements et gagne 300 ATK d’élan. Une par tour ; le badge ⇧ et l’aura verte la signalent.</li>
               <li><b>États</b> : malade (la Maladie, l’épidémie : −300 ATK à chaque tour), brûlée (le Feu : −500 ATK, 200 points perdus par tour), endormie (l’Eau, la passivité : n’attaque pas), confuse (l’Inconstance : une attaque sur deux échoue). La Grâce, la Campagne et certaines règles les guérissent.</li>
               <li><b>Planètes</b> : chacune domine la suivante dans l’ordre d’Edmond (Soleil, Lune, Mercure, Vénus, Mars, Jupiter, Saturne, puis le Soleil) : +500 ATK contre elle. <b>La Fatalité</b> : au-delà du 40e tour (20 chacun), celui qui a le plus de points de vie l’emporte.</li>

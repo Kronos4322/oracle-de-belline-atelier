@@ -288,3 +288,22 @@ body.plein-ecran { overflow: auto; }
   #bouton-plein-ecran { display: none; }
   .barre h1 { font-size: 17px; }
 }
+
+/* ---------- Téléphone : le Chemin tient dans l'écran, sans défiler ----------
+   La scène prend toute la hauteur libre ; le tableau de bord, compact, reste visible dessous. */
+@media (max-width: 860px) {
+  body.page-chemin { height: 100vh; height: 100dvh; overflow: hidden; display: flex; flex-direction: column; }
+  body.page-chemin .barre { flex: none; }
+  body.page-chemin .jeu { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 6px; padding: 0 6px calc(6px + env(safe-area-inset-bottom)); }
+  body.page-chemin .scene { flex: 1; height: auto; min-height: 0; max-height: none; }
+  body.page-chemin .cote { flex: none; max-height: 34vh; max-height: 34dvh; overflow: auto; gap: 6px; padding: 0; }
+  body.page-chemin .tableau { padding: 6px 10px; gap: 2px 14px; font-size: 14px; }
+  body.page-chemin .tableau .bloc.large:has(#val-besoin:empty) { display: none; }
+  body.page-chemin .etiquette { font-size: 11px; }
+  body.page-chemin .retenues-bloc { padding: 6px 10px; display: flex; align-items: center; gap: 10px; }
+  body.page-chemin .retenues-bloc h3 { margin: 0; font-size: 13px; white-space: nowrap; }
+  body.page-chemin .retenues { flex: 1; min-width: 0; overflow-x: auto; white-space: nowrap; }
+  body.page-chemin .effets-actifs:empty { display: none; }
+}
+/* Annonces pour lecteurs d'écran : hors du flux (elles allongeaient la page de quelques pixels) */
+.lecteur { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }

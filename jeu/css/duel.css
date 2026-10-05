@@ -488,3 +488,22 @@ button.atelier-carte:hover:not([disabled]) { background: rgba(243,213,138,.25) !
 
 /* Lien vers la fiche de la carte dans le Grimoire de l'Atelier */
 .lien-grimoire { color: var(--or-clair); white-space: nowrap; }
+
+/* =============== 14. Téléphone : tout le duel tient dans l'écran =============== */
+#bouton-journal { display: none; }
+@media (max-width: 640px) {
+  .arene { padding: 0 4px; gap: 0; }
+  .plateau { border-radius: 14px; gap: 4px; padding: 6px 4px 4px; }
+  .journal-bloc { display: none; }
+  .journal-bloc.ouvert { display: block; position: fixed; left: 6px; right: 6px; bottom: calc(6px + env(safe-area-inset-bottom)); z-index: 45; max-height: 55vh; overflow: auto;
+    box-shadow: 0 -10px 40px rgba(0,0,0,.6); }
+  #bouton-journal { display: inline-block; }
+  .barre { padding: 4px 8px; }
+  .barre .retour { font-size: 13px; }
+  .barre h1 { font-size: 15px; }
+  .rang-monstres { margin-bottom: 14px; }
+  .main-vous { height: calc(var(--main-l) * 1.46 + 10px); padding-bottom: 2px; }
+}
+
+/* Reprendre le duel enregistré */
+.reprendre { width: 100%; font-size: 16px; padding: 12px 16px; background: linear-gradient(180deg, #8f2735, var(--bordeaux-fonce)); color: var(--creme); border-color: var(--or-clair); }

@@ -451,9 +451,9 @@ function revelerJouee(d, j, place, ev, rng) {
 }
 
 /** Peut-on activer l'influence `index` ? */
-export function peutActiver(d, j, index) {
+export function peutActiver(d, j, index, horsTour = false) {
   const J = d.joueurs[j], id = J.main[index];
-  if (d.fini || d.actif !== j || !enPrincipale(d)) return { ok: false, raison: "Pas maintenant." };
+  if (d.fini || (!horsTour && (d.actif !== j || !enPrincipale(d)))) return { ok: false, raison: "Pas maintenant." };
   if (id == null || def(id).type !== "influence") return { ok: false, raison: "Ce n’est pas une influence." };
   const x = def(id);
   if (x.sousType === "equipement" && !monstres(J).length) return { ok: false, raison: "Équipement : il faut une apparition à équiper." };
@@ -466,7 +466,7 @@ export function peutActiver(d, j, index) {
  * (déclencheur 'influence') que l'adversaire active en réponse : c'est une chaîne.
  */
 export function activer(d, j, index, options = {}, rng = Math.random) {
-  const v = peutActiver(d, j, index);
+  const v = peutActiver(d, j, index, !!options.horsTour);
   if (!v.ok) return [{ type: "refus", j, raison: v.raison }];
   const ev = [], J = d.joueurs[j], o = adversaire(j);
   const id = J.main.splice(index, 1)[0], x = def(id);
@@ -560,6 +560,61 @@ export function revelerInfluence(d, j, place, options = {}, rng = Math.random) {
   const ev = activer(d, j, J.main.length - 1, { ...options, revelee: true }, rng);
   if (ev.length === 1 && ev[0].type === "refus") { J.main.pop(); J.presages[place] = p; }
   return ev;
+}
+
+/**
+ * Magies en réponse (ajout de jeu, comme les magies jeu-rapide) : pendant le tour adverse, une influence posée
+ * face cachée depuis au moins un tour peut être révélée en réponse (à une attaque, avant le choc). Les terrains
+ * ne se révèlent qu'à son tour.
+ */
+export function influencesEnReponse(d, k) {
+  const K = d.joueurs[k];
+  if (d.fini || d.actif === k) return [];
+  return K.presages.map((p, place) => ({ p, place }))
+    .filter(x => x.p?.influence && x.p.poseTour < d.tour && def(x.p.id).sousType !== "terrain")
+    .filter(x => def(x.p.id).sousType !== "equipement" || monstres(K).length)
+    .map(x => x.place);
+}
+export function revelerEnReponse(d, k, place, options = {}, rng = Math.random) {
+  if (!influencesEnReponse(d, k).includes(place)) return [{ type: "refus", j: k, raison: "Cette carte ne peut pas répondre maintenant." }];
+  const K = d.joueurs[k], p = K.presages[place];
+  K.presages[place] = null;
+  K.main.push(p.id);
+  const ev = activer(d, k, K.main.length - 1, { choix: options.choix, revelee: true, horsTour: true }, rng);
+  if (ev.length === 1 && ev[0].type === "refus") { K.main.pop(); K.presages[place] = p; }
+  else ev.unshift({ type: "texte", j: k, texte: `${K.nom} répond par une influence posée.` });
+  return ev;
+}
+
+/** Après une reprise (duel enregistré) : les nouveaux identifiants ne doivent pas croiser les anciens. */
+export function preparerReprise(d) {
+  let max = 0;
+  for (const J of d.joueurs) for (const x of [...J.monstres, ...J.presages]) if (x?.uid > max) max = x.uid;
+  compteurUid = Math.max(compteurUid, max + 1);
+  return d;
+}
+
+/**
+ * L'Ombre répond-elle à une attaque par une influence posée ? Renvoie { place, choix } ou null.
+ * Elle compare la suite de l'attaque avec et sans sa réponse.
+ */
+export function influenceOmbre(d, k, contexte, profil = d.joueurs[k].profil) {
+  const dispo = influencesEnReponse(d, k);
+  if (!dispo.length || (profil?.hasard ?? 0) > 0.5) return null;
+  const j = adversaire(k);
+  const apres = s => { if (ciblesAttaque(s, j, contexte.place).includes(contexte.cible)) attaquer(s, j, contexte.place, contexte.cible, neutre, null); return evaluer(s, k); };
+  const base = apres(copie(d));
+  let meilleur = null, gain = 2;
+  for (const place of dispo) {
+    const x = def(d.joueurs[k].presages[place].id);
+    for (const choix of (x.choix ? x.choix.map((_, i) => i) : [null])) {
+      const s = copie(d);
+      revelerEnReponse(s, k, place, { choix }, neutre);
+      const v = apres(s) - base;
+      if (v > gain) { gain = v; meilleur = { place, choix }; }
+    }
+  }
+  return meilleur;
 }
 
 // ---------- Techniques : alignements et associations ----------

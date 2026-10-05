@@ -32,6 +32,8 @@ import { activer as activerDuel, accordsTerrain, accomplirAccordTerrain, terrain
 import { deckGardien as deckDuGardien, GARDIENS as LES_GARDIENS } from "../js/data/gardiens.js";
 import { def as defDuel, peutPoserInfluence, evolutionsPossibles, evoluer, domine, calculCombat as calculDuel, passerAuCombat as auCombatDuel, attaquer as attaquerDuel, techniquesPossibles as techniquesDuel, fusionsPossibles as fusionsDuel } from "../js/engine/duel.js";
 import { SORTS, ETATS } from "../js/data/sorts.js";
+import { influencesEnReponse, revelerEnReponse, preparerReprise, influenceOmbre } from "../js/engine/duel.js";
+import { reprendreHasard } from "../js/engine/hasard.js";
 
 let ok = 0, echecs = 0;
 const test = (nom, f) => {
@@ -919,6 +921,54 @@ test("Mécaniques dévoilées pas à pas : le premier Gardien n'ouvre ni figures
   const libre = creerDuel(creerHasard(6), "homme", { premier: 0, reserves: [Object.keys(FIGURES).map(Number), []] });
   libre.joueurs[0].main = [17, 49];
   assert.ok(fusionsDuel(libre, 0).length > 0, "en duel libre, tout est ouvert");
+});
+
+console.log("Magies en réponse, enregistrement du duel");
+test("Une influence posée se révèle pendant l'attaque adverse et change le combat", () => {
+  const d = creerDuel(creerHasard(8), "homme", { premier: 1 });
+  d.tour = 4; d.phase = "combat";
+  d.joueurs[1].monstres[0] = apparitionDe(21, d);                 // Vol-Perte, 1300 ATK, attaque
+  const def0 = apparitionDe(8, d); d.joueurs[0].monstres[0] = def0;  // Pensée-Amitié, 1200 ATK
+  d.joueurs[0].presages[0] = { uid: 900, id: 6, influence: true, poseTour: 2 };  // Élévation : +800 ATK (équipement)
+  assert.deepEqual(influencesEnReponse(d, 0), [0]);
+  assert.deepEqual(influencesEnReponse(d, 1), [], "pas pendant son propre tour");
+  const ev = revelerEnReponse(d, 0, 0, {}, creerHasard(1));
+  assert.ok(ev.some(e => e.type === "influence" && e.revelee));
+  assert.equal(d.joueurs[0].monstres[0].atk, 1200 + 800);
+  attaquer(d, 1, 0, 0, creerHasard(1), null);
+  assert.ok(d.joueurs[0].monstres[0], "renforcée, elle tient");
+  assert.equal(d.joueurs[1].monstres[0], null, "et l'attaquant est détruit");
+  const posee = creerDuel(creerHasard(8), "homme", { premier: 1 });
+  posee.joueurs[0].presages[0] = { uid: 901, id: 45, influence: true, poseTour: posee.tour };
+  assert.deepEqual(influencesEnReponse(posee, 0), [], "pas le tour même de la pose");
+});
+test("L'Ombre répond à une attaque par une influence posée quand ça la sauve", () => {
+  const d = creerDuel(creerHasard(8), "homme", { premier: 0, profils: [null, PROFILS.mage] });
+  d.tour = 4; d.phase = "combat";
+  d.joueurs[0].monstres[0] = apparitionDe(35, d);
+  d.joueurs[1].monstres[0] = apparitionDe(8, d);
+  d.joueurs[1].presages[0] = { uid: 902, id: 6, influence: true, poseTour: 2 };
+  const r = influenceOmbre(d, 1, { place: 0, cible: 0 });
+  assert.ok(r && r.place === 0);
+});
+test("Un duel enregistré reprend à l'identique (même hasard, mêmes coups)", () => {
+  const jouer = (d, rng, n) => {
+    for (let pas = 0; pas < n && !d.fini; pas++) {
+      const a = actionOmbre(d, PROFILS.adepte, rng);
+      if (a.type === "fin" || a.type === "rien") { finTour(d, rng); continue; }
+      const ev = executerOmbre(d, a, rng, null);
+      if (ev.length === 1 && ev[0].type === "refus") finTour(d, rng);
+    }
+    return d;
+  };
+  const rngA = creerHasard(77), a = creerDuel(rngA, "homme", { premier: 0 });
+  jouer(a, rngA, 40);
+  const sauvegarde = JSON.stringify({ d: a, hasard: rngA.etat() });
+  jouer(a, rngA, 60);
+  const lu = JSON.parse(sauvegarde), b = preparerReprise(lu.d), rngB = reprendreHasard(lu.hasard);
+  jouer(b, rngB, 60);
+  assert.deepEqual(b.joueurs.map(j => [j.lp, j.main, j.cimetiere]), a.joueurs.map(j => [j.lp, j.main, j.cimetiere]));
+  assert.equal(b.tour, a.tour);
 });
 
 console.log("Effets visuels");

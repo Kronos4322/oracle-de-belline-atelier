@@ -100,8 +100,14 @@ function loupable(el, quoi) {
   // double-clic (ou double toucher) : la carte en grand
   el.addEventListener("dblclick", e => { const q = quoi(); if (q) { e.preventDefault(); zoomer(q[0], q[1]); } });
   if (survol) {
-    el.addEventListener("mouseenter", () => { const q = quoi(); if (!q) return; montrerLoupe(q[0], q[1], el); apercu(q[0], q[1], q[2], true); });
-    el.addEventListener("mouseleave", () => { cacherLoupe(); retablirApercu(); });
+    let attente = null;
+    el.addEventListener("mouseenter", () => {
+      const q = quoi(); if (!q) return;
+      apercu(q[0], q[1], q[2], true);
+      clearTimeout(attente);
+      attente = setTimeout(() => { if (!occupe && el.matches(":hover")) montrerLoupe(q[0], q[1], el); }, 400);
+    });
+    el.addEventListener("mouseleave", () => { clearTimeout(attente); cacherLoupe(); retablirApercu(); });
   } else {
     let minuteur = null, longue = false;
     el.addEventListener("pointerdown", () => { longue = false; minuteur = setTimeout(() => { const q = quoi(); if (q) { longue = true; montrerLoupe(q[0], q[1], el); } }, 420); });
@@ -1000,14 +1006,15 @@ function allerLP(j, cible) {
   requestAnimationFrame(pas);
 }
 
-function flotter(el, texte, classe) {
+function flotter(el, texte, classe, duree = 1500) {
   if (!el) return;
   const c = centre(el);
   const f = document.createElement("span");
   f.className = `flottant ${classe}`; f.textContent = texte;
   f.style.left = `${c.x}px`; f.style.top = `${c.y - 20}px`;
+  if (duree !== 1500) f.style.animationDuration = `${duree}ms`;
   $("plateau").appendChild(f);
-  setTimeout(() => f.remove(), 1500);
+  setTimeout(() => f.remove(), duree);
 }
 
 function eclats(el, couleur, n = 18) {
@@ -1058,8 +1065,9 @@ function encart(titre, texte, ids = [], classe = "", duree = 8000) {
   el.append(cartes, corps);
   const fermer = () => { el.classList.add("part"); setTimeout(() => el.remove(), 300); };
   el.addEventListener("click", fermer);
-  box.prepend(el);
-  while (box.children.length > 3) box.lastChild.remove();
+  box.append(el);
+  while (box.children.length > 3) box.firstChild.remove();
+  [...box.children].forEach((x, k, t) => x.classList.toggle("replie", k < t.length - 1));
   setTimeout(fermer, duree * facteur());
 }
 
@@ -1208,7 +1216,7 @@ async function animer(ev, garderOccupe = false) {
       }
       case "protegee": flotter(zoneEl(e.j, e.place), "protégée", "neutre"); journal(`${c} n’est pas détruite (protégée une fois).`); await attendre(450); break;
       case "lp": {
-        flotter($(`lp-${e.j}`), `${e.v > 0 ? "+" : "−"}${Math.abs(e.v)}`, e.v > 0 ? "bien" : "mal");
+        flotter($(`lp-${e.j}`), `${e.v > 0 ? "+" : "−"}${Math.abs(e.v)}`, `${e.v > 0 ? "bien" : "mal"}${Math.abs(e.v) >= 1000 ? " gros" : ""}`);
         allerLP(e.j, e.lp);
         if (e.v < 0) { const p = $(`lp-${e.j}`); p.classList.remove("touche"); void p.offsetWidth; p.classList.add("touche"); if (-e.v >= 1500) { eclair("rgba(255,60,40,.3)"); secousse(true); } }
         journal(`${nom(e.j)} ${e.v > 0 ? accorde(e.j, "gagnez", "gagne") : accorde(e.j, "perdez", "perd")} ${Math.abs(e.v)} points de vie${e.pourquoi ? ` (${e.pourquoi})` : ""}.`);
@@ -1226,8 +1234,12 @@ async function animer(ev, garderOccupe = false) {
         const combo = e.combo > 1 ? ` · combo ×${e.combo}` : "";
         journal(`${titre}${e.terrain ? " (sur le terrain)" : ""}${e.resonance ? " (résonance avec une carte en jeu)" : ""}${combo} : ${e.texte} (${e.valeur} points)`, true);
         if (e.j === 0) { accordsDuDuel.push({ titre, texte: e.texte, belline: e.sorte === "belline" }); if (e.regle) { noterRegle(carnet, e.regle); sauverCarnet(carnet); } }
-        encart(`${titre}${e.resonance ? " · résonance" : ""}${combo}`, `${e.texte} ${e.favorable ? (e.j === 0 ? "Vous gagnez" : `${d.joueurs[1].nom} gagne`) : (e.j === 0 ? `${d.joueurs[1].nom} perd` : "Vous perdez")} ${e.valeur} points${e.sorte === "belline" ? ", et le sort de la règle agit" : ""}.`,
-          e.ids || [], `${e.sorte || "belline"} ${e.favorable ? "favorable" : "nefaste"}`, e.sorte === "lecture" ? 6000 : 10000);
+        if (e.sorte === "lecture") {
+          // une lecture : un fil entre les deux cartes et une étiquette qui s'envole, sans encart
+          const ancre = e.ids && [...document.querySelectorAll(`#monstres-${e.j} .zone, #presages-${e.j} .zone`)].find(z => { const P = +z.dataset.place, s = z.closest(".rang-presages") ? "presages" : "monstres"; return d.joueurs[e.j][s][P]?.id === e.ids[1]; });
+          flotter(ancre || $(`lp-${e.j}`), `✦ ${nomDe(e.ids?.[0])} ↔ ${nomDe(e.ids?.[1])}`, `lecture ${e.favorable ? "bien" : "mal"}`, 2600);
+        } else encart(`${titre}${e.resonance ? " · résonance" : ""}${combo}`, `${e.texte} ${e.favorable ? (e.j === 0 ? "Vous gagnez" : `${d.joueurs[1].nom} gagne`) : (e.j === 0 ? `${d.joueurs[1].nom} perd` : "Vous perdez")} ${e.valeur} points${e.sorte === "belline" ? ", et le sort de la règle agit" : ""}.`,
+          e.ids || [], `${e.sorte || "belline"} ${e.favorable ? "favorable" : "nefaste"}`, e.sorte === "belline" || e.sorte === "majeur" ? 10000 : 5500);
         if (e.sorte !== "lecture") { banniere(e.sorte === "majeur" ? `${titre} : ${e.texte.split(" : ")[0]}` : titre + combo, e.sorte === "majeur" ? e.texte.split(" : ").slice(1).join(" : ") : e.texte, e.sorte === "belline" ? "belline" : e.sorte === "majeur" ? "majeur" : e.favorable ? "accord" : "sombre"); jouerSon("regle"); eclair(e.favorable ? "rgba(243,213,138,.35)" : "rgba(160,60,90,.3)"); }
         else jouerSon(e.favorable ? "gain" : "perte");
         if (e.ids) {
@@ -1349,6 +1361,7 @@ $("deck-complet").addEventListener("click", () => { deck = CARTES.map(c => c.id)
 
 function majAccueil() {
   majDeck();
+  if ($("apprenti") && carnet.duels.joues < 3 && !majAccueil.fait) { $("apprenti").checked = true; majAccueil.fait = true; }
   $("liste-gardiens").replaceChildren(...GARDIENS.map((g, i) => {
     const li = document.createElement("li");
     const r = REGIONS.find(x => x.famille === g.famille);
@@ -1370,6 +1383,8 @@ function majAccueil() {
 function demarrer(config, graine = null) {
   consultant = document.querySelector("input[name=consultant]:checked")?.value || "homme";
   partie = { ...config, graine: graine ?? nouvelleGraine(), apprenti: config.apprenti ?? !!$("apprenti")?.checked };
+  // le premier duel est doux : vous commencez, et l'Ombre ne pose pas de présage pendant ses deux premiers tours
+  const premierDuel = !carnet.duels.joues && !graine;
   accordsDuDuel = [];
   rng = creerHasard(partie.graine);
   let options;
@@ -1388,6 +1403,7 @@ function demarrer(config, graine = null) {
       terrain: PLANETES[Math.floor(rng() * 7)], profils: [null, profil], nomAdverse: `L’Ombre (${profil.nom})`
     };
   }
+  if (premierDuel) Object.assign(options, { premier: 0, douceur: 2 });
   d = creerDuel(rng, consultant, options);
   selection = null; occupe = false;
   lpAffiche[0] = lpAffiche[1] = LP;

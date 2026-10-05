@@ -74,7 +74,9 @@ export function creerDuel(rng, consultant = "homme", options = {}) {
       joueur(options.nomAdverse || "L’Ombre", consultant === "homme" ? "femme" : "homme", decks[1], reserves[1], options.profils?.[1] || null, rng)
     ],
     actif: premier, premier, tour: 1, phase: "principale1", fini: false, gagnant: null, terrain: options.terrain ?? null,
-    mec: Object.fromEntries(MECANIQUES.map(k => [k, options.mecaniques ? options.mecaniques.includes(k) : true])), limite: options.limite ?? LIMITE
+    mec: Object.fromEntries(MECANIQUES.map(k => [k, options.mecaniques ? options.mecaniques.includes(k) : true])), limite: options.limite ?? LIMITE,
+    // la douceur (premier duel) : l'Ombre ne pose aucun présage pendant ses `douceur` premiers tours
+    douceur: options.douceur ?? 0
   };
 }
 
@@ -373,11 +375,13 @@ function accordEntre(prec, courante) {
 
 function accomplir(d, j, a, ev, terrain = false, rng = Math.random) {
   const J = d.joueurs[j];
-  J.combo++;
-  const bonus = 200 * (J.combo - 1), valeur = a.valeur + bonus;
-  ev.push({ type: "accord", j, texte: a.texte, favorable: a.favorable, regle: a.regle, sorte: a.sorte, cle: a.cle, terrain, resonance: !!a.resonance, ids: a.ids, combo: J.combo, valeur });
-  if (a.favorable) { changerLP(d, j, valeur, ev, J.combo > 1 ? `combo ×${J.combo}` : "accord"); if (a.pioche) piocher(d, j, 1, ev); }
-  else changerLP(d, adversaire(j), -valeur, ev, J.combo > 1 ? `combo ×${J.combo}` : "accord");
+  // les lectures (si fréquentes) ne comptent pas dans les combos et n'en reçoivent pas le bonus
+  const lecture = a.sorte === "lecture";
+  if (!lecture) J.combo++;
+  const bonus = lecture ? 0 : 200 * Math.max(0, J.combo - 1), valeur = a.valeur + bonus;
+  ev.push({ type: "accord", j, texte: a.texte, favorable: a.favorable, regle: a.regle, sorte: a.sorte, cle: a.cle, terrain, resonance: !!a.resonance, ids: a.ids, combo: lecture ? 1 : J.combo, valeur });
+  if (a.favorable) { changerLP(d, j, valeur, ev, !lecture && J.combo > 1 ? `combo ×${J.combo}` : lecture ? "lecture" : "accord"); if (a.pioche) piocher(d, j, 1, ev); }
+  else changerLP(d, adversaire(j), -valeur, ev, !lecture && J.combo > 1 ? `combo ×${J.combo}` : lecture ? "lecture" : "accord");
   // le sort de Belline : l'effet propre de la règle
   for (const e of a.sort || []) { if (d.fini) break; appliquer({ d, j, rng, ev, mult: 1, nouvelle: null, prec: null, idCarte: null }, e); }
   // une règle accomplie fait entrer sa figure dans la réserve
@@ -1126,7 +1130,7 @@ function actionsNotees(d, profil) {
       const x = def(id);
       if (x.type === "influence" && peutActiver(d, j, index).ok)
         for (const c of (x.choix ? x.choix.map((_, i) => i) : [null])) noter({ type: "activer", index, choix: c }, s => activer(s, j, index, { choix: c }, neutre));
-      if (x.type === "presage" && peutPoser(d, j, index).ok) res.push({ type: "poser", index, v: 3.5 });
+      if (x.type === "presage" && peutPoser(d, j, index).ok && d.tour > 2 * (d.douceur || 0)) res.push({ type: "poser", index, v: 3.5 });
       // une influence peu utile maintenant se garde face cachée pour plus tard
       if (x.type === "influence" && !x.sousType && peutPoserInfluence(d, j, index).ok && J.presages.filter(Boolean).length < 3) res.push({ type: "poserInfluence", index, v: 0.6 });
       if (x.type === "apparition") for (const pose of [false, true]) if (peutInvoquer(d, j, index, pose).ok) {

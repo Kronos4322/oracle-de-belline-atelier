@@ -904,18 +904,33 @@ test("Affinité entre planètes : chacune domine la suivante dans l'ordre d'Edmo
   const c = calculDuel(d, 0, 0, 0);
   assert.ok(c.avantage); assert.equal(c.atk, atkEffectif(d, 0, d.joueurs[0].monstres[0]) + 500);
 });
-test("Combo : un second accord dans le même tour rapporte 200 points de plus", () => {
+test("Combo : un second accord dans le même tour rapporte 200 points de plus ; les lectures n'y comptent pas", () => {
   const d = creerDuel(creerHasard(6), "homme", { premier: 0 });
-  d.joueurs[0].main = [18, 44, 19];    // Changement, Hazard (passer) : une lecture ; puis Argent (encaisser) : Hazard et Argent, un gain au jeu
+  d.joueurs[0].main = [18, 44, 19];    // Changement, Hazard (passer) : une lecture ; puis Argent (encaisser) : Hazard et Argent, une lecture
   activerDuel(d, 0, 0, {}, creerHasard(1));
-  const ev1 = activerDuel(d, 0, 0, { choix: 1 }, creerHasard(1));
-  assert.equal(ev1.find(e => e.type === "accord").combo, 1);
-  const lp = d.joueurs[0].lp;
+  activerDuel(d, 0, 0, { choix: 1 }, creerHasard(1));
   const ev2 = activerDuel(d, 0, 0, { choix: 0 }, creerHasard(1));
   const acc = ev2.find(e => e.type === "accord");
-  assert.ok(acc && acc.combo === 2, JSON.stringify(acc));
-  assert.equal(acc.valeur, 200 + 200);
-  assert.equal(d.joueurs[0].lp, lp + 500 + acc.valeur);
+  assert.ok(acc && acc.sorte === "lecture" && acc.combo === 1 && acc.valeur === 200, JSON.stringify(acc));
+  // un accord de la notice après un premier accord du tour : +200
+  const d2 = creerDuel(creerHasard(6), "homme", { premier: 0 });
+  d2.joueurs[0].combo = 1; d2.joueurs[0].derniere = { id: 17, choix: 0 }; d2.joueurs[0].main = [49];
+  const ev3 = invoquer(d2, 0, 0, { sacrifices: [] }, creerHasard(1));
+  const acc2 = ev3.find(e => e.type === "accord");
+  assert.ok(acc2 && acc2.sorte === "belline" && acc2.combo === 2, JSON.stringify(acc2));
+});
+test("Premier duel doux : l'Ombre ne pose aucun présage pendant ses deux premiers tours", () => {
+  for (let g = 1; g <= 20; g++) {
+    const rng = creerHasard(g), d = creerDuel(rng, "homme", { premier: 0, douceur: 2, profils: [null, PROFILS.adepte] });
+    d.joueurs[1].main.push(12, 33, 47);   // des présages en main
+    finTour(d, rng);
+    for (let pas = 0; pas < 60 && !d.fini && d.tour <= 4; pas++) {
+      if (d.actif === 0) { finTour(d, rng); continue; }
+      const a = actionOmbre(d, d.joueurs[1].profil, rng);
+      assert.notEqual(a.type, "poser", `tour ${d.tour}`);
+      if (a.type === "fin" || a.type === "rien") finTour(d, rng); else executerOmbre(d, a, rng);
+    }
+  }
 });
 test("La Fatalité : au-delà du 40e tour, le plus de points de vie l'emporte", () => {
   const d = creerDuel(creerHasard(6), "homme", { premier: 0 });

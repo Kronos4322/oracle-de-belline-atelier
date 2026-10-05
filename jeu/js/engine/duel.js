@@ -345,7 +345,8 @@ function accorder(d, j, prec, courante, ev) {
   const a = prec && prec.id < 100 ? accordEntre(prec, courante) : null;
   if (a) { accomplir(d, j, a, ev, false); return; }
   // la résonance (ajout de jeu) : sans accord avec la carte révélée avant, la nouvelle carte se lit avec une de vos
-  // cartes face visible en jeu (celle-ci puis la nouvelle) ; échos, accompagnement et lectures seulement, une fois par carte révélée
+  // cartes face visible en jeu (celle-ci puis la nouvelle, dans l'ordre de la règle) ; une règle de Belline ou un Grand accord
+  // d'abord, sinon un écho, un accompagnement ou une lecture ; une fois par carte révélée
   if (!d.mec.accordsTerrain) return;
   const r = resonance(d.joueurs[j], courante.id);
   if (r) accomplir(d, j, r, ev, false);
@@ -354,6 +355,12 @@ function accorder(d, j, prec, courante, ev) {
 /** La résonance d'une carte qu'on révèle avec les cartes face visible de son joueur : un accord hors notice, ou null. */
 function resonance(J, id) {
   const enJeu = [...J.monstres.filter(m => m && !m.faceCachee).map(m => m.id), ...J.presages.filter(p => p?.continue).map(p => p.id)];
+  for (const autre of enJeu) {
+    if (autre >= 100 || autre === id) continue;
+    // une règle de Belline ou un Grand accord avec une carte déjà en jeu passe avant tout
+    const fort = accordEntre({ id: autre, choix: null }, { id, choix: null });
+    if (fort && (fort.sorte === "belline" || fort.sorte === "majeur")) return { ...fort, resonance: true };
+  }
   for (const autre of enJeu) {
     if (autre >= 100 || autre === id) continue;
     const l = accordDeLecture(autre, id, nomDe);
@@ -691,6 +698,25 @@ export function techniquesPossibles(d, j) {
     if (places.length >= 3) res.push({ cle: `alignement:${f}`, sorte: "alignement", famille: f, places, ...ALIGNEMENTS[f] });
   }
   for (const a of ASSOCIATIONS) if (!J.techniques.includes(a.id) && associationComplete(J, a)) res.push({ cle: `association:${a.id}`, sorte: "association", ...a });
+  if (d.tour >= 3) res.push(...appelsPossibles(J));
+  return res;
+}
+
+/**
+ * L'Appel des règles (ajout de jeu) : une fois par duel, une carte de votre main appelle depuis votre deck l'autre carte
+ * d'une de ses règles de Belline. Quatre propositions au plus.
+ */
+function appelsPossibles(J) {
+  if (J.techniques.includes("appel")) return [];
+  const res = [], vues = new Set();
+  for (const id of new Set(J.main)) for (const r of VOISINAGE) {
+    const autre = r.a === id ? r.b : r.b === id ? r.a : null;
+    if (autre == null || autre === id || vues.has(autre) || !J.pioche.includes(autre)) continue;
+    vues.add(autre);
+    res.push({ cle: `appel:${r.id}`, sorte: "appel", nom: "L’Appel des règles", glyphe: "☄", cherche: autre, cartes: [id, autre], effets: [],
+      texte: `${nomDe(id)} appelle ${nomDe(autre)} depuis votre deck : « ${r.texte} »` });
+    if (res.length >= 4) return res;
+  }
   return res;
 }
 
@@ -701,9 +727,11 @@ export function utiliserTechnique(d, j, cle, rng = Math.random) {
   const J = d.joueurs[j], ev = [];
   J.techniqueFaite = true;
   if (t.sorte === "association") J.techniques.push(t.id);
+  if (t.sorte === "appel") J.techniques.push("appel");
   ev.push({ type: "technique", j, cle, sorte: t.sorte, nom: t.nom, texte: t.texte, famille: t.famille ?? null, places: t.places ?? [], cartes: t.cartes ?? [] });
   const effets = t.sorte === "alignement" ? [{ t: "terrain", famille: t.famille }, ...t.effets] : t.effets;
   for (const e of effets) { appliquer({ d, j, rng, ev, mult: 1, nouvelle: null, prec: null, idCarte: null }, e); if (d.fini) break; }
+  if (t.sorte === "appel") { J.pioche.splice(J.pioche.indexOf(t.cherche), 1); J.main.push(t.cherche); ev.push({ type: "pioche", j, id: t.cherche, appel: true }); }
   finSiBesoin(d, ev);
   return ev;
 }

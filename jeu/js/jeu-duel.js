@@ -1617,7 +1617,8 @@ function accorder(d, j, prec, courante, ev) {
   const a = prec && prec.id < 100 ? accordEntre(prec, courante) : null;
   if (a) { accomplir(d, j, a, ev, false); return; }
   // la résonance (ajout de jeu) : sans accord avec la carte révélée avant, la nouvelle carte se lit avec une de vos
-  // cartes face visible en jeu (celle-ci puis la nouvelle) ; échos, accompagnement et lectures seulement, une fois par carte révélée
+  // cartes face visible en jeu (celle-ci puis la nouvelle, dans l'ordre de la règle) ; une règle de Belline ou un Grand accord
+  // d'abord, sinon un écho, un accompagnement ou une lecture ; une fois par carte révélée
   if (!d.mec.accordsTerrain) return;
   const r = resonance(d.joueurs[j], courante.id);
   if (r) accomplir(d, j, r, ev, false);
@@ -1626,6 +1627,12 @@ function accorder(d, j, prec, courante, ev) {
 /** La résonance d'une carte qu'on révèle avec les cartes face visible de son joueur : un accord hors notice, ou null. */
 function resonance(J, id) {
   const enJeu = [...J.monstres.filter(m => m && !m.faceCachee).map(m => m.id), ...J.presages.filter(p => p?.continue).map(p => p.id)];
+  for (const autre of enJeu) {
+    if (autre >= 100 || autre === id) continue;
+    // une règle de Belline ou un Grand accord avec une carte déjà en jeu passe avant tout
+    const fort = accordEntre({ id: autre, choix: null }, { id, choix: null });
+    if (fort && (fort.sorte === "belline" || fort.sorte === "majeur")) return { ...fort, resonance: true };
+  }
   for (const autre of enJeu) {
     if (autre >= 100 || autre === id) continue;
     const l = accordDeLecture(autre, id, nomDe);
@@ -1963,6 +1970,25 @@ function techniquesPossibles(d, j) {
     if (places.length >= 3) res.push({ cle: `alignement:${f}`, sorte: "alignement", famille: f, places, ...ALIGNEMENTS[f] });
   }
   for (const a of ASSOCIATIONS) if (!J.techniques.includes(a.id) && associationComplete(J, a)) res.push({ cle: `association:${a.id}`, sorte: "association", ...a });
+  if (d.tour >= 3) res.push(...appelsPossibles(J));
+  return res;
+}
+
+/**
+ * L'Appel des règles (ajout de jeu) : une fois par duel, une carte de votre main appelle depuis votre deck l'autre carte
+ * d'une de ses règles de Belline. Quatre propositions au plus.
+ */
+function appelsPossibles(J) {
+  if (J.techniques.includes("appel")) return [];
+  const res = [], vues = new Set();
+  for (const id of new Set(J.main)) for (const r of VOISINAGE) {
+    const autre = r.a === id ? r.b : r.b === id ? r.a : null;
+    if (autre == null || autre === id || vues.has(autre) || !J.pioche.includes(autre)) continue;
+    vues.add(autre);
+    res.push({ cle: `appel:${r.id}`, sorte: "appel", nom: "L’Appel des règles", glyphe: "☄", cherche: autre, cartes: [id, autre], effets: [],
+      texte: `${nomDe(id)} appelle ${nomDe(autre)} depuis votre deck : « ${r.texte} »` });
+    if (res.length >= 4) return res;
+  }
   return res;
 }
 
@@ -1973,9 +1999,11 @@ function utiliserTechnique(d, j, cle, rng = Math.random) {
   const J = d.joueurs[j], ev = [];
   J.techniqueFaite = true;
   if (t.sorte === "association") J.techniques.push(t.id);
+  if (t.sorte === "appel") J.techniques.push("appel");
   ev.push({ type: "technique", j, cle, sorte: t.sorte, nom: t.nom, texte: t.texte, famille: t.famille ?? null, places: t.places ?? [], cartes: t.cartes ?? [] });
   const effets = t.sorte === "alignement" ? [{ t: "terrain", famille: t.famille }, ...t.effets] : t.effets;
   for (const e of effets) { appliquer({ d, j, rng, ev, mult: 1, nouvelle: null, prec: null, idCarte: null }, e); if (d.fini) break; }
+  if (t.sorte === "appel") { J.pioche.splice(J.pioche.indexOf(t.cherche), 1); J.main.push(t.cherche); ev.push({ type: "pioche", j, id: t.cherche, appel: true }); }
   finSiBesoin(d, ev);
   return ev;
 }
@@ -4875,6 +4903,19 @@ const MECA_GARDIENS = [[], ["poseInfluence", "evolution"], ["poseInfluence", "ev
 const NOMS_MECA = { poseInfluence: "les influences posées face cachée", evolution: "l’évolution des apparitions", techniques: "les techniques (alignements, associations)",
   figures: "les figures d’accord", accordsTerrain: "les accords sur le terrain", superInvocations: "l’invocation céleste (les astres)" };
 let accordsDuDuel = [];
+// les moments forts du duel (pour l'écran de fin)
+const momentsVides = () => ({ plusGrosCoup: 0, coupPar: null, astres: [], figures: 0, presages: 0, poses: 0, attaques: 0, lectures: 0 });
+let moments = momentsVides();
+/** Note un événement dans les moments forts du duel. */
+function noterMoment(e) {
+  if (e.type === "lp" && e.j === 1 && e.v < 0 && -e.v > moments.plusGrosCoup) { moments.plusGrosCoup = -e.v; moments.coupPar = e.pourquoi || ""; }
+  if (e.j !== 0) return;
+  if (e.type === "celeste") moments.astres.push(e.id);
+  if (e.type === "fusion") moments.figures++;
+  if (e.type === "presage") moments.presages++;
+  if (e.type === "attaque") moments.attaques++;
+  if (e.type === "accord" && e.sorte === "lecture") moments.lectures++;
+}
 const estRare = id => id < 100 && (carnet.cartes[id]?.vecue || 0) > 0;
 
 // ---------- Dessin ----------
@@ -5477,7 +5518,7 @@ function ouvrirTechniques() {
   for (const c of celestes) liste.push(item(`★ Invocation céleste : ${ASTRES[c.id].nom}`, ASTRES[c.id].texte,
     `Prête : ${[...c.places.map(p => nomDe(J.monstres[p].id)), ...(c.main != null ? [`${nomDe(J.main[c.main])} (main)`] : [])].join(", ")} sont sacrifiées. Touchez pour invoquer.`, () => executerCeleste(c.famille), "prete celeste"));
   if (d.mec.superInvocations && !celestes.length) liste.push(item("★ Invocation céleste", "Réunissez trois cartes d’une même planète : deux apparitions face recto en jeu, et une troisième en jeu ou dans la main. Sacrifiez-les pour invoquer l’astre (niveau 10). Chaque astre une fois par duel.", J.astres.length ? `Déjà invoqués : ${J.astres.map(f => ASTRES[Object.keys(ASTRES).find(k => ASTRES[k].famille === f)].nom).join(", ")}.` : "", null, "vide"));
-  for (const t of pretes) liste.push(item(`${t.sorte === "alignement" ? t.glyphe : "✦"} ${t.nom}`, t.texte, "Prête : touchez pour l’utiliser", () => executerTechnique(t.cle), "prete"));
+  for (const t of pretes) liste.push(item(`${t.sorte === "alignement" || t.sorte === "appel" ? t.glyphe : "✦"} ${t.nom}`, t.texte, "Prête : touchez pour l’utiliser", () => executerTechnique(t.cle), "prete"));
   if (!pretes.length) liste.push(item("Aucune technique prête", d.actif === 0 && J.techniqueFaite ? "Vous avez déjà utilisé une technique ce tour." : "Alignez trois apparitions d’une même planète, ou révélez les cartes d’une association.", "", null, "vide"));
   for (const [f, a] of Object.entries(ALIGNEMENTS)) {
     const n = J.monstres.filter(m => m && !m.faceCachee && m.id < 100 && CARTE_PAR_ID[m.id].famille === f).length;
@@ -5542,7 +5583,7 @@ function enregistrer() {
   if (!d || !partie || partie.demo || d.fini) return;
   try {
     const lignes = [...$("journal").children].slice(0, 40).map(li => [li.textContent, li.className]);
-    localStorage.setItem(CLE_DUEL, JSON.stringify({ version: 1, d, partie, hasard: rng.etat(), accordsDuDuel, lignes, quand: Date.now() }));
+    localStorage.setItem(CLE_DUEL, JSON.stringify({ version: 1, d, partie, hasard: rng.etat(), accordsDuDuel, moments, lignes, quand: Date.now() }));
   } catch { /* stockage plein ou bloqué : le duel continue sans sauvegarde */ }
 }
 function effacerEnregistrement() { try { localStorage.removeItem(CLE_DUEL); } catch { /* rien */ } }
@@ -5552,7 +5593,7 @@ function lireEnregistrement() {
 async function reprendre() {
   const s = lireEnregistrement();
   if (!s) return;
-  d = preparerReprise(s.d); partie = s.partie; rng = reprendreHasard(s.hasard); accordsDuDuel = s.accordsDuDuel || [];
+  d = preparerReprise(s.d); partie = s.partie; rng = reprendreHasard(s.hasard); accordsDuDuel = s.accordsDuDuel || []; moments = { ...momentsVides(), ...(s.moments || {}) };
   selection = null; occupe = false;
   lpAffiche[0] = d.joueurs[0].lp; lpAffiche[1] = d.joueurs[1].lp;
   $("journal").replaceChildren(...(s.lignes || []).map(([t, c]) => { const li = document.createElement("li"); li.textContent = t; if (c) li.className = c; return li; }));
@@ -5933,6 +5974,7 @@ async function animer(ev, garderOccupe = false) {
   majCommandes();
   for (const e of ev) {
     const c = e.id != null ? nomDe(e.id) : "";
+    noterMoment(e);
     switch (e.type) {
       case "refus": journal(e.raison); jouerSon("erreur"); break;
       case "tour":
@@ -6120,10 +6162,11 @@ async function animer(ev, garderOccupe = false) {
         await attendre(500); rendre(); break;
       }
       case "technique": {
-        journal(`${e.sorte === "alignement" ? "Alignement" : "Association"} : ${e.j === 0 ? "vous utilisez" : `${d.joueurs[1].nom} utilise`} « ${e.nom} ». ${e.texte}`, true);
+        const genre = { alignement: "Alignement", appel: "Appel des règles" }[e.sorte] || "Association";
+        journal(`${genre} : ${e.j === 0 ? "vous utilisez" : `${d.joueurs[1].nom} utilise`} « ${e.nom} ». ${e.texte}`, true);
         for (const p of e.places) zoneEl(e.j, p)?.classList.add("aligne");
-        banniere(e.nom, e.sorte === "alignement" ? "Alignement planétaire" : "Association", "accord");
-        encart(`${e.sorte === "alignement" ? "Alignement" : "Association"} : ${e.nom}`, e.texte, e.cartes || [], "technique", 10000);
+        banniere(e.nom, e.sorte === "alignement" ? "Alignement planétaire" : e.sorte === "appel" ? "Une règle de Belline se prépare" : "Association", "accord");
+        encart(`${genre} : ${e.nom}`, e.texte, e.cartes || [], "technique", 10000);
         jouerSon("regle"); eclair("rgba(243,213,138,.35)");
         effets.jouer(EFFET_TECHNIQUE[e.cle.split(":")[1]] || "etoiles", effets.rect($("tapis")));
         await attendre(1500); break;
@@ -6198,7 +6241,7 @@ function demarrer(config, graine = null) {
   partie = { ...config, graine: graine ?? nouvelleGraine(), apprenti: config.apprenti ?? !!$("apprenti")?.checked };
   // le premier duel est doux : vous commencez, et l'Ombre ne pose pas de présage pendant ses deux premiers tours
   const premierDuel = !carnet.duels.joues && !graine;
-  accordsDuDuel = [];
+  accordsDuDuel = []; moments = momentsVides();
   rng = creerHasard(partie.graine);
   let options;
   if (config.mode === "gardien") {
@@ -6267,8 +6310,13 @@ function terminer() {
     lecons = vaincreGardien(carnet, g.famille, reglesEnseignees(g));
   }
   sauverCarnet(carnet);
+  // le coup final : un temps suspendu, la barre du vaincu se brise, puis la bannière
+  const plateau = $("plateau"), vaincu = d.gagnant == null ? null : 1 - d.gagnant;
+  plateau.classList.remove("coup-final"); void plateau.offsetWidth; plateau.classList.add("coup-final");
+  if (vaincu != null) { $(`lp-${vaincu}`).classList.add("brise"); secousse(true); eclair(gagne ? "rgba(255,240,200,.6)" : "rgba(255,40,40,.45)"); }
+  setTimeout(() => { plateau.classList.remove("coup-final"); $("lp-0").classList.remove("brise"); $("lp-1").classList.remove("brise"); }, 2600);
   jouerSon(gagne ? "victoire" : "defaite");
-  banniere(gagne ? "Victoire" : "Défaite", "", gagne ? "accord" : "sombre");
+  setTimeout(() => banniere(gagne ? "Victoire" : "Défaite", "", gagne ? "accord" : "sombre"), 700);
   // la fin du duel : une pluie d'étoiles à la victoire, des cendres à la défaite
   const tout = effets.rect($("plateau"));
   if (gagne) { effets.jouer("etincelles", tout); effets.jouer("etoiles", tout); setTimeout(() => effets.jouer("etincelles", tout), 500); }
@@ -6284,13 +6332,26 @@ function terminer() {
       const neuves = MECA_GARDIENS[partie.index + 1].filter(k => !MECA_GARDIENS[partie.index].includes(k));
       if (neuves.length) $("fin-duel-lecons").insertAdjacentHTML("beforeend", `<p><b>Nouvelle mécanique au prochain duel :</b> ${neuves.map(k => esc(NOMS_MECA[k])).join(", ")}.</p>`);
     }
-    const vus = accordsDuDuel.filter((a, i, t) => t.findIndex(x => x.texte === a.texte) === i);
+    // les moments forts
+    const forts = [];
+    if (moments.plusGrosCoup) forts.push(`Votre plus gros coup : <b>${moments.plusGrosCoup}</b> points${moments.coupPar ? ` (${esc(moments.coupPar)})` : ""}.`);
+    for (const id of moments.astres) forts.push(`Invocation céleste : <b>${esc(nomDe(id))}</b> est descendu sur le tapis.`);
+    if (moments.figures) forts.push(`${moments.figures} figure${moments.figures > 1 ? "s" : ""} d’accord invoquée${moments.figures > 1 ? "s" : ""}.`);
+    if (moments.lectures) forts.push(`${moments.lectures} lecture${moments.lectures > 1 ? "s" : ""} de votre dictionnaire.`);
+    if (forts.length) $("fin-duel-lecons").insertAdjacentHTML("beforeend", `<p><b>Vos moments forts :</b></p><ul class="moments">${forts.map(t => `<li>${t}</li>`).join("")}</ul>`);
+    const vus = accordsDuDuel.filter((a, i, t) => !/^Lecture/.test(a.titre) && t.findIndex(x => x.texte === a.texte) === i);
     $("fin-duel-lecons").insertAdjacentHTML("beforeend", vus.length
       ? `<p><b>Vos accords dans ce duel :</b></p><ul>${vus.map(a => `<li>${a.belline ? "<b>Règle de Belline</b>" : esc(a.titre)} : ${esc(a.texte)}</li>`).join("")}</ul>`
-      : "<p class='petit'>Aucun accord dans ce duel : les badges ✦ sur vos cartes montrent celles qui s’associent.</p>");
+      : "<p class='petit'>Aucune règle ni accord de la notice dans ce duel : les badges ✦ dorés sur vos cartes montrent celles qui forment une règle, et l’Appel des règles (Techniques) va chercher la carte qui manque.</p>");
+    // un conseil tiré du duel
+    const conseil = !gagne && !moments.presages ? "Vous n’avez déclenché aucun présage : posez-en face cachée, ils répondent aux attaques de l’adversaire."
+      : !gagne && moments.attaques < 3 ? "Vous avez peu attaqué : après vos invocations, passez au combat (C) pour user ses points de vie."
+      : !vus.some(a => a.belline) ? "Pour accomplir une règle de Belline, révélez ses deux cartes l’une après l’autre, ou la seconde quand la première est face visible en jeu."
+      : gagne ? "Belle lecture des cartes. Essayez un Gardien plus loin dans la campagne, ou la difficulté au-dessus." : "";
+    if (conseil) $("fin-duel-lecons").insertAdjacentHTML("beforeend", `<p class="conseil-fin">☞ ${esc(conseil)}</p>`);
     $("fin-duel").classList.add("visible");
     $("bouton-revanche").focus();
-  }, 1300);
+  }, 2400);
 }
 
 /** La nature d'une carte pour l'atelier : légère, moyenne, forte, influence, terrain, présage. */
@@ -6465,7 +6526,7 @@ $("bouton-journal")?.addEventListener("click", () => {
 });
 
 // Outil de vérification (?test) : lire l'état depuis la console ou un script.
-if (new URLSearchParams(location.search).has("test")) window.__duel = { etat: () => d, occupe: () => occupe, demarrer, effet: id => effetCarte(id), effets, zone: zoneEl };
+if (new URLSearchParams(location.search).has("test")) window.__duel = { etat: () => d, occupe: () => occupe, demarrer, effet: id => effetCarte(id), effets, zone: zoneEl, terminer, animer };
 
 // Accueil : un duel de démonstration derrière le voile
 majAccueil();

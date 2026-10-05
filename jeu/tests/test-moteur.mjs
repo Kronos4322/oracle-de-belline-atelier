@@ -919,6 +919,26 @@ test("Combo : un second accord dans le même tour rapporte 200 points de plus ; 
   const acc2 = ev3.find(e => e.type === "accord");
   assert.ok(acc2 && acc2.sorte === "belline" && acc2.combo === 2, JSON.stringify(acc2));
 });
+test("L'Appel des règles : une carte de la main appelle sa partenaire depuis le deck, une fois par duel", () => {
+  const d = creerDuel(creerHasard(8), "homme", { premier: 0 });
+  d.tour = 3;
+  const J = d.joueurs[0];
+  J.main = [9]; if (!J.pioche.includes(30)) J.pioche.push(30);
+  const t = techniquesPossibles(d, 0).find(x => x.sorte === "appel" && x.cherche === 30);
+  assert.ok(t, "Campagne appelle la Table (le pique-nique)");
+  utiliserTechnique(d, 0, t.cle, creerHasard(1));
+  assert.ok(J.main.includes(30) && !J.pioche.includes(30));
+  J.techniqueFaite = false;
+  assert.ok(!techniquesPossibles(d, 0).some(x => x.sorte === "appel"), "une fois par duel");
+});
+test("Résonance : une règle de Belline s'accomplit avec une carte déjà face visible", () => {
+  const d = duelVide(21);
+  poserMonstre(d, 0, 0, 17);   // la Maladie en jeu
+  d.joueurs[0].derniere = null; d.joueurs[0].main = [49];   // la Grâce
+  const ev = invoquer(d, 0, 0, { sacrifices: [] }, creerHasard(1));
+  const acc = ev.find(e => e.type === "accord");
+  assert.ok(acc && acc.sorte === "belline" && acc.resonance, JSON.stringify(acc));
+});
 test("Premier duel doux : l'Ombre ne pose aucun présage pendant ses deux premiers tours", () => {
   for (let g = 1; g <= 20; g++) {
     const rng = creerHasard(g), d = creerDuel(rng, "homme", { premier: 0, douceur: 2, profils: [null, PROFILS.adepte] });

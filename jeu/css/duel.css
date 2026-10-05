@@ -23,6 +23,7 @@ body.plein-ecran .arene { max-width: none; }
 .plateau.secoue { animation: secouer-plateau .35s; }
 @keyframes secouer-plateau { 20% { transform: translate(-6px, 2px); } 40% { transform: translate(5px, -3px); } 60% { transform: translate(-3px, 2px); } 80% { transform: translate(2px, -1px); } }
 .plateau > .calque-effets { z-index: 9; }
+.plateau > .ecran { z-index: 10; }   /* les écrans (accueil, fin, deck) passent au-dessus des effets */
 
 /* =============== 2. Points de vie, bandeaux, barre du joueur =============== */
 .bandeau-joueur { display: flex; align-items: center; gap: 14px; position: relative; z-index: 3; }
@@ -261,6 +262,14 @@ button.pile:hover:not([disabled]) { background: rgba(243,213,138,.1); box-shadow
   text-shadow: 0 2px 8px rgba(0,0,0,.9), 0 0 16px currentColor; animation: envol 1.5s ease-out forwards; }
 .flottant.mal { color: #ff6b5b; } .flottant.bien { color: #8ff0a8; } .flottant.neutre { color: var(--or-pale); font-size: 16px; }
 .flottant.gros { font-size: 46px; }
+/* le coup final : le temps se suspend, la barre du vaincu se brise */
+.plateau.coup-final .tapis { animation: coup-final 2.4s ease-out; }
+@keyframes coup-final { 0% { filter: none; transform: scale(1); } 12% { filter: brightness(1.6) saturate(.4); transform: scale(1.025); } 60% { filter: saturate(.5); transform: scale(1.015); } 100% { filter: none; transform: scale(1); } }
+.points-vie.brise { animation: brise .9s ease-out; }
+@keyframes brise { 0%, 100% { transform: none; } 15% { transform: translateX(-8px) rotate(-1.5deg); } 30% { transform: translateX(7px) rotate(1deg); } 45% { transform: translateX(-4px); } 60% { transform: translateX(2px); } }
+.points-vie.brise .lp-jauge { box-shadow: 0 0 14px rgba(255,60,40,.9); }
+.moments { margin: 4px 0 8px; }
+.conseil-fin { margin-top: 8px; padding: 6px 10px; border-left: 3px solid var(--or); background: rgba(243,213,138,.18); border-radius: 6px; }
 .flottant.lecture { font-family: "EB Garamond", serif; font-weight: 600; font-size: 16px; padding: 2px 10px; border-radius: 999px; text-shadow: none;
   background: rgba(20,14,36,.88); border: 1px solid currentColor; color: var(--or-pale); }
 .flottant.lecture.mal { color: #ffb3c0; }

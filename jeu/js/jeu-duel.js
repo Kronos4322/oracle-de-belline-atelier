@@ -4769,7 +4769,60 @@ function jouerElement(element, phase = "impact") {
   }
 }
 
-return { jouerSon, sonActif, basculerSon, jouerElement };
+/** Le bruissement d'une carte qu'on pioche. */
+function bruissement() { souffle(0.16, "highpass", 2500, 6000, 0.05); }
+
+// ---------- La musique d'ambiance : un bourdon doux, accordé à la planète du duel (réglage à part) ----------
+const CLE_MUSIQUE = "chemin-du-mage.musique";
+let musiqueVoulue = true;
+try { musiqueVoulue = localStorage.getItem(CLE_MUSIQUE) !== "non"; } catch { /* stockage indisponible */ }
+let bourdon = null, planeteBourdon = null;
+// la fondamentale de chaque planète (Saturne grave, la Lune claire), et l'intervalle qui l'accompagne
+const BOURDONS = { soleil: [110, 1.5], lune: [138.6, 1.5], mercure: [164.8, 1.335], venus: [130.8, 1.26], mars: [98, 1.5], jupiter: [82.4, 1.5], saturne: [69.3, 1.335] };
+
+function arreterBourdon(fondu = 1.2) {
+  if (!bourdon) return;
+  const b = bourdon, t = b.ctx.currentTime;
+  b.gain.gain.cancelScheduledValues(t); b.gain.gain.setValueAtTime(b.gain.gain.value, t); b.gain.gain.linearRampToValueAtTime(0, t + fondu);
+  setTimeout(() => b.sources.forEach(s => { try { s.stop(); } catch { /* déjà arrêtée */ } }), fondu * 1000 + 100);
+  bourdon = null;
+}
+
+/** Lance (ou change) la musique d'ambiance de la planète ; null l'arrête. */
+function musique(planete) {
+  if (planete === planeteBourdon && bourdon) return;
+  planeteBourdon = planete;
+  arreterBourdon();
+  if (!planete || !musiqueVoulue || !BOURDONS[planete]) return;
+  const a = audio(); if (!a) return;
+  const [f, k] = BOURDONS[planete], t = a.currentTime;
+  const gain = a.createGain(); gain.gain.setValueAtTime(0, t); gain.gain.linearRampToValueAtTime(0.03, t + 3);
+  const filtre = a.createBiquadFilter(); filtre.type = "lowpass"; filtre.frequency.value = 700;
+  gain.connect(filtre).connect(a.destination);
+  const sources = [];
+  for (const [freq, forme, vol] of [[f, "sine", 1], [f * k, "sine", 0.6], [f * 2, "triangle", 0.25]]) {
+    const o = a.createOscillator(), g = a.createGain();
+    o.type = forme; o.frequency.value = freq; g.gain.value = vol;
+    // une respiration lente : chaque voix ondule à son rythme
+    const lfo = a.createOscillator(), lg = a.createGain();
+    lfo.frequency.value = 0.05 + Math.random() * 0.08; lg.gain.value = vol * 0.5;
+    lfo.connect(lg).connect(g.gain);
+    o.connect(g).connect(gain); o.start(t); lfo.start(t);
+    sources.push(o, lfo);
+  }
+  bourdon = { ctx: a, gain, sources };
+}
+function musiqueActive() { return musiqueVoulue; }
+/** Bascule la musique ; renvoie le nouvel état. */
+function basculerMusique() {
+  musiqueVoulue = !musiqueVoulue;
+  try { localStorage.setItem(CLE_MUSIQUE, musiqueVoulue ? "oui" : "non"); } catch { /* rien */ }
+  const p = planeteBourdon; planeteBourdon = null;
+  if (musiqueVoulue) musique(p); else arreterBourdon();
+  return musiqueVoulue;
+}
+
+return { jouerSon, sonActif, basculerSon, jouerElement, bruissement, musique, musiqueActive, basculerMusique };
 })();
 
 // ===== js/ui/pleinEcran.js =====
@@ -4864,7 +4917,7 @@ const { peindreCarteDuel, peindreHologramme } = M["js/render/carteDuel.js"];
 const { Effets, elementDe, TEINTES } = M["js/render/effetsVisuels.js"];
 const { Ambiance } = M["js/render/ambiance.js"];
 const { chargerCarnet, sauverCarnet } = M["js/ui/stockage.js"];
-const { jouerSon, basculerSon, sonActif, jouerElement } = M["js/ui/son.js"];
+const { jouerSon, basculerSon, sonActif, jouerElement, bruissement, musique, basculerMusique, musiqueActive } = M["js/ui/son.js"];
 const { installerPleinEcran } = M["js/ui/pleinEcran.js"];
 
 const $ = id => document.getElementById(id);
@@ -5061,6 +5114,7 @@ function rendre() {
   for (const j of [0, 1]) majLieu(j);
   $("tapis").dataset.terrain = d.terrain || "";
   ambiance.regler(d.terrain, [d.joueurs[0].terrainCarte, d.joueurs[1].terrainCarte]);
+  if (!d.fini) musique(d.terrain);
   majCommandes();
   $("indication").textContent = indication();
 }
@@ -5242,6 +5296,7 @@ function reconcilierMain() {
   // la main est étalée, cartes côte à côte : si elles ne tiennent pas toutes, elles rapetissent un peu
   const l = Math.min(largeurMain, (box.clientWidth - 8 * (n + 1)) / Math.max(1, n));
   box.style.setProperty("--main-l", `${Math.max(window.innerWidth <= 640 ? 58 : 60, Math.floor(l))}px`);
+  box.style.setProperty("--n", n);
   voulus.forEach((el, index) => {
     if (box.children[index] !== el) box.insertBefore(el, box.children[index] || null);
     el._index = index;
@@ -5986,7 +6041,7 @@ async function animer(ev, garderOccupe = false) {
         rendre(); banniere(e.phase === "combat" ? "Phase de combat" : "Phase principale 2", "", "petite"); jouerSon("choix");
         await attendre(600); break;
       case "pioche":
-        if (e.j === 0) { journal(`Vous piochez ${c}.`); noterVue(carnet, e.id); rendre(); document.querySelector("#main-0 .carte-main:last-child")?.classList.add("piochee"); }
+        if (e.j === 0) { journal(`Vous ${e.appel ? "appelez" : "piochez"} ${c}.`); noterVue(carnet, e.id); rendre(); const m = document.querySelector("#main-0 .carte-main:last-child"); m?.classList.add("piochee"); if (e.appel) m?.classList.add("appelee"); bruissement(); }
         else { rendre(); document.querySelector("#main-1 canvas:last-child")?.classList.add("piochee"); }
         await attendre(280); break;
       case "fusion":
@@ -6315,6 +6370,7 @@ function terminer() {
   plateau.classList.remove("coup-final"); void plateau.offsetWidth; plateau.classList.add("coup-final");
   if (vaincu != null) { $(`lp-${vaincu}`).classList.add("brise"); secousse(true); eclair(gagne ? "rgba(255,240,200,.6)" : "rgba(255,40,40,.45)"); }
   setTimeout(() => { plateau.classList.remove("coup-final"); $("lp-0").classList.remove("brise"); $("lp-1").classList.remove("brise"); }, 2600);
+  musique(null);
   jouerSon(gagne ? "victoire" : "defaite");
   setTimeout(() => banniere(gagne ? "Victoire" : "Défaite", "", gagne ? "accord" : "sombre"), 700);
   // la fin du duel : une pluie d'étoiles à la victoire, des cendres à la défaite
@@ -6470,8 +6526,12 @@ window.addEventListener("resize", () => { if (d) ajusterTaille(); });
 installerPleinEcran($("bouton-plein-ecran"), () => { if (d) ajusterTaille(); });
 const boutonSon = $("bouton-son");
 const majSon = () => { boutonSon.textContent = sonActif() ? "♪ Son" : "♪ Muet"; boutonSon.setAttribute("aria-pressed", String(sonActif())); };
-boutonSon.addEventListener("click", () => { basculerSon(); majSon(); });
+boutonSon.addEventListener("click", () => { basculerSon(); majSon(); if (!sonActif()) musique(null); else if (d && !d.fini) musique(d.terrain); });
 majSon();
+const boutonMusique = $("bouton-musique");
+const majMusique = () => { boutonMusique.textContent = musiqueActive() ? "♫ Musique" : "♫ Silence"; boutonMusique.setAttribute("aria-pressed", String(musiqueActive())); };
+boutonMusique.addEventListener("click", () => { basculerMusique(); majMusique(); if (musiqueActive() && d && !d.fini) musique(d.terrain); });
+majMusique();
 
 // Votre dictionnaire des associations (Atelier, 4 Mo) : chargé après le démarrage, il remplace les lectures modernes.
 function chargerDictionnaire() {

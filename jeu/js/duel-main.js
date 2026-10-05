@@ -23,7 +23,7 @@ import { peindreCarteDuel, peindreHologramme } from "./render/carteDuel.js";
 import { Effets, elementDe, TEINTES } from "./render/effetsVisuels.js";
 import { Ambiance } from "./render/ambiance.js";
 import { chargerCarnet, sauverCarnet } from "./ui/stockage.js";
-import { jouerSon, basculerSon, sonActif, jouerElement } from "./ui/son.js";
+import { jouerSon, basculerSon, sonActif, jouerElement, bruissement, musique, basculerMusique, musiqueActive } from "./ui/son.js";
 import { installerPleinEcran } from "./ui/pleinEcran.js";
 
 const $ = id => document.getElementById(id);
@@ -220,6 +220,7 @@ function rendre() {
   for (const j of [0, 1]) majLieu(j);
   $("tapis").dataset.terrain = d.terrain || "";
   ambiance.regler(d.terrain, [d.joueurs[0].terrainCarte, d.joueurs[1].terrainCarte]);
+  if (!d.fini) musique(d.terrain);
   majCommandes();
   $("indication").textContent = indication();
 }
@@ -401,6 +402,7 @@ function reconcilierMain() {
   // la main est étalée, cartes côte à côte : si elles ne tiennent pas toutes, elles rapetissent un peu
   const l = Math.min(largeurMain, (box.clientWidth - 8 * (n + 1)) / Math.max(1, n));
   box.style.setProperty("--main-l", `${Math.max(window.innerWidth <= 640 ? 58 : 60, Math.floor(l))}px`);
+  box.style.setProperty("--n", n);
   voulus.forEach((el, index) => {
     if (box.children[index] !== el) box.insertBefore(el, box.children[index] || null);
     el._index = index;
@@ -1145,7 +1147,7 @@ async function animer(ev, garderOccupe = false) {
         rendre(); banniere(e.phase === "combat" ? "Phase de combat" : "Phase principale 2", "", "petite"); jouerSon("choix");
         await attendre(600); break;
       case "pioche":
-        if (e.j === 0) { journal(`Vous piochez ${c}.`); noterVue(carnet, e.id); rendre(); document.querySelector("#main-0 .carte-main:last-child")?.classList.add("piochee"); }
+        if (e.j === 0) { journal(`Vous ${e.appel ? "appelez" : "piochez"} ${c}.`); noterVue(carnet, e.id); rendre(); const m = document.querySelector("#main-0 .carte-main:last-child"); m?.classList.add("piochee"); if (e.appel) m?.classList.add("appelee"); bruissement(); }
         else { rendre(); document.querySelector("#main-1 canvas:last-child")?.classList.add("piochee"); }
         await attendre(280); break;
       case "fusion":
@@ -1474,6 +1476,7 @@ function terminer() {
   plateau.classList.remove("coup-final"); void plateau.offsetWidth; plateau.classList.add("coup-final");
   if (vaincu != null) { $(`lp-${vaincu}`).classList.add("brise"); secousse(true); eclair(gagne ? "rgba(255,240,200,.6)" : "rgba(255,40,40,.45)"); }
   setTimeout(() => { plateau.classList.remove("coup-final"); $("lp-0").classList.remove("brise"); $("lp-1").classList.remove("brise"); }, 2600);
+  musique(null);
   jouerSon(gagne ? "victoire" : "defaite");
   setTimeout(() => banniere(gagne ? "Victoire" : "Défaite", "", gagne ? "accord" : "sombre"), 700);
   // la fin du duel : une pluie d'étoiles à la victoire, des cendres à la défaite
@@ -1629,8 +1632,12 @@ window.addEventListener("resize", () => { if (d) ajusterTaille(); });
 installerPleinEcran($("bouton-plein-ecran"), () => { if (d) ajusterTaille(); });
 const boutonSon = $("bouton-son");
 const majSon = () => { boutonSon.textContent = sonActif() ? "♪ Son" : "♪ Muet"; boutonSon.setAttribute("aria-pressed", String(sonActif())); };
-boutonSon.addEventListener("click", () => { basculerSon(); majSon(); });
+boutonSon.addEventListener("click", () => { basculerSon(); majSon(); if (!sonActif()) musique(null); else if (d && !d.fini) musique(d.terrain); });
 majSon();
+const boutonMusique = $("bouton-musique");
+const majMusique = () => { boutonMusique.textContent = musiqueActive() ? "♫ Musique" : "♫ Silence"; boutonMusique.setAttribute("aria-pressed", String(musiqueActive())); };
+boutonMusique.addEventListener("click", () => { basculerMusique(); majMusique(); if (musiqueActive() && d && !d.fini) musique(d.terrain); });
+majMusique();
 
 // Votre dictionnaire des associations (Atelier, 4 Mo) : chargé après le démarrage, il remplace les lectures modernes.
 function chargerDictionnaire() {

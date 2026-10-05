@@ -4031,7 +4031,60 @@ function jouerElement(element, phase = "impact") {
   }
 }
 
-return { jouerSon, sonActif, basculerSon, jouerElement };
+/** Le bruissement d'une carte qu'on pioche. */
+function bruissement() { souffle(0.16, "highpass", 2500, 6000, 0.05); }
+
+// ---------- La musique d'ambiance : un bourdon doux, accordé à la planète du duel (réglage à part) ----------
+const CLE_MUSIQUE = "chemin-du-mage.musique";
+let musiqueVoulue = true;
+try { musiqueVoulue = localStorage.getItem(CLE_MUSIQUE) !== "non"; } catch { /* stockage indisponible */ }
+let bourdon = null, planeteBourdon = null;
+// la fondamentale de chaque planète (Saturne grave, la Lune claire), et l'intervalle qui l'accompagne
+const BOURDONS = { soleil: [110, 1.5], lune: [138.6, 1.5], mercure: [164.8, 1.335], venus: [130.8, 1.26], mars: [98, 1.5], jupiter: [82.4, 1.5], saturne: [69.3, 1.335] };
+
+function arreterBourdon(fondu = 1.2) {
+  if (!bourdon) return;
+  const b = bourdon, t = b.ctx.currentTime;
+  b.gain.gain.cancelScheduledValues(t); b.gain.gain.setValueAtTime(b.gain.gain.value, t); b.gain.gain.linearRampToValueAtTime(0, t + fondu);
+  setTimeout(() => b.sources.forEach(s => { try { s.stop(); } catch { /* déjà arrêtée */ } }), fondu * 1000 + 100);
+  bourdon = null;
+}
+
+/** Lance (ou change) la musique d'ambiance de la planète ; null l'arrête. */
+function musique(planete) {
+  if (planete === planeteBourdon && bourdon) return;
+  planeteBourdon = planete;
+  arreterBourdon();
+  if (!planete || !musiqueVoulue || !BOURDONS[planete]) return;
+  const a = audio(); if (!a) return;
+  const [f, k] = BOURDONS[planete], t = a.currentTime;
+  const gain = a.createGain(); gain.gain.setValueAtTime(0, t); gain.gain.linearRampToValueAtTime(0.03, t + 3);
+  const filtre = a.createBiquadFilter(); filtre.type = "lowpass"; filtre.frequency.value = 700;
+  gain.connect(filtre).connect(a.destination);
+  const sources = [];
+  for (const [freq, forme, vol] of [[f, "sine", 1], [f * k, "sine", 0.6], [f * 2, "triangle", 0.25]]) {
+    const o = a.createOscillator(), g = a.createGain();
+    o.type = forme; o.frequency.value = freq; g.gain.value = vol;
+    // une respiration lente : chaque voix ondule à son rythme
+    const lfo = a.createOscillator(), lg = a.createGain();
+    lfo.frequency.value = 0.05 + Math.random() * 0.08; lg.gain.value = vol * 0.5;
+    lfo.connect(lg).connect(g.gain);
+    o.connect(g).connect(gain); o.start(t); lfo.start(t);
+    sources.push(o, lfo);
+  }
+  bourdon = { ctx: a, gain, sources };
+}
+function musiqueActive() { return musiqueVoulue; }
+/** Bascule la musique ; renvoie le nouvel état. */
+function basculerMusique() {
+  musiqueVoulue = !musiqueVoulue;
+  try { localStorage.setItem(CLE_MUSIQUE, musiqueVoulue ? "oui" : "non"); } catch { /* rien */ }
+  const p = planeteBourdon; planeteBourdon = null;
+  if (musiqueVoulue) musique(p); else arreterBourdon();
+  return musiqueVoulue;
+}
+
+return { jouerSon, sonActif, basculerSon, jouerElement, bruissement, musique, musiqueActive, basculerMusique };
 })();
 
 // ===== js/ui/stockage.js =====

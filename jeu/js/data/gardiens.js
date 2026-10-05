@@ -8,7 +8,7 @@ import { VOISINAGE } from "./voisinage.js";
 
 export const PROFILS = {
   novice: { nom: "Novice", hasard: 0.65, agressif: 1, soin: 1 },
-  adepte: { nom: "Adepte", hasard: 0.15, agressif: 1, soin: 1 },
+  adepte: { nom: "Adepte", hasard: 0.3, agressif: 1, soin: 1 },
   mage: { nom: "Mage", hasard: 0, agressif: 1.1, soin: 0.8 }
 };
 

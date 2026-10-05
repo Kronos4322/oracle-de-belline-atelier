@@ -32,7 +32,7 @@ import { activer as activerDuel, accordsTerrain, accomplirAccordTerrain, terrain
 import { deckGardien as deckDuGardien, GARDIENS as LES_GARDIENS } from "../js/data/gardiens.js";
 import { def as defDuel, peutPoserInfluence, evolutionsPossibles, evoluer, domine, calculCombat as calculDuel, passerAuCombat as auCombatDuel, attaquer as attaquerDuel, techniquesPossibles as techniquesDuel, fusionsPossibles as fusionsDuel } from "../js/engine/duel.js";
 import { SORTS, ETATS } from "../js/data/sorts.js";
-import { influencesEnReponse, revelerEnReponse, preparerReprise, influenceOmbre } from "../js/engine/duel.js";
+import { influencesEnReponse, revelerEnReponse, preparerReprise, influenceOmbre, terrainsEnReponse, poserTerrainEnReponse, peutActiver as peutActiverDuel } from "../js/engine/duel.js";
 import { reprendreHasard } from "../js/engine/hasard.js";
 
 let ok = 0, echecs = 0;
@@ -474,7 +474,8 @@ test("Chaque carte a sa fiche de duel, tirée d'un mot de sa notice", () => {
 test("Une vraie courbe : assez de petites apparitions (niveau 4 au plus), des moyennes, des fortes, neuf présages", () => {
   const app = CARTES.map(c => DUEL[c.id]).filter(x => x.type === "apparition");
   assert.ok(app.filter(x => x.niveau <= 4).length >= 15, "trop peu de petites cartes : la main se bloque");
-  assert.ok(app.filter(x => x.niveau >= 5 && x.niveau <= 6).length >= 3);
+  assert.ok(app.filter(x => x.niveau <= 4).length >= 22, "les attaques légères : au moins 22");
+  assert.ok(app.filter(x => x.niveau >= 5 && x.niveau <= 6).length >= 1);
   assert.ok(CARTES.filter(c => DUEL[c.id].type === "presage").length >= 9);
 });
 test("Les figures d'accord : une par règle, avec ses deux cartes, et un nom pris dans la règle", () => {
@@ -501,12 +502,12 @@ test("Une invocation par tour ; niveau 5 : un sacrifice ; carte forte : deux", (
   const d = duelVide(4); d.joueurs[0].main = [37, 32];
   invoquer(d, 0, 0, {}, creerHasard(1));
   assert.equal(peutInvoquer(d, 0, 0).ok, false);
-  const e = duelVide(5); e.joueurs[0].main = [35];
+  const e = duelVide(5); e.joueurs[0].main = [39];
   assert.equal(peutInvoquer(e, 0, 0).offrande, 1, "sans apparition à sacrifier : l'offrande de points de vie");
   e.joueurs[0].lp = 1000; assert.equal(peutInvoquer(e, 0, 0).ok, false, "pas assez de points de vie pour l'offrande");
   e.joueurs[0].lp = 8000; poserMonstre(e, 0, 0, 4); assert.equal(peutInvoquer(e, 0, 0).ok, true); assert.equal(peutInvoquer(e, 0, 0).offrande, 0);
-  const o = duelVide(7); o.joueurs[0].main = [35];
-  invoquer(o, 0, 0, {}, creerHasard(1)); assert.equal(o.joueurs[0].lp, 8000 - 1500); assert.equal(o.joueurs[0].monstres.find(Boolean).id, 35);
+  const o = duelVide(7); o.joueurs[0].main = [39];
+  invoquer(o, 0, 0, {}, creerHasard(1)); assert.equal(o.joueurs[0].lp, 8000 - 1500); assert.equal(o.joueurs[0].monstres.find(Boolean).id, 39);
   const f = duelVide(6); f.joueurs[0].main = [48]; poserMonstre(f, 0, 0, 4);
   poserMonstre(f, 0, 1, 8);
   invoquer(f, 0, 0, { sacrifices: [0, 1] }, creerHasard(1));
@@ -562,7 +563,7 @@ test("Présages : Retard annule ; Échec détruit ; pas le tour de leur pose", (
 });
 test("Chaîne : Stérilité répond à une influence, qui ne produit rien", () => {
   const d = duelVide(16); d.tour = 3;
-  d.joueurs[0].main = [45];
+  d.joueurs[0].main = [19];
   d.joueurs[1].presages[0] = { uid: 4, id: 47, poseTour: 1 };
   const ev = activer(d, 0, 0, { contre: 0 }, creerHasard(1));
   assert.equal(d.joueurs[0].lp, 8000);
@@ -610,12 +611,12 @@ test("Accord de Belline : Maladie puis Grâce rend des points de vie et une cart
   assert.ok(d.joueurs[0].reserve.includes(106), "la règle accomplie fait entrer sa figure (Guérison) dans la réserve");
 });
 test("L'Étoile rejoue la carte précédente, à moitié si ce n'est pas la vôtre", () => {
-  const a = duelVide(21); a.joueurs[0].consultant = "homme"; a.joueurs[0].main = [45, 2];
+  const a = duelVide(21); a.joueurs[0].consultant = "homme"; a.joueurs[0].main = [19, 2];
   activer(a, 0, 0, {}, creerHasard(1)); activer(a, 0, 0, {}, creerHasard(1));
-  assert.equal(a.joueurs[0].lp, 11000);
-  const b = duelVide(21); b.joueurs[0].consultant = "homme"; b.joueurs[0].main = [45, 3];
+  assert.equal(a.joueurs[0].lp, 9000);
+  const b = duelVide(21); b.joueurs[0].consultant = "homme"; b.joueurs[0].main = [19, 3];
   activer(b, 0, 0, {}, creerHasard(1)); activer(b, 0, 0, {}, creerHasard(1));
-  assert.equal(b.joueurs[0].lp, 10250);
+  assert.equal(b.joueurs[0].lp, 8750);
 });
 test("Les Gardiens : un deck à leur couleur, des règles à enseigner", () => {
   for (const g of GARDIENS) {
@@ -668,7 +669,7 @@ test("Les règles de Belline se produisent en jeu (et pas seulement en test)", (
 console.log("Influences posées et techniques");
 test("Une influence se pose face cachée et se révèle au tour suivant", () => {
   const d = creerDuel(creerHasard(5), "homme", { premier: 0 });
-  d.joueurs[0].main = [45, 10];
+  d.joueurs[0].main = [19, 18];
   const ev = poserInfluence(d, 0, 0);
   assert.equal(ev[0].type, "posePresage");
   const place = ev[0].place;
@@ -678,10 +679,10 @@ test("Une influence se pose face cachée et se révèle au tour suivant", () => 
   const lp = d.joueurs[0].lp;
   const ev2 = revelerInfluence(d, 0, place, {}, creerHasard(1));
   assert.ok(ev2.some(e => e.type === "influence" && e.revelee));
-  assert.equal(d.joueurs[0].lp, lp + 1500);
+  assert.equal(d.joueurs[0].lp, lp + 500);
   assert.equal(d.joueurs[0].presages[place], null);
-  assert.ok(d.joueurs[0].cimetiere.includes(45));
-  assert.ok(d.joueurs[0].reveles.includes(45));
+  assert.ok(d.joueurs[0].cimetiere.includes(19));
+  assert.ok(d.joueurs[0].reveles.includes(19));
 });
 test("Une influence posée n'est pas un présage : elle ne répond jamais à l'adversaire", () => {
   const d = creerDuel(creerHasard(5), "homme", { premier: 0 });
@@ -753,9 +754,9 @@ test("La Renommée prend le sens de la carte qui l'accompagne ; la Trahison gât
 });
 test("En duel, une lecture moderne s'accomplit quand ses deux cartes se suivent", () => {
   const d = creerDuel(creerHasard(3), "homme", { premier: 0 });
-  d.joueurs[0].main = [10, 45];   // Présents puis Bonheur : un bonheur offert
+  d.joueurs[0].main = [18, 44];   // Changement puis Hazard (passer) : la chance tourne
   activerDuel(d, 0, 0, {}, creerHasard(1));
-  const ev = activerDuel(d, 0, 0, {}, creerHasard(1));
+  const ev = activerDuel(d, 0, 0, { choix: 1 }, creerHasard(1));
   const a = ev.find(e => e.type === "accord");
   assert.ok(a && a.sorte === "lecture" && a.favorable, JSON.stringify(a));
 });
@@ -893,17 +894,16 @@ test("Affinité entre planètes : chacune domine la suivante dans l'ordre d'Edmo
 });
 test("Combo : un second accord dans le même tour rapporte 200 points de plus", () => {
   const d = creerDuel(creerHasard(6), "homme", { premier: 0 });
-  d.joueurs[0].main = [10, 45];        // Présents puis Bonheur : une lecture
+  d.joueurs[0].main = [18, 44, 19];    // Changement, Hazard (passer) : une lecture ; puis Argent (encaisser) : Hazard et Argent, un gain au jeu
   activerDuel(d, 0, 0, {}, creerHasard(1));
-  const ev1 = activerDuel(d, 0, 0, {}, creerHasard(1));
+  const ev1 = activerDuel(d, 0, 0, { choix: 1 }, creerHasard(1));
   assert.equal(ev1.find(e => e.type === "accord").combo, 1);
-  d.joueurs[0].main = [27, 29];        // Union, Amor : un mariage d'amour
-  activerDuel(d, 0, 0, {}, creerHasard(1));
   const lp = d.joueurs[0].lp;
-  const ev2 = invoquer(d, 0, 0, {}, creerHasard(1));
+  const ev2 = activerDuel(d, 0, 0, { choix: 0 }, creerHasard(1));
   const acc = ev2.find(e => e.type === "accord");
-  assert.ok(acc && acc.combo >= 2, JSON.stringify(acc));
-  assert.equal(d.joueurs[0].lp, lp + acc.valeur);
+  assert.ok(acc && acc.combo === 2, JSON.stringify(acc));
+  assert.equal(acc.valeur, 200 + 200);
+  assert.equal(d.joueurs[0].lp, lp + 500 + acc.valeur);
 });
 test("La Fatalité : au-delà du 40e tour, le plus de points de vie l'emporte", () => {
   const d = creerDuel(creerHasard(6), "homme", { premier: 0 });
@@ -951,6 +951,34 @@ test("L'Ombre répond à une attaque par une influence posée quand ça la sauve
   const r = influenceOmbre(d, 1, { place: 0, cible: 0 });
   assert.ok(r && r.place === 0);
 });
+test("Terrains au combat : posé de la main pendant l'attaque adverse, il sauve le défenseur", () => {
+  const d = creerDuel(creerHasard(9), "homme", { premier: 1 });
+  d.tour = 4; d.phase = "combat";
+  d.joueurs[1].monstres[0] = apparitionDe(21, d);                       // Vol-Perte, 1300 ATK
+  const m = apparitionDe(22, d); m.position = "defense"; d.joueurs[0].monstres[0] = m;   // Entreprises, DEF 1600... trop juste sans abri ?
+  m.def = 1000;                                                         // affaiblie : DEF 1000, elle tomberait
+  d.joueurs[0].main = [16];                                             // Pénates : +700 DEF en défense
+  assert.deepEqual(terrainsEnReponse(d, 0), [0]);
+  assert.deepEqual(terrainsEnReponse(d, 1), [], "pas pendant son propre tour");
+  poserTerrainEnReponse(d, 0, 0, creerHasard(1));
+  assert.equal(d.joueurs[0].terrainCarte, 16);
+  attaquer(d, 1, 0, 0, creerHasard(1), null);
+  assert.ok(d.joueurs[0].monstres[0], "abritée par les Pénates, elle tient (1700 contre 1300)");
+});
+test("Terrains au combat : posé face cachée, il se révèle en réponse ; pendant votre combat, il se pose avant d'attaquer", () => {
+  const d = creerDuel(creerHasard(9), "homme", { premier: 1 });
+  d.tour = 4; d.phase = "combat";
+  d.joueurs[0].presages[0] = { uid: 960, id: 52, influence: true, poseTour: 2 };
+  assert.deepEqual(influencesEnReponse(d, 0), [0], "un terrain posé répond aussi");
+  revelerEnReponse(d, 0, 0, {}, creerHasard(1));
+  assert.equal(d.joueurs[0].terrainCarte, 52);
+  const e = creerDuel(creerHasard(9), "homme", { premier: 0 });
+  e.tour = 3; e.phase = "combat"; e.joueurs[0].main = [30];
+  assert.ok(peutActiverDuel(e, 0, 0).ok, "la Table se pose pendant le combat");
+  e.joueurs[0].main = [19];
+  assert.equal(peutActiverDuel(e, 0, 0).ok, false, "une influence ordinaire, non");
+});
+
 test("Un duel enregistré reprend à l'identique (même hasard, mêmes coups)", () => {
   const jouer = (d, rng, n) => {
     for (let pas = 0; pas < n && !d.fini; pas++) {

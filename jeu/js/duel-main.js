@@ -11,7 +11,7 @@ import {
   creerDuel, def, nomDe, familleDe, peutInvoquer, invoquer, peutActiver, activer, peutPoser, poser, peutChanger, changerPosition,
   fusionsPossibles, fusionner, passerAuCombat, passerPrincipale2, ciblesAttaque, calculCombat, attaquer,
   presagesActivables, presageOmbre, reagirInvocation, finTour, actionOmbre, executerOmbre, atkEffectif, defEffectif, LP,
-  accordsTerrain, accomplirAccordTerrain, peutPoserInfluence, poserInfluence, evolutionsPossibles, evoluer, MECANIQUES, domine, influencesEnReponse, revelerEnReponse, influenceOmbre, preparerReprise, peutRevelerInfluence, revelerInfluence, techniquesPossibles, utiliserTechnique, avancementAssociation
+  accordsTerrain, accomplirAccordTerrain, peutPoserInfluence, poserInfluence, evolutionsPossibles, evoluer, MECANIQUES, domine, influencesEnReponse, revelerEnReponse, influenceOmbre, preparerReprise, terrainsEnReponse, poserTerrainEnReponse, peutRevelerInfluence, revelerInfluence, techniquesPossibles, utiliserTechnique, avancementAssociation
 } from "./engine/duel.js";
 import { ALIGNEMENTS, ASSOCIATIONS } from "./data/techniques.js";
 import { accordDeLecture, definirDictionnaire, dictionnaireCharge } from "./data/lectures.js";
@@ -666,7 +666,7 @@ async function executerAttaque(place, cible) {
   selection = null; actions([]);
   const magie = influenceOmbre(d, 1, { place, cible });
   if (magie) {
-    await animer(revelerEnReponse(d, 1, magie.place, { choix: magie.choix }, rng), true);
+    await animer(magie.main != null ? poserTerrainEnReponse(d, 1, magie.main, rng) : revelerEnReponse(d, 1, magie.place, { choix: magie.choix }, rng), true);
     if (d.fini || !ciblesAttaque(d, 0, place).includes(cible)) { journal("Votre attaque n’a plus lieu."); finAction(); return; }
   }
   const p = presageOmbre(d, 1, "attaque", { place, cible });
@@ -792,11 +792,12 @@ async function tourAdverse() {
     if (a.type === "attaquer") {
       // vos réponses : un présage, ou une influence posée (révélée avant le choc) ; puis encore un présage si vous voulez
       for (let tour = 0; tour < 3 && !d.fini; tour++) {
-        const dispo = presagesActivables(d, 0, "attaque"), magies = influencesEnReponse(d, 0);
-        if (!dispo.length && !magies.length) break;
+        const dispo = presagesActivables(d, 0, "attaque"), magies = influencesEnReponse(d, 0), lieux = terrainsEnReponse(d, 0);
+        if (!dispo.length && !magies.length && !lieux.length) break;
         if (!ciblesAttaque(d, 1, a.place).includes(a.cible)) break;
         montrerFleche(zoneEl(1, a.place), a.cible === "direct" ? $("lp-0") : zoneEl(0, a.cible));
-        const r = await demanderReaction(dispo, attaqueTexte(a), magies);
+        const r = await demanderReaction(dispo, attaqueTexte(a), magies, lieux);
+        if (r && typeof r === "object" && r.main != null) { await animer(poserTerrainEnReponse(d, 0, r.main, rng), true); continue; }
         if (r && typeof r === "object") { await animer(revelerEnReponse(d, 0, r.influence, { choix: r.choix }, rng), true); continue; }
         reponse = r; break;
       }
@@ -865,9 +866,9 @@ function attaqueTexte(a) {
  * Le joueur peut répondre : par un présage (`places`), ou par une influence posée face cachée (`influences`,
  * comme une magie jeu-rapide). Résout l'emplacement du présage choisi, { influence: place, choix }, ou null.
  */
-function demanderReaction(places, texte, influences = []) {
+function demanderReaction(places, texte, influences = [], terrainsMain = []) {
   return new Promise(resolve => {
-    $("reaction-titre").textContent = influences.length && !places.length ? "Une réponse ?" : "Un présage ?";
+    $("reaction-titre").textContent = (influences.length || terrainsMain.length) && !places.length ? "Une réponse ?" : "Un présage ?";
     $("reaction-texte").textContent = texte;
     const zone = $("reaction-cartes");
     const carte = (id, legende, valeur) => {
@@ -884,7 +885,8 @@ function demanderReaction(places, texte, influences = []) {
         const id = d.joueurs[0].presages[place].id, x = def(id);
         return x.choix ? x.choix.map((ch, c) => carte(id, `Révéler ${nomDe(id)} : ${ch.label}`, { influence: place, choix: c }))
           : [carte(id, `Révéler ${nomDe(id)}`, { influence: place, choix: null })];
-      }));
+      }),
+      ...terrainsMain.map(index => { const id = d.joueurs[0].main[index]; return carte(id, `Poser le terrain ${nomDe(id)}`, { main: index }); }));
     $("reaction-non").onclick = () => { $("reaction").classList.remove("visible"); cacherFleche(); resolve(null); };
     $("reaction").classList.add("visible");
     jouerSon("choix");
@@ -1243,7 +1245,17 @@ function majReprise() {
 $("bouton-reprendre")?.addEventListener("click", reprendre);
 
 function gardienAccessible(i) { return i === 0 || carnet.gardiens.includes(GARDIENS[i - 1].famille); }
+/** L'accueil dit combien de cartes compte votre deck ; s'il en manque, un bouton rend les 53. */
+function majDeck() {
+  const b = $("bouton-deck"), n = deck.length;
+  b.textContent = `Votre deck (${n} carte${n > 1 ? "s" : ""} sur 53) et votre réserve`;
+  const r = $("deck-complet");
+  r.hidden = n >= 53; r.textContent = `Reprendre les 53 cartes (il en manque ${53 - n})`;
+}
+$("deck-complet").addEventListener("click", () => { deck = CARTES.map(c => c.id); sauverDeck(deck); majDeck(); });
+
 function majAccueil() {
+  majDeck();
   $("liste-gardiens").replaceChildren(...GARDIENS.map((g, i) => {
     const li = document.createElement("li");
     const r = REGIONS.find(x => x.famille === g.famille);
@@ -1393,10 +1405,11 @@ function montrerAtelier() {
 $("bouton-deck").addEventListener("click", montrerAtelier);
 $("atelier-tout").addEventListener("click", () => { deck = CARTES.map(c => c.id); montrerAtelier(); });
 $("atelier-rien").addEventListener("click", () => { deck = []; montrerAtelier(); });
-$("atelier-fermer").addEventListener("click", () => { if (deck.length < 30) return; sauverDeck(deck); $("atelier").classList.remove("visible"); });
+$("atelier-fermer").addEventListener("click", () => { if (deck.length < 30) return; sauverDeck(deck); $("atelier").classList.remove("visible"); majDeck(); });
 $("bouton-regles").addEventListener("click", () => { $("regles-duel").hidden = !$("regles-duel").hidden; });
 for (const b of document.querySelectorAll("[data-libre]")) b.addEventListener("click", () => demarrer({ mode: "libre", difficulte: b.dataset.libre }));
-$("bouton-revanche").addEventListener("click", () => demarrer(partie, partie.graine));
+// la revanche : même adversaire, nouvelle donne (rejouer la même graine redonnait exactement les mêmes cartes)
+$("bouton-revanche").addEventListener("click", () => demarrer(partie));
 $("bouton-retour-accueil").addEventListener("click", () => { $("fin-duel").classList.remove("visible"); majAccueil(); majReprise(); $("accueil-duel").classList.add("visible"); });
 
 window.addEventListener("keydown", e => {

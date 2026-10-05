@@ -478,20 +478,20 @@ const DUEL = {
   3: { type: "influence", mot: "consultante", texte: "L’Étoile reçoit la carte qui la précède : votre carte précédente se rejoue, pleinement si c’est votre Étoile, à moitié sinon.", effets: [{ t: "rejouer" }] },
 
   // ---------- Soleil ----------
-  4: { type: "apparition", niveau: 1, atk: 300, def: 600, mot: "naissance", texte: "Naissance, apparition : quand elle est révélée (même retournée), piochez une carte.", effets: [{ t: "piocher", n: 1 }] },
+  4: { type: "apparition", niveau: 1, atk: 800, def: 600, mot: "naissance", texte: "Naissance, apparition : quand elle est révélée (même retournée), piochez une carte.", effets: [{ t: "piocher", n: 1 }] },
   5: { type: "apparition", niveau: 4, atk: 1700, def: 1300, mot: "récompense", texte: "Succès, récompense : quand elle est révélée, vous gagnez 300 points de vie, plus 50 par carte de votre cimetière.", effets: [{ t: "reussite" }] },
   6: { type: "influence", sousType: "equipement", mot: "progrès", texte: "Équipement. Progrès : votre apparition la plus forte gagne 800 ATK tant qu’elle reste en jeu.", effets: [{ t: "stat", atk: 800, def: 0, camp: "soi", cible: "plusForte", equipement: true }] },
   7: { type: "apparition", niveau: 4, atk: 1800, def: 1700, protege: true, mot: "distinction", texte: "Distinction honorifique : la première fois qu’elle devrait être détruite au combat, elle ne l’est pas.", effets: [] },
   8: { type: "apparition", niveau: 3, atk: 1200, def: 1500, garde: true, mot: "fidélité", texte: "Un ami, fidélité : le chien garde. L’adversaire doit l’attaquer en premier.", effets: [] },
   9: { type: "influence", sousType: "terrain", mot: "santé", texte: "Terrain. Campagne, repos, santé : vos apparitions gagnent 300 DEF et guérissent de leurs états ; au début de chacun de vos tours, vous gagnez 300 points de vie. Tient 5 tours.", effets: [], terrain: { def: 300, lp: 300, duree: 5 } },
-  10: { type: "influence", mot: "cadeaux", texte: "Cadeaux, ce qui arrive par faveur : piochez une carte et gagnez 300 points de vie.", effets: [{ t: "piocher", n: 1 }, { t: "lp", v: 300 }] },
+  10: { type: "apparition", niveau: 2, atk: 1100, def: 900, mot: "cadeaux", texte: "Cadeaux, ce qui arrive par faveur : quand elle est révélée, piochez une carte.", effets: [{ t: "piocher", n: 1 }] },
 
   // ---------- Lune ----------
   11: { type: "apparition", niveau: 7, atk: 2500, def: 1800, forte: true, mot: "malchance", texte: "Carte forte. La malchance : quand elle est révélée, toutes les apparitions adverses perdent 500 ATK.",
     effets: [{ t: "stat", atk: -500, def: 0, camp: "adverse", cible: "toutes" }] },
   12: { type: "presage", declencheur: "attaque", mot: "éloignement", texte: "Départ, éloignement : quand une apparition adverse attaque, renvoyez-la dans la main de son joueur.", effets: [{ t: "renvoyerAttaquant" }] },
   13: { type: "presage", declencheur: "invocation", mot: "versatile", texte: "Caractère versatile : quand l’adversaire invoque une apparition, elle échange son ATK et sa DEF et devient confuse.", effets: [{ t: "inverserInvoquee" }] },
-  14: { type: "apparition", niveau: 2, atk: 900, def: 700, mot: "découverte", texte: "Découverte, surveillance, espionnage : quand elle est révélée, vous voyez la main adverse.", effets: [{ t: "voir" }] },
+  14: { type: "apparition", niveau: 2, atk: 1200, def: 700, mot: "découverte", texte: "Découverte, surveillance, espionnage : quand elle est révélée, vous voyez la main adverse.", effets: [{ t: "voir" }] },
   15: { type: "presage", declencheur: "invocation", mot: "passivité", texte: "La passivité : quand l’adversaire invoque une apparition, elle passe en défense, s’endort et ne pourra pas attaquer à son prochain tour.", effets: [{ t: "passiviteInvoquee" }] },
   16: { type: "influence", sousType: "terrain", mot: "foyer", texte: "Terrain. Le foyer, la maison, le lieu où l’on vit : un abri. Vos apparitions en défense gagnent 700 DEF. Tient 5 tours.", effets: [], terrain: { defDefense: 700, duree: 5 } },
   17: { type: "influence", mot: "remède", texte: "Malaise ou remède : sous 3000 points de vie, vous en regagnez 1000 ; sinon l’épidémie ôte 500 ATK à toutes les apparitions adverses et rend malade la plus forte.", effets: [{ t: "remede", v: 1000, seuil: 3000 }] },
@@ -502,25 +502,25 @@ const DUEL = {
     choix: [{ label: "Encaisser", effets: [{ t: "lp", v: 500 }] }, { label: "Placer", effets: [{ t: "differe", tours: 2, effets: [{ t: "lp", v: 1200 }] }] }] },
   20: { type: "apparition", niveau: 4, atk: 1500, def: 1700, mot: "savoir", texte: "Le savoir, les connaissances : quand elle est révélée, piochez une carte.", effets: [{ t: "piocher", n: 1 }] },
   21: { type: "apparition", niveau: 3, atk: 1300, def: 800, voleur: true, mot: "vol", texte: "Vol, perte : quand elle inflige des dégâts de combat, elle vole une carte au hasard dans la main adverse.", effets: [] },
-  22: { type: "apparition", niveau: 3, atk: 800, def: 1600, croissance: 300, mot: "projet", texte: "Projet en cours d’exécution : gagne 300 ATK à chacune de vos phases de pioche.", effets: [] },
+  22: { type: "apparition", niveau: 3, atk: 1000, def: 1600, croissance: 300, mot: "projet", texte: "Projet en cours d’exécution : gagne 300 ATK à chacune de vos phases de pioche.", effets: [] },
   23: { type: "apparition", niveau: 3, atk: 1400, def: 1000, mot: "commerce", texte: "Trafic, commerce, négoce : quand elle est révélée, vous gagnez 400 points de vie.", effets: [{ t: "lp", v: 400 }] },
   24: { type: "presage", declencheur: "attaque", mot: "surprise", texte: "Arrivée inattendue, surprise : quand une apparition adverse attaque, une apparition de niveau 4 ou moins de votre main arrive en défense et reçoit l’attaque.", effets: [{ t: "renfortSurprise" }] },
 
   // ---------- Vénus ----------
   25: { type: "influence", sousType: "equipement", mot: "parures", texte: "Équipement. Les parures, les bijoux : votre apparition la plus forte gagne 300 ATK et 500 DEF tant qu’elle reste en jeu.", effets: [{ t: "stat", atk: 300, def: 500, camp: "soi", cible: "plusForte", equipement: true }] },
   26: { type: "presage", declencheur: "attaque", mot: "paix", texte: "La paix, concorde : quand une apparition adverse attaque, l’attaque est annulée et la phase de combat prend fin ; vous piochez une carte.", effets: [{ t: "annulerCombat" }] },
-  27: { type: "influence", mot: "retour", texte: "Réunion, retour : la dernière carte de votre cimetière revient dans votre main.", effets: [{ t: "retourMain" }] },
-  28: { type: "apparition", niveau: 4, atk: 1200, def: 1600, mot: "liens", texte: "Les liens du sang ou de l’esprit : quand elle est révélée, vos autres apparitions gagnent 400 DEF.", effets: [{ t: "stat", atk: 0, def: 400, camp: "soi", cible: "autres" }] },
-  29: { type: "apparition", niveau: 3, atk: 1000, def: 1000, regain: 200, mot: "affection", texte: "L’affection : vous gagnez 200 points de vie à chacune de vos phases de pioche.", effets: [] },
+  27: { type: "apparition", niveau: 3, atk: 1500, def: 1200, mot: "retour", texte: "Union, réunion, retour : quand elle est révélée, la dernière carte de votre cimetière revient dans votre main.", effets: [{ t: "retourMain" }] },
+  28: { type: "apparition", niveau: 4, atk: 1400, def: 1600, mot: "liens", texte: "Les liens du sang ou de l’esprit : quand elle est révélée, vos autres apparitions gagnent 400 DEF.", effets: [{ t: "stat", atk: 0, def: 400, camp: "soi", cible: "autres" }] },
+  29: { type: "apparition", niveau: 3, atk: 1300, def: 1000, regain: 200, mot: "affection", texte: "L’affection : vous gagnez 200 points de vie à chacune de vos phases de pioche.", effets: [] },
   30: { type: "influence", sousType: "terrain", mot: "fêtes", texte: "Terrain. La table, les fêtes, les festins : vos apparitions gagnent 200 ATK ; au début de chacun de vos tours, vous gagnez 200 points de vie. Tient 5 tours.", effets: [], terrain: { atk: 200, lp: 200, duree: 5 } },
-  31: { type: "apparition", niveau: 5, atk: 2500, def: 0, feuDePaille: true, mot: "emballement", texte: "Emballement, feu de paille : une grande force, mais elle est détruite à la fin du tour où elle a attaqué.", effets: [] },
+  31: { type: "apparition", niveau: 4, atk: 2200, def: 0, feuDePaille: true, mot: "emballement", texte: "Emballement, feu de paille : une grande force, mais elle est détruite à la fin du tour où elle a attaqué.", effets: [] },
 
   // ---------- Mars ----------
   32: { type: "apparition", niveau: 4, atk: 1600, def: 1000, mot: "jalousie", texte: "Jalousie, envie : quand elle est révélée, la plus forte apparition adverse perd 600 ATK.", effets: [{ t: "stat", atk: -600, def: 0, camp: "adverse", cible: "plusForte" }] },
   33: { type: "presage", declencheur: "attaque", mot: "procès", texte: "Procès, litiges : quand une apparition adverse attaque, pile ou face : l’attaquant est détruit, ou l’attaque se poursuit.", effets: [{ t: "litige" }] },
   34: { type: "apparition", niveau: 8, atk: 2800, def: 2400, forte: true, mot: "force majeure", texte: "Carte forte. La force majeure : quand elle est révélée, toutes les apparitions adverses passent en défense.", effets: [{ t: "defense", camp: "adverse" }] },
-  35: { type: "apparition", niveau: 5, atk: 2200, def: 1400, declaree: true, mot: "attaques", texte: "Ennemis déclarés, attaques : ne peut pas être posée face cachée.", effets: [] },
-  36: { type: "apparition", niveau: 2, atk: 700, def: 1400, mot: "pourparlers", texte: "Pourparlers, conférences : quand elle est révélée, la plus forte apparition adverse ne peut pas attaquer à son prochain tour.", effets: [{ t: "bloquer", camp: "adverse", cible: "plusForte", tours: 1 }] },
+  35: { type: "apparition", niveau: 4, atk: 2000, def: 1300, declaree: true, mot: "attaques", texte: "Ennemis déclarés, attaques : ne peut pas être posée face cachée.", effets: [] },
+  36: { type: "apparition", niveau: 2, atk: 1100, def: 1400, mot: "pourparlers", texte: "Pourparlers, conférences : quand elle est révélée, la plus forte apparition adverse ne peut pas attaquer à son prochain tour.", effets: [{ t: "bloquer", camp: "adverse", cible: "plusForte", tours: 1 }] },
   37: { type: "apparition", niveau: 4, atk: 1800, def: 600, percant: true, mot: "ardeur", texte: "L’ardeur : contre une apparition en défense, inflige la différence en dégâts. Quand elle est révélée, le feu brûle la plus forte apparition adverse.", effets: [{ t: "statut", etat: "brulure", camp: "adverse", cible: "plusForte" }] },
   38: { type: "apparition", niveau: 7, atk: 2600, def: 1500, forte: true, mot: "bouleversement", texte: "Carte forte. Le bouleversement, la destruction : quand elle est révélée, les apparitions adverses en défense sont détruites, et le terrain adverse est cassé.", effets: [{ t: "detruireDefense", camp: "adverse" }, { t: "casserTerrain", camp: "adverse" }] },
 
@@ -528,18 +528,18 @@ const DUEL = {
   39: { type: "apparition", niveau: 6, atk: 2100, def: 2600, garde: true, mot: "protections", texte: "Protections, un personnage puissant : l’aigle garde. L’adversaire doit l’attaquer en premier.", effets: [] },
   40: { type: "influence", sousType: "continue", tours: 3, mot: "espérances", texte: "Continue (3 tours). Espérances qui se réaliseront par la suite : au début de chacun de vos tours, gagnez 300 points de vie et votre apparition la plus faible gagne 200 ATK.",
     effets: [{ t: "lp", v: 300 }, { t: "stat", atk: 200, def: 0, camp: "soi", cible: "plusFaible" }] },
-  41: { type: "influence", mot: "legs", texte: "Legs, les choses du passé : l’apparition la plus forte de votre cimetière revient sur le terrain.", effets: [{ t: "heritage" }] },
+  41: { type: "apparition", niveau: 4, atk: 1500, def: 1500, mot: "legs", texte: "Legs, les ancêtres, les choses du passé : quand elle est révélée, l’apparition la plus forte de votre cimetière revient sur le terrain.", effets: [{ t: "heritage" }] },
   42: { type: "apparition", niveau: 7, atk: 2000, def: 3000, forte: true, moderation: true, mot: "prudence", texte: "Carte forte. Prudence, modération : tant qu’elle est face recto, les dégâts de combat que vous subissez sont divisés par deux.", effets: [] },
   43: { type: "apparition", niveau: 4, atk: 1800, def: 1400, mot: "opinion", texte: "L’opinion, selon les cartes d’accompagnement : quand elle est révélée, l’adversaire perd 300 points de vie par apparition que vous contrôlez.", effets: [{ t: "degatsParAllie", v: 300 }] },
   44: { type: "influence", mot: "occasion", texte: "Une occasion : miser (pile ou face : 1500 points de dégâts à l’un ou à l’autre) ou passer.",
     choix: [{ label: "Miser", effets: [{ t: "hasard", v: 1500 }] }, { label: "Passer", effets: [] }] },
-  45: { type: "influence", mot: "bonheur", texte: "Le bonheur, vocation réalisée : gagnez 1500 points de vie.", effets: [{ t: "lp", v: 1500 }] },
+  45: { type: "apparition", niveau: 4, atk: 1600, def: 1600, mot: "bonheur", texte: "Le bonheur, vocation réalisée : quand elle est révélée, vous gagnez 800 points de vie.", effets: [{ t: "lp", v: 800 }] },
 
   // ---------- Saturne ----------
-  46: { type: "apparition", niveau: 2, atk: 500, def: 800, mot: "afflictions", texte: "Afflictions, infirmités : quand elle est révélée, toutes les apparitions adverses perdent 300 ATK et 300 DEF.", effets: [{ t: "stat", atk: -300, def: -300, camp: "adverse", cible: "toutes" }] },
+  46: { type: "apparition", niveau: 2, atk: 900, def: 800, mot: "afflictions", texte: "Afflictions, infirmités : quand elle est révélée, toutes les apparitions adverses perdent 300 ATK et 300 DEF.", effets: [{ t: "stat", atk: -300, def: -300, camp: "adverse", cible: "toutes" }] },
   47: { type: "presage", declencheur: "influence", mot: "tentatives vaines", texte: "Stérilité, tentatives vaines : quand l’adversaire active une influence, elle ne produit rien.", effets: [{ t: "annulerInfluence" }] },
   48: { type: "apparition", niveau: 8, atk: 3000, def: 2500, forte: true, mot: "fin", texte: "Carte forte. L’échéance inéluctable, la fin : quand elle est révélée, détruisez une apparition adverse en défense ou face cachée.", effets: [{ t: "detruire", camp: "adverse", cible: "defense" }] },
-  49: { type: "apparition", niveau: 3, atk: 900, def: 1200, mot: "revirement", texte: "Revirement favorable : quand elle est révélée, vous gagnez 600 points de vie et vos apparitions guérissent de leurs états.", effets: [{ t: "lp", v: 600 }, { t: "guerir", camp: "soi" }] },
+  49: { type: "apparition", niveau: 3, atk: 1200, def: 1200, mot: "revirement", texte: "Revirement favorable : quand elle est révélée, vous gagnez 600 points de vie et vos apparitions guérissent de leurs états.", effets: [{ t: "lp", v: 600 }, { t: "guerir", camp: "soi" }] },
   50: { type: "presage", declencheur: "attaque", mot: "échec", texte: "Échec, faillite : quand une apparition adverse attaque, elle est détruite.", effets: [{ t: "detruireAttaquant" }] },
   51: { type: "presage", declencheur: "attaque", mot: "retard", texte: "Retard, délai : quand une apparition adverse attaque, l’attaque est annulée et elle ne pourra plus attaquer pendant deux tours.", effets: [{ t: "retarderAttaquant", tours: 2 }] },
   52: { type: "influence", sousType: "terrain", mot: "repliement", texte: "Terrain. Claustration, repliement sur soi : le Cloître arrête. Vos apparitions gagnent 900 DEF mais ne peuvent pas attaquer tant qu’il demeure (3 tours).", effets: [], terrain: { def: 900, sansAttaque: true, duree: 3 } },
@@ -660,7 +660,7 @@ const { VOISINAGE } = M["js/data/voisinage.js"];
 
 const PROFILS = {
   novice: { nom: "Novice", hasard: 0.65, agressif: 1, soin: 1 },
-  adepte: { nom: "Adepte", hasard: 0.15, agressif: 1, soin: 1 },
+  adepte: { nom: "Adepte", hasard: 0.3, agressif: 1, soin: 1 },
   mage: { nom: "Mage", hasard: 0, agressif: 1.1, soin: 0.8 }
 };
 
@@ -1648,9 +1648,13 @@ function revelerJouee(d, j, place, ev, rng) {
 }
 
 /** Peut-on activer l'influence `index` ? */
+/** Un terrain se pose aussi pendant votre phase de combat, au moment d'attaquer (ajout de jeu). */
+const momentTerrain = d => enPrincipale(d) || d.phase === "combat";
+
 function peutActiver(d, j, index, horsTour = false) {
   const J = d.joueurs[j], id = J.main[index];
-  if (d.fini || (!horsTour && (d.actif !== j || !enPrincipale(d)))) return { ok: false, raison: "Pas maintenant." };
+  const terrain = id != null && def(id)?.sousType === "terrain";
+  if (d.fini || (!horsTour && (d.actif !== j || !(terrain ? momentTerrain(d) : enPrincipale(d))))) return { ok: false, raison: "Pas maintenant." };
   if (id == null || def(id).type !== "influence") return { ok: false, raison: "Ce n’est pas une influence." };
   const x = def(id);
   if (x.sousType === "equipement" && !monstres(J).length) return { ok: false, raison: "Équipement : il faut une apparition à équiper." };
@@ -1740,7 +1744,8 @@ function poserInfluence(d, j, index) {
 }
 function peutRevelerInfluence(d, j, place) {
   const J = d.joueurs[j], p = J.presages[place];
-  if (d.fini || d.actif !== j || !enPrincipale(d)) return { ok: false, raison: "Pas maintenant." };
+  const terrain = p && def(p.id)?.sousType === "terrain";
+  if (d.fini || d.actif !== j || !(terrain ? momentTerrain(d) : enPrincipale(d))) return { ok: false, raison: "Pas maintenant." };
   if (!p || !p.influence) return { ok: false, raison: "Ce n’est pas une influence posée." };
   if (p.poseTour >= d.tour) return { ok: false, raison: "Posée ce tour : elle se révélera à partir de votre prochain tour." };
   const x = def(p.id);
@@ -1768,7 +1773,7 @@ function influencesEnReponse(d, k) {
   const K = d.joueurs[k];
   if (d.fini || d.actif === k) return [];
   return K.presages.map((p, place) => ({ p, place }))
-    .filter(x => x.p?.influence && x.p.poseTour < d.tour && def(x.p.id).sousType !== "terrain")
+    .filter(x => x.p?.influence && x.p.poseTour < d.tour)
     .filter(x => def(x.p.id).sousType !== "equipement" || monstres(K).length)
     .map(x => x.place);
 }
@@ -1780,6 +1785,22 @@ function revelerEnReponse(d, k, place, options = {}, rng = Math.random) {
   const ev = activer(d, k, K.main.length - 1, { choix: options.choix, revelee: true, horsTour: true }, rng);
   if (ev.length === 1 && ev[0].type === "refus") { K.main.pop(); K.presages[place] = p; }
   else ev.unshift({ type: "texte", j: k, texte: `${K.nom} répond par une influence posée.` });
+  return ev;
+}
+
+/**
+ * Terrains en réponse (ajout de jeu) : pendant l'attaque adverse, un terrain de votre main peut être posé avant le
+ * choc (les Pénates abritent vos défenseurs, le Cloître…) ; un terrain posé face cachée se révèle aussi
+ * (`influencesEnReponse`). Renvoie les index de la main.
+ */
+function terrainsEnReponse(d, k) {
+  if (d.fini || d.actif === k) return [];
+  return d.joueurs[k].main.map((id, index) => ({ id, index })).filter(x => def(x.id).sousType === "terrain").map(x => x.index);
+}
+function poserTerrainEnReponse(d, k, index, rng = Math.random) {
+  if (!terrainsEnReponse(d, k).includes(index)) return [{ type: "refus", j: k, raison: "Ce terrain ne peut pas être posé maintenant." }];
+  const ev = activer(d, k, index, { horsTour: true }, rng);
+  if (!(ev.length === 1 && ev[0].type === "refus")) ev.unshift({ type: "texte", j: k, texte: `${d.joueurs[k].nom} pose un terrain en réponse.` });
   return ev;
 }
 
@@ -1796,8 +1817,8 @@ function preparerReprise(d) {
  * Elle compare la suite de l'attaque avec et sans sa réponse.
  */
 function influenceOmbre(d, k, contexte, profil = d.joueurs[k].profil) {
-  const dispo = influencesEnReponse(d, k);
-  if (!dispo.length || (profil?.hasard ?? 0) > 0.5) return null;
+  const dispo = influencesEnReponse(d, k), terrains = terrainsEnReponse(d, k);
+  if ((!dispo.length && !terrains.length) || (profil?.hasard ?? 0) > 0.5) return null;
   const j = adversaire(k);
   const apres = s => { if (ciblesAttaque(s, j, contexte.place).includes(contexte.cible)) attaquer(s, j, contexte.place, contexte.cible, neutre, null); return evaluer(s, k); };
   const base = apres(copie(d));
@@ -1810,6 +1831,12 @@ function influenceOmbre(d, k, contexte, profil = d.joueurs[k].profil) {
       const v = apres(s) - base;
       if (v > gain) { gain = v; meilleur = { place, choix }; }
     }
+  }
+  for (const index of terrains) {
+    const s = copie(d);
+    poserTerrainEnReponse(s, k, index, neutre);
+    const v = apres(s) - base;
+    if (v > gain) { gain = v; meilleur = { main: index }; }
   }
   return meilleur;
 }
@@ -2303,7 +2330,7 @@ function executerOmbre(d, a, rng = Math.random, reponse = null) {
   }
 }
 
-return { OFFRANDE, LP, MECANIQUES, def, nomDe, familleDe, creerDuel, apparitionDe, atkEffectif, domine, defEffectif, terrainDe, accordsTerrain, accomplirAccordTerrain, peutInvoquer, invoquer, peutActiver, activer, peutPoser, poser, peutPoserInfluence, poserInfluence, peutRevelerInfluence, revelerInfluence, influencesEnReponse, revelerEnReponse, preparerReprise, influenceOmbre, avancementAssociation, associationComplete, techniquesPossibles, utiliserTechnique, evolutionsPossibles, evoluer, peutChanger, changerPosition, fusionsPossibles, fusionner, passerAuCombat, passerPrincipale2, ciblesAttaque, calculCombat, presagesActivables, attaquer, reagirInvocation, finTour, evaluer, presageOmbre, actionOmbre, executerOmbre };
+return { OFFRANDE, LP, MECANIQUES, def, nomDe, familleDe, creerDuel, apparitionDe, atkEffectif, domine, defEffectif, terrainDe, accordsTerrain, accomplirAccordTerrain, peutInvoquer, invoquer, peutActiver, activer, peutPoser, poser, peutPoserInfluence, poserInfluence, peutRevelerInfluence, revelerInfluence, influencesEnReponse, revelerEnReponse, terrainsEnReponse, poserTerrainEnReponse, preparerReprise, influenceOmbre, avancementAssociation, associationComplete, techniquesPossibles, utiliserTechnique, evolutionsPossibles, evoluer, peutChanger, changerPosition, fusionsPossibles, fusionner, passerAuCombat, passerPrincipale2, ciblesAttaque, calculCombat, presagesActivables, attaquer, reagirInvocation, finTour, evaluer, presageOmbre, actionOmbre, executerOmbre };
 })();
 
 // ===== js/engine/carnet.js =====
@@ -4581,7 +4608,7 @@ const {
   creerDuel, def, nomDe, familleDe, peutInvoquer, invoquer, peutActiver, activer, peutPoser, poser, peutChanger, changerPosition,
   fusionsPossibles, fusionner, passerAuCombat, passerPrincipale2, ciblesAttaque, calculCombat, attaquer,
   presagesActivables, presageOmbre, reagirInvocation, finTour, actionOmbre, executerOmbre, atkEffectif, defEffectif, LP,
-  accordsTerrain, accomplirAccordTerrain, peutPoserInfluence, poserInfluence, evolutionsPossibles, evoluer, MECANIQUES, domine, influencesEnReponse, revelerEnReponse, influenceOmbre, preparerReprise, peutRevelerInfluence, revelerInfluence, techniquesPossibles, utiliserTechnique, avancementAssociation
+  accordsTerrain, accomplirAccordTerrain, peutPoserInfluence, poserInfluence, evolutionsPossibles, evoluer, MECANIQUES, domine, influencesEnReponse, revelerEnReponse, influenceOmbre, preparerReprise, terrainsEnReponse, poserTerrainEnReponse, peutRevelerInfluence, revelerInfluence, techniquesPossibles, utiliserTechnique, avancementAssociation
 } = M["js/engine/duel.js"];
 const { ALIGNEMENTS, ASSOCIATIONS } = M["js/data/techniques.js"];
 const { accordDeLecture, definirDictionnaire, dictionnaireCharge } = M["js/data/lectures.js"];
@@ -5236,7 +5263,7 @@ async function executerAttaque(place, cible) {
   selection = null; actions([]);
   const magie = influenceOmbre(d, 1, { place, cible });
   if (magie) {
-    await animer(revelerEnReponse(d, 1, magie.place, { choix: magie.choix }, rng), true);
+    await animer(magie.main != null ? poserTerrainEnReponse(d, 1, magie.main, rng) : revelerEnReponse(d, 1, magie.place, { choix: magie.choix }, rng), true);
     if (d.fini || !ciblesAttaque(d, 0, place).includes(cible)) { journal("Votre attaque n’a plus lieu."); finAction(); return; }
   }
   const p = presageOmbre(d, 1, "attaque", { place, cible });
@@ -5362,11 +5389,12 @@ async function tourAdverse() {
     if (a.type === "attaquer") {
       // vos réponses : un présage, ou une influence posée (révélée avant le choc) ; puis encore un présage si vous voulez
       for (let tour = 0; tour < 3 && !d.fini; tour++) {
-        const dispo = presagesActivables(d, 0, "attaque"), magies = influencesEnReponse(d, 0);
-        if (!dispo.length && !magies.length) break;
+        const dispo = presagesActivables(d, 0, "attaque"), magies = influencesEnReponse(d, 0), lieux = terrainsEnReponse(d, 0);
+        if (!dispo.length && !magies.length && !lieux.length) break;
         if (!ciblesAttaque(d, 1, a.place).includes(a.cible)) break;
         montrerFleche(zoneEl(1, a.place), a.cible === "direct" ? $("lp-0") : zoneEl(0, a.cible));
-        const r = await demanderReaction(dispo, attaqueTexte(a), magies);
+        const r = await demanderReaction(dispo, attaqueTexte(a), magies, lieux);
+        if (r && typeof r === "object" && r.main != null) { await animer(poserTerrainEnReponse(d, 0, r.main, rng), true); continue; }
         if (r && typeof r === "object") { await animer(revelerEnReponse(d, 0, r.influence, { choix: r.choix }, rng), true); continue; }
         reponse = r; break;
       }
@@ -5435,9 +5463,9 @@ function attaqueTexte(a) {
  * Le joueur peut répondre : par un présage (`places`), ou par une influence posée face cachée (`influences`,
  * comme une magie jeu-rapide). Résout l'emplacement du présage choisi, { influence: place, choix }, ou null.
  */
-function demanderReaction(places, texte, influences = []) {
+function demanderReaction(places, texte, influences = [], terrainsMain = []) {
   return new Promise(resolve => {
-    $("reaction-titre").textContent = influences.length && !places.length ? "Une réponse ?" : "Un présage ?";
+    $("reaction-titre").textContent = (influences.length || terrainsMain.length) && !places.length ? "Une réponse ?" : "Un présage ?";
     $("reaction-texte").textContent = texte;
     const zone = $("reaction-cartes");
     const carte = (id, legende, valeur) => {
@@ -5454,7 +5482,8 @@ function demanderReaction(places, texte, influences = []) {
         const id = d.joueurs[0].presages[place].id, x = def(id);
         return x.choix ? x.choix.map((ch, c) => carte(id, `Révéler ${nomDe(id)} : ${ch.label}`, { influence: place, choix: c }))
           : [carte(id, `Révéler ${nomDe(id)}`, { influence: place, choix: null })];
-      }));
+      }),
+      ...terrainsMain.map(index => { const id = d.joueurs[0].main[index]; return carte(id, `Poser le terrain ${nomDe(id)}`, { main: index }); }));
     $("reaction-non").onclick = () => { $("reaction").classList.remove("visible"); cacherFleche(); resolve(null); };
     $("reaction").classList.add("visible");
     jouerSon("choix");
@@ -5813,7 +5842,17 @@ function majReprise() {
 $("bouton-reprendre")?.addEventListener("click", reprendre);
 
 function gardienAccessible(i) { return i === 0 || carnet.gardiens.includes(GARDIENS[i - 1].famille); }
+/** L'accueil dit combien de cartes compte votre deck ; s'il en manque, un bouton rend les 53. */
+function majDeck() {
+  const b = $("bouton-deck"), n = deck.length;
+  b.textContent = `Votre deck (${n} carte${n > 1 ? "s" : ""} sur 53) et votre réserve`;
+  const r = $("deck-complet");
+  r.hidden = n >= 53; r.textContent = `Reprendre les 53 cartes (il en manque ${53 - n})`;
+}
+$("deck-complet").addEventListener("click", () => { deck = CARTES.map(c => c.id); sauverDeck(deck); majDeck(); });
+
 function majAccueil() {
+  majDeck();
   $("liste-gardiens").replaceChildren(...GARDIENS.map((g, i) => {
     const li = document.createElement("li");
     const r = REGIONS.find(x => x.famille === g.famille);
@@ -5963,10 +6002,11 @@ function montrerAtelier() {
 $("bouton-deck").addEventListener("click", montrerAtelier);
 $("atelier-tout").addEventListener("click", () => { deck = CARTES.map(c => c.id); montrerAtelier(); });
 $("atelier-rien").addEventListener("click", () => { deck = []; montrerAtelier(); });
-$("atelier-fermer").addEventListener("click", () => { if (deck.length < 30) return; sauverDeck(deck); $("atelier").classList.remove("visible"); });
+$("atelier-fermer").addEventListener("click", () => { if (deck.length < 30) return; sauverDeck(deck); $("atelier").classList.remove("visible"); majDeck(); });
 $("bouton-regles").addEventListener("click", () => { $("regles-duel").hidden = !$("regles-duel").hidden; });
 for (const b of document.querySelectorAll("[data-libre]")) b.addEventListener("click", () => demarrer({ mode: "libre", difficulte: b.dataset.libre }));
-$("bouton-revanche").addEventListener("click", () => demarrer(partie, partie.graine));
+// la revanche : même adversaire, nouvelle donne (rejouer la même graine redonnait exactement les mêmes cartes)
+$("bouton-revanche").addEventListener("click", () => demarrer(partie));
 $("bouton-retour-accueil").addEventListener("click", () => { $("fin-duel").classList.remove("visible"); majAccueil(); majReprise(); $("accueil-duel").classList.add("visible"); });
 
 window.addEventListener("keydown", e => {

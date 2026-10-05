@@ -451,9 +451,13 @@ function revelerJouee(d, j, place, ev, rng) {
 }
 
 /** Peut-on activer l'influence `index` ? */
+/** Un terrain se pose aussi pendant votre phase de combat, au moment d'attaquer (ajout de jeu). */
+const momentTerrain = d => enPrincipale(d) || d.phase === "combat";
+
 export function peutActiver(d, j, index, horsTour = false) {
   const J = d.joueurs[j], id = J.main[index];
-  if (d.fini || (!horsTour && (d.actif !== j || !enPrincipale(d)))) return { ok: false, raison: "Pas maintenant." };
+  const terrain = id != null && def(id)?.sousType === "terrain";
+  if (d.fini || (!horsTour && (d.actif !== j || !(terrain ? momentTerrain(d) : enPrincipale(d))))) return { ok: false, raison: "Pas maintenant." };
   if (id == null || def(id).type !== "influence") return { ok: false, raison: "Ce n’est pas une influence." };
   const x = def(id);
   if (x.sousType === "equipement" && !monstres(J).length) return { ok: false, raison: "Équipement : il faut une apparition à équiper." };
@@ -543,7 +547,8 @@ export function poserInfluence(d, j, index) {
 }
 export function peutRevelerInfluence(d, j, place) {
   const J = d.joueurs[j], p = J.presages[place];
-  if (d.fini || d.actif !== j || !enPrincipale(d)) return { ok: false, raison: "Pas maintenant." };
+  const terrain = p && def(p.id)?.sousType === "terrain";
+  if (d.fini || d.actif !== j || !(terrain ? momentTerrain(d) : enPrincipale(d))) return { ok: false, raison: "Pas maintenant." };
   if (!p || !p.influence) return { ok: false, raison: "Ce n’est pas une influence posée." };
   if (p.poseTour >= d.tour) return { ok: false, raison: "Posée ce tour : elle se révélera à partir de votre prochain tour." };
   const x = def(p.id);
@@ -571,7 +576,7 @@ export function influencesEnReponse(d, k) {
   const K = d.joueurs[k];
   if (d.fini || d.actif === k) return [];
   return K.presages.map((p, place) => ({ p, place }))
-    .filter(x => x.p?.influence && x.p.poseTour < d.tour && def(x.p.id).sousType !== "terrain")
+    .filter(x => x.p?.influence && x.p.poseTour < d.tour)
     .filter(x => def(x.p.id).sousType !== "equipement" || monstres(K).length)
     .map(x => x.place);
 }
@@ -583,6 +588,22 @@ export function revelerEnReponse(d, k, place, options = {}, rng = Math.random) {
   const ev = activer(d, k, K.main.length - 1, { choix: options.choix, revelee: true, horsTour: true }, rng);
   if (ev.length === 1 && ev[0].type === "refus") { K.main.pop(); K.presages[place] = p; }
   else ev.unshift({ type: "texte", j: k, texte: `${K.nom} répond par une influence posée.` });
+  return ev;
+}
+
+/**
+ * Terrains en réponse (ajout de jeu) : pendant l'attaque adverse, un terrain de votre main peut être posé avant le
+ * choc (les Pénates abritent vos défenseurs, le Cloître…) ; un terrain posé face cachée se révèle aussi
+ * (`influencesEnReponse`). Renvoie les index de la main.
+ */
+export function terrainsEnReponse(d, k) {
+  if (d.fini || d.actif === k) return [];
+  return d.joueurs[k].main.map((id, index) => ({ id, index })).filter(x => def(x.id).sousType === "terrain").map(x => x.index);
+}
+export function poserTerrainEnReponse(d, k, index, rng = Math.random) {
+  if (!terrainsEnReponse(d, k).includes(index)) return [{ type: "refus", j: k, raison: "Ce terrain ne peut pas être posé maintenant." }];
+  const ev = activer(d, k, index, { horsTour: true }, rng);
+  if (!(ev.length === 1 && ev[0].type === "refus")) ev.unshift({ type: "texte", j: k, texte: `${d.joueurs[k].nom} pose un terrain en réponse.` });
   return ev;
 }
 
@@ -599,8 +620,8 @@ export function preparerReprise(d) {
  * Elle compare la suite de l'attaque avec et sans sa réponse.
  */
 export function influenceOmbre(d, k, contexte, profil = d.joueurs[k].profil) {
-  const dispo = influencesEnReponse(d, k);
-  if (!dispo.length || (profil?.hasard ?? 0) > 0.5) return null;
+  const dispo = influencesEnReponse(d, k), terrains = terrainsEnReponse(d, k);
+  if ((!dispo.length && !terrains.length) || (profil?.hasard ?? 0) > 0.5) return null;
   const j = adversaire(k);
   const apres = s => { if (ciblesAttaque(s, j, contexte.place).includes(contexte.cible)) attaquer(s, j, contexte.place, contexte.cible, neutre, null); return evaluer(s, k); };
   const base = apres(copie(d));
@@ -613,6 +634,12 @@ export function influenceOmbre(d, k, contexte, profil = d.joueurs[k].profil) {
       const v = apres(s) - base;
       if (v > gain) { gain = v; meilleur = { place, choix }; }
     }
+  }
+  for (const index of terrains) {
+    const s = copie(d);
+    poserTerrainEnReponse(s, k, index, neutre);
+    const v = apres(s) - base;
+    if (v > gain) { gain = v; meilleur = { main: index }; }
   }
   return meilleur;
 }

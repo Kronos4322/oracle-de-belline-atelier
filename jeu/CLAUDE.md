@@ -61,9 +61,14 @@ Duel (tout le mode est une adaptation) :
 - Figures d'accord (`js/data/accords.js`) : une par règle de voisinage ; nom et effet tirés du texte de la règle ; dans la réserve : quatre figures de départ et celles des règles connues (carnet) ; une règle accomplie en duel fait entrer sa figure dans la réserve.
 - Affinité planétaire (+200 ATK par autre apparition de même planète) et ciel du duel (+300 ATK / DEF à la planète du duel).
 - Pioche : 2 cartes par tour, main limitée à 7.
-- Assez de petites cartes : au moins 15 apparitions de niveau 4 au plus (test). Réussite, Découverte (« surveillance,
-  espionnage »), Intelligence (« le savoir ») et Trafic (« commerce, avocats, notaires ») sont des apparitions ;
-  Honneur et Renommée sont de niveau 4.
+- Assez d'attaques légères : au moins 22 apparitions de niveau 4 au plus (test ; 23 aujourd'hui, 2,6 par main de
+  départ, 2,5 % de mains sans aucune). Réussite, Découverte (« surveillance, espionnage »), Intelligence (« le
+  savoir »), Trafic (« commerce, avocats, notaires »), Présents (« cadeaux »), Union (« réunion, retour »),
+  Héritage (« les ancêtres ») et Bonheur sont des apparitions ; Honneur, Renommée, Ennemis et Passions sont de niveau 4.
+- Revanche : même adversaire, nouvelle donne (la même graine redonnait les mêmes cartes). L'accueil montre la taille du
+  deck du joueur et propose de reprendre les 53 cartes s'il en manque.
+- Terrains au combat : pendant votre phase de combat, un terrain se pose avant d'attaquer ; pendant l'attaque adverse,
+  un terrain de la main (ou posé face cachée) se pose en réponse, avant le choc (`terrainsEnReponse`).
 - Offrande : un sacrifice qui manque se remplace par 1500 points de vie (on n'est jamais bloqué).
 - Lectures du dictionnaire de l'Atelier (quand il est chargé) : la paire « A puis B » donne un accord de 200 points
   selon sa dynamique (renforcement constructif, tendance favorable, dynamique réparatrice : favorable ; cumul de

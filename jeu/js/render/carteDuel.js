@@ -6,6 +6,7 @@ import { COULEURS } from "../config.js";
 import { CARTE_PAR_ID } from "../data/cartes.js";
 import { DUEL } from "../data/duel.js";
 import { FIGURES } from "../data/accords.js";
+import { ASTRES } from "../data/astres.js";
 import { ILLUSTRATIONS } from "./illustrations.js";
 import { FAMILLES, arrondi, hexA } from "./carte.js";
 
@@ -17,14 +18,36 @@ const CADRES = {
   influence: ["#3fb3a6", "#1c7d75", "#0d4743"],
   presage: ["#c9599f", "#8c2a68", "#4f0f39"],
   accord: ["#a77ad8", "#5e2f99", "#2a0f52"],
-  bleue: ["#5b8fe0", "#2b5fae", "#173a75"]
+  bleue: ["#5b8fe0", "#2b5fae", "#173a75"],
+  astre: ["#fff3c4", "#3b2f8f", "#0c0730"]
 };
 const NOMS_FAMILLE = { preambule: "Cartes maîtresses", soleil: "Soleil", lune: "Lune", mercure: "Mercure", venus: "Vénus", mars: "Mars", jupiter: "Jupiter", saturne: "Saturne", hors: "Hors jeu" };
 const ACCORD_FAM = { couleur: "#7a4bb0", glyphe: "✦" };
 
-const est = id => (id >= 100 ? FIGURES[id] : DUEL[id]);
-const nom = id => (id >= 100 ? FIGURES[id].nom : CARTE_PAR_ID[id].nom);
-const famille = id => (id >= 100 ? ACCORD_FAM : FAMILLES[CARTE_PAR_ID[id].famille]);
+const est = id => (id >= 200 ? ASTRES[id] : id >= 100 ? FIGURES[id] : DUEL[id]);
+const nom = id => (id >= 200 ? ASTRES[id].nom : id >= 100 ? FIGURES[id].nom : CARTE_PAR_ID[id].nom);
+const famille = id => (id >= 200 ? FAMILLES[ASTRES[id].famille] : id >= 100 ? ACCORD_FAM : FAMILLES[CARTE_PAR_ID[id].famille]);
+
+/** Un astre (invocation céleste) : son symbole planétaire immense, ses rayons, son orbite. */
+function dessinerAstre(c, id, cx, cy, t) {
+  const a = ASTRES[id], fam = FAMILLES[a.famille];
+  c.save();
+  c.strokeStyle = "rgba(255,240,200,.38)"; c.lineCap = "round";
+  for (let k = 0; k < 16; k++) {
+    const ang = k * Math.PI / 8, r0 = t * 0.3, r1 = t * (k % 2 ? 0.5 : 0.64);
+    c.lineWidth = Math.max(1, t * (k % 2 ? 0.012 : 0.022));
+    c.beginPath(); c.moveTo(cx + Math.cos(ang) * r0, cy + Math.sin(ang) * r0); c.lineTo(cx + Math.cos(ang) * r1, cy + Math.sin(ang) * r1); c.stroke();
+  }
+  c.strokeStyle = hexA(fam.couleur === "#57514a" ? "#cfc2a8" : fam.couleur, 0.9); c.lineWidth = Math.max(1, t * 0.018);
+  c.beginPath(); c.ellipse(cx, cy, t * 0.56, t * 0.17, -0.35, 0, Math.PI * 2); c.stroke();
+  const halo = c.createRadialGradient(cx, cy, 0, cx, cy, t * 0.42);
+  halo.addColorStop(0, "rgba(255,248,225,.55)"); halo.addColorStop(1, "rgba(255,248,225,0)");
+  c.fillStyle = halo; c.beginPath(); c.arc(cx, cy, t * 0.42, 0, Math.PI * 2); c.fill();
+  c.shadowColor = "#fff3c4"; c.shadowBlur = t * 0.14; c.fillStyle = "#fff8e6";
+  c.font = `${Math.round(t * 0.6)}px 'EB Garamond', serif`; c.textAlign = "center"; c.textBaseline = "middle";
+  c.fillText(a.glyphe, cx, cy + t * 0.03);
+  c.restore();
+}
 
 function lignes(c, texte, max) {
   const mots = texte.split(" "), res = [];
@@ -39,7 +62,7 @@ function fondArt(c, id, fx, fy, fl, fh, coul) {
   const art = c.createRadialGradient(fx + fl / 2, fy + fh * 0.45, 4, fx + fl / 2, fy + fh / 2, fl * 0.8);
   art.addColorStop(0, hexA(coul, 0.95)); art.addColorStop(0.55, hexA(coul, 0.55)); art.addColorStop(1, "#120a1c");
   c.fillStyle = art; c.fillRect(fx, fy, fl, fh);
-  const f = id >= 100 ? "accord" : CARTE_PAR_ID[id].famille;
+  const f = id >= 200 ? ASTRES[id].famille : id >= 100 ? "accord" : CARTE_PAR_ID[id].famille;
   const hasard = k => { const s = Math.sin((id + 1) * 91.7 + k * 12.9898) * 43758.5453; return s - Math.floor(s); };
   c.save();
   if (f === "lune" || f === "saturne" || f === "accord" || f === "preambule") {
@@ -144,7 +167,7 @@ function encre(c, fy, fh) {
 /** Dessine la face d'une carte de duel (ou d'une figure d'accord) à (x, y), à l'échelle `s`. */
 export function dessinerCarteDuel(c, id, x = 0, y = 0, s = 1) {
   const x0 = est(id), fam = famille(id);
-  const sorte = id >= 100 ? "accord" : id === 0 ? "bleue" : x0.forte ? "forte" : x0.type;
+  const sorte = id >= 200 ? "astre" : id >= 100 ? "accord" : id === 0 ? "bleue" : x0.forte ? "forte" : x0.type;
   const [c1, c2, c3] = CADRES[sorte];
   c.save();
   c.translate(x, y); c.scale(s, s);
@@ -189,7 +212,8 @@ export function dessinerCarteDuel(c, id, x = 0, y = 0, s = 1) {
   c.fillStyle = "#1a1224"; c.fillRect(fx - 2, fy - 2, fl + 4, fh + 4);
   fondArt(c, id, fx, fy, fl, fh, fam.couleur);
   c.save(); c.beginPath(); c.rect(fx, fy, fl, fh); c.clip();
-  if (id >= 100) {
+  if (id >= 200) dessinerAstre(c, id, fx + fl / 2, fy + fh / 2, fh * 0.95);
+  else if (id >= 100) {
     // la figure d'accord réunit les deux cartes de la règle
     const [a, b] = x0.materiaux.map(m => (Array.isArray(m) ? m[0] : m));
     c.fillStyle = "rgba(243,213,138,.25)"; c.beginPath(); c.arc(fx + fl / 2, fy + fh / 2, 32, 0, Math.PI * 2); c.fill();
@@ -218,7 +242,7 @@ export function dessinerCarteDuel(c, id, x = 0, y = 0, s = 1) {
   c.strokeStyle = "rgba(0,0,0,.35)"; c.lineWidth = 0.8; c.stroke();
   c.textAlign = "left"; c.textBaseline = "alphabetic";
   c.fillStyle = COULEURS.encre; c.font = "bold 8px 'Cinzel', serif";
-  const typeLigne = id >= 100 ? `[ Figure d’accord / ${x0.favorable ? "Favorable" : "Néfaste"} ]`
+  const typeLigne = id >= 200 ? `[ Astre / Invocation céleste ]` : id >= 100 ? `[ Figure d’accord / ${x0.favorable ? "Favorable" : "Néfaste"} ]`
     : x0.type === "apparition" ? `[ ${NOMS_FAMILLE[CARTE_PAR_ID[id].famille]} / Figure${x0.forte ? " / Forte" : ""} ]`
     : x0.type === "presage" ? `[ Présage / ${{ attaque: "Attaque", invocation: "Invocation", influence: "Chaîne" }[x0.declencheur]} ]`
     : `[ Influence${x0.sousType === "equipement" ? " / Équipement" : x0.sousType === "continue" ? " / Continue" : x0.sousType === "terrain" ? " / Terrain" : ""} ]`;
@@ -239,7 +263,7 @@ export function dessinerCarteDuel(c, id, x = 0, y = 0, s = 1) {
     c.fillText(`ATK/${x0.atk}   DEF/${x0.def}`, tx + tl - 4, ty + th - 3);
   }
   c.font = "6px 'Cinzel', serif"; c.fillStyle = "rgba(253,248,236,.85)"; c.textAlign = "left";
-  const pied = id >= 100 ? `Accord ${x0.regles[0].replace(">", " · ").replace("-", " · ")} · Belline` : id === 0 ? "Carte Bleue · Belline" : `N° ${id} · Belline`;
+  const pied = id >= 200 ? "Invocation céleste · Belline" : id >= 100 ? `Accord ${x0.regles[0].replace(">", " · ").replace("-", " · ")} · Belline` : id === 0 ? "Carte Bleue · Belline" : `N° ${id} · Belline`;
   c.fillText(pied, 9, DH - 4);
   c.restore();
 }
@@ -288,7 +312,8 @@ export function dessinerHologramme(c, id, taille) {
     c.save();
     c.shadowColor = couleur; c.shadowBlur = flou;
     c.fillStyle = "#fff8e6"; c.strokeStyle = "#fff8e6";
-    if (id >= 100) {
+    if (id >= 200) dessinerAstre(c, id, cx, T * 0.48, T * 0.8);
+    else if (id >= 100) {
       const [a, b] = FIGURES[id].materiaux.map(m => (Array.isArray(m) ? m[0] : m));
       if (ILLUSTRATIONS[a]) { c.save(); ILLUSTRATIONS[a](c, T * 0.35, T * 0.5, T * 0.56); c.restore(); }
       if (ILLUSTRATIONS[b]) { c.save(); ILLUSTRATIONS[b](c, T * 0.65, T * 0.48, T * 0.56); c.restore(); }
@@ -326,7 +351,7 @@ const borne = (v, min, max) => Math.max(min, Math.min(max, v));
  */
 export function dessinerCarteCompacte(c, id, l, jeton = false) {
   const h = l * DH / DL, x0 = est(id), fam = famille(id);
-  const sorte = id >= 100 ? "accord" : id === 0 ? "bleue" : x0.forte ? "forte" : x0.type;
+  const sorte = id >= 200 ? "astre" : id >= 100 ? "accord" : id === 0 ? "bleue" : x0.forte ? "forte" : x0.type;
   const [c1, c2, c3] = CADRES[sorte];
   c.save();
   const g = c.createLinearGradient(0, 0, l, h);
@@ -358,7 +383,8 @@ export function dessinerCarteCompacte(c, id, l, jeton = false) {
   c.save(); c.beginPath(); c.rect(ax, ay, al, ah); c.clip();
   fondArt(c, id, ax, ay, al, ah, fam.couleur);
   const t = Math.min(al, ah) * 0.82, cx = ax + al / 2, cy = ay + ah / 2;
-  if (id >= 100) {
+  if (id >= 200) dessinerAstre(c, id, cx, cy, t * 1.05);
+  else if (id >= 100) {
     const [a, b] = x0.materiaux.map(mm => (Array.isArray(mm) ? mm[0] : mm));
     encre(c, ay, ah); if (ILLUSTRATIONS[a]) { c.save(); ILLUSTRATIONS[a](c, cx - al * 0.18, cy, t * 0.7); c.restore(); }
     encre(c, ay, ah); if (ILLUSTRATIONS[b]) { c.save(); ILLUSTRATIONS[b](c, cx + al * 0.18, cy, t * 0.7); c.restore(); }
@@ -436,7 +462,7 @@ function recopier(canvas, img) {
 export function peindreCarteDuel(canvas, id, face = true, largeur = DL, format = "complete") {
   const h = largeur * DH / DL;
   const f = face ? format : "dos";
-  recopier(canvas, image(`v5:${f}:${id}`, largeur, h, c => {
+  recopier(canvas, image(`v6:${f}:${id}`, largeur, h, c => {
     if (!face) dessinerDosDuel(c, 0, 0, largeur / DL);
     else if (format === "complete") dessinerCarteDuel(c, id, 0, 0, largeur / DL);
     else dessinerCarteCompacte(c, id, largeur, format === "jeton");
@@ -445,5 +471,5 @@ export function peindreCarteDuel(canvas, id, face = true, largeur = DL, format =
 
 /** Peint l'hologramme d'une apparition dans un canvas carré de `taille` px CSS. */
 export function peindreHologramme(canvas, id, taille) {
-  recopier(canvas, image(`holo2:${id}`, taille, taille, c => dessinerHologramme(c, id, taille)));
+  recopier(canvas, image(`holo3:${id}`, taille, taille, c => dessinerHologramme(c, id, taille)));
 }

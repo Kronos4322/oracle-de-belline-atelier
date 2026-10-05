@@ -25,7 +25,8 @@ import { DUEL, sacrificesRequis } from "../data/duel.js";
 import { FIGURES } from "../data/accords.js";
 import { ALIGNEMENTS, ASSOCIATIONS } from "../data/techniques.js";
 import { accordDeLecture } from "../data/lectures.js";
-import { SORTS } from "../data/sorts.js";
+import { SORTS, grandAccord } from "../data/sorts.js";
+import { ASTRES, ASTRE_DE } from "../data/astres.js";
 import { VOISINAGE, reglesDeclenchees } from "../data/voisinage.js";
 import { melanger } from "./hasard.js";
 
@@ -36,15 +37,17 @@ const REGLE = Object.fromEntries(VOISINAGE.map(r => [r.id, r]));
 const adversaire = j => 1 - j;
 const PLANETES = ["soleil", "lune", "mercure", "venus", "mars", "jupiter", "saturne"];
 /** Les mécaniques avancées ; la campagne les dévoile une à une (toutes en duel libre). */
-export const MECANIQUES = ["poseInfluence", "evolution", "techniques", "figures", "accordsTerrain"];
+export const MECANIQUES = ["poseInfluence", "evolution", "techniques", "figures", "accordsTerrain", "superInvocations"];
 let compteurUid = 1;
 
 /** Définition de duel d'une carte ou d'une figure d'accord. */
-export const def = id => (id >= 100 ? FIGURES[id] : DUEL[id]);
+export const def = id => (id >= 200 ? ASTRES[id] : id >= 100 ? FIGURES[id] : DUEL[id]);
 /** Nom d'une carte ou d'une figure. */
-export const nomDe = id => (id >= 100 ? FIGURES[id].nom : CARTE_PAR_ID[id].nom);
+export const nomDe = id => (id >= 200 ? ASTRES[id].nom : id >= 100 ? FIGURES[id].nom : CARTE_PAR_ID[id].nom);
 /** Planète d'une carte (les figures n'en ont pas). */
-export const familleDe = id => (id >= 100 ? null : CARTE_PAR_ID[id].famille);
+export const familleDe = id => (id >= 200 ? ASTRES[id].famille : id >= 100 ? null : CARTE_PAR_ID[id].famille);
+/** Un astre (super-invocation, n° 200 à 206) ? */
+export const estAstre = id => id >= 200;
 
 function joueur(nom, consultant, deck, reserve, profil, rng) {
   const pioche = melanger(deck, rng);
@@ -53,7 +56,7 @@ function joueur(nom, consultant, deck, reserve, profil, rng) {
     monstres: Array(ZONES).fill(null), presages: Array(ZONES).fill(null), cimetiere: [],
     invocationFaite: false, fusionFaite: false, derniere: null, doubler: false, annuleProchaine: false,
     sterile: false, voitMain: false, differes: [], reveles: [], techniques: [], techniqueFaite: false,
-    accordsFaits: [], accordTerrainFait: false, terrainCarte: null, combo: 0, evolutionFaite: false
+    accordsFaits: [], accordTerrainFait: false, terrainCarte: null, combo: 0, evolutionFaite: false, astres: [], superFaite: false
   };
 }
 
@@ -159,15 +162,16 @@ function auCimetiere(d, j, zone, place, ev, pourquoi = "detruite") {
   const J = d.joueurs[j], x = J[zone][place];
   if (!x) return;
   J[zone][place] = null;
-  if (x.id >= 100) J.reserve.push(x.id); else J.cimetiere.push(x.id);
+  if (estAstre(x.id)) { /* un astre retourne au ciel */ } else if (x.id >= 100) J.reserve.push(x.id); else J.cimetiere.push(x.id);
   for (const e of x.equipements || []) J.cimetiere.push(e);
   ev.push({ type: pourquoi, j, place, zone, id: x.id });
+  if (estAstre(x.id)) ev.push({ type: "texte", j, texte: `${nomDe(x.id)} retourne au ciel.` });
 }
 
 function versMain(d, j, zone, place, ev) {
   const J = d.joueurs[j], x = J[zone][place];
   J[zone][place] = null;
-  if (x.id >= 100) J.reserve.push(x.id); else J.main.push(x.id);
+  if (estAstre(x.id)) { /* un astre retourne au ciel */ } else if (x.id >= 100) J.reserve.push(x.id); else J.main.push(x.id);
   for (const e of x.equipements || []) J.cimetiere.push(e);
   ev.push({ type: "renvoi", j, place, id: x.id });
 }
@@ -345,6 +349,8 @@ function accordEntre(prec, courante) {
   const r = reglesDeclenchees(prec, courante)[0];
   const ids = [prec.id, courante.id];
   if (r) return { texte: r.texte, favorable: r.effets.reduce((s, f) => s + (f.valeur ?? 0), 0) >= 0, regle: r.id, sorte: "belline", valeur: ACCORD, pioche: true, ids, sort: SORTS[r.id] || [] };
+  const g = grandAccord(prec.id, courante.id);
+  if (g) return { texte: `${g.nom} : ${g.texte}`, nom: g.nom, favorable: g.sens > 0, sorte: "majeur", valeur: 1500, pioche: g.sens > 0, ids, sort: g.effets };
   const l = accordDeLecture(prec.id, courante.id, nomDe);
   return l ? { texte: l.texte, favorable: l.sens > 0, sorte: l.sorte, cle: l.cle, valeur: l.valeur, pioche: l.sorte !== "lecture", ids } : null;
 }
@@ -682,6 +688,44 @@ export function utiliserTechnique(d, j, cle, rng = Math.random) {
   return ev;
 }
 
+// ---------- Invocation céleste : les astres (ajout de jeu, js/data/astres.js) ----------
+
+/**
+ * Les invocations célestes possibles : trois cartes d'une même planète, dont deux apparitions face recto en jeu ;
+ * la troisième est une autre apparition en jeu, ou une carte de cette planète dans la main.
+ */
+export function superInvocationsPossibles(d, j) {
+  const J = d.joueurs[j];
+  if (d.fini || d.actif !== j || !enPrincipale(d) || !d.mec.superInvocations || J.superFaite) return [];
+  const res = [];
+  for (const f of PLANETES) {
+    if (J.astres.includes(f)) continue;
+    const siennes = monstres(J).filter(x => !x.m.faceCachee && x.m.id < 100 && familleDe(x.m.id) === f)
+      .sort((a, b) => atkEffectif(d, j, a.m) - atkEffectif(d, j, b.m));
+    if (siennes.length < 2) continue;
+    if (siennes.length >= 3) { res.push({ famille: f, id: ASTRE_DE[f], places: siennes.slice(0, 3).map(x => x.place), main: null }); continue; }
+    const index = J.main.findIndex(id => id < 100 && familleDe(id) === f);
+    if (index >= 0) res.push({ famille: f, id: ASTRE_DE[f], places: siennes.map(x => x.place), main: index });
+  }
+  return res;
+}
+export function superInvoquer(d, j, famille, rng = Math.random) {
+  const o = superInvocationsPossibles(d, j).find(x => x.famille === famille);
+  if (!o) return [{ type: "refus", j, raison: "L’invocation céleste n’est pas possible maintenant." }];
+  const J = d.joueurs[j], ev = [];
+  ev.push({ type: "celeste", j, id: o.id, famille, materiaux: [...o.places.map(p => J.monstres[p].id), ...(o.main != null ? [J.main[o.main]] : [])] });
+  for (const p of o.places) { ev.push({ type: "sacrifice", j, place: p, id: J.monstres[p].id }); auCimetiere(d, j, "monstres", p, ev, "sacrifiee"); }
+  if (o.main != null) { const id = J.main.splice(o.main, 1)[0]; J.cimetiere.push(id); ev.push({ type: "defausse", j, id, materiau: true }); }
+  const place = placeLibre(J.monstres);
+  J.monstres[place] = apparitionDe(o.id, d);
+  J.astres.push(famille); J.superFaite = true;
+  ev.push({ type: "invocation", j, place, id: o.id, speciale: true, astre: true });
+  reveler(d, j, place, ev, rng);
+  J.derniere = { id: o.id, choix: null };
+  finSiBesoin(d, ev);
+  return ev;
+}
+
 // ---------- Évolution (ajout de jeu, à la manière de Digimon et Pokémon) ----------
 
 /**
@@ -965,7 +1009,7 @@ export function finTour(d, rng = Math.random) {
     return ev;
   }
   const K = d.joueurs[d.actif];
-  K.invocationFaite = false; K.fusionFaite = false; K.techniqueFaite = false; K.accordTerrainFait = false; K.evolutionFaite = false; K.combo = 0;
+  K.invocationFaite = false; K.fusionFaite = false; K.techniqueFaite = false; K.accordTerrainFait = false; K.evolutionFaite = false; K.combo = 0; K.superFaite = false;
   ev.push({ type: "tour", j: d.actif });
   for (const x of monstres(K)) {
     x.m.aAttaque = false; x.m.changeFait = false; x.m.attaqueCeTour = false;
@@ -1079,6 +1123,7 @@ function actionsNotees(d, profil) {
     for (const t of techniquesPossibles(d, j)) noter({ type: "technique", cle: t.cle }, s => utiliserTechnique(s, j, t.cle, neutre));
     for (const t of accordsTerrain(d, j)) noter({ type: "accordTerrain", cle: t.cle }, s => accomplirAccordTerrain(s, j, t.cle));
     for (const e of evolutionsPossibles(d, j)) noter({ type: "evoluer", index: e.index, place: e.place }, s => evoluer(s, j, e.index, e.place, neutre));
+    for (const c of superInvocationsPossibles(d, j)) noter({ type: "superInvoquer", famille: c.famille }, s => superInvoquer(s, j, c.famille, neutre));
     J.presages.forEach((p, place) => {
       if (!p?.influence || !peutRevelerInfluence(d, j, place).ok) return;
       for (const c of (def(p.id).choix ? def(p.id).choix.map((_, i) => i) : [null])) noter({ type: "revelerInfluence", place, choix: c }, s => revelerInfluence(s, j, place, { choix: c }, neutre));
@@ -1099,7 +1144,7 @@ export function actionOmbre(d, profil = d.joueurs[d.actif].profil, rng = Math.ra
   if (d.fini) return { type: "rien" };
   const j = d.actif;
   const notes = actionsNotees(d, profil).sort((a, b) => b.v - a.v);
-  const seuil = { activer: 1.5, poser: 0, poserInfluence: 0.5, revelerInfluence: 1.5, technique: 1, accordTerrain: 0.5, evoluer: 0.5, invoquer: -1, fusionner: 0, changer: 0.8, attaquer: 0 };
+  const seuil = { activer: 1.5, poser: 0, poserInfluence: 0.5, revelerInfluence: 1.5, technique: 1, accordTerrain: 0.5, evoluer: 0.5, superInvoquer: 2, invoquer: -1, fusionner: 0, changer: 0.8, attaquer: 0 };
   let utiles = notes.filter(a => a.v > seuil[a.type] || (a.type === "invoquer" && !monstres(d.joueurs[j]).length));
   // la difficulté : une part de coups pris au hasard parmi les coups possibles
   if (utiles.length && profil?.hasard && rng() < profil.hasard) {
@@ -1123,6 +1168,7 @@ export function executerOmbre(d, a, rng = Math.random, reponse = null) {
     case "technique": return utiliserTechnique(d, j, a.cle, rng);
     case "accordTerrain": return accomplirAccordTerrain(d, j, a.cle);
     case "evoluer": return evoluer(d, j, a.index, a.place, rng);
+    case "superInvoquer": return superInvoquer(d, j, a.famille, rng);
     case "invoquer": return invoquer(d, j, a.index, { pose: a.pose }, rng);
     case "fusionner": return fusionner(d, j, a.figure, rng);
     case "changer": return changerPosition(d, j, a.place, rng);

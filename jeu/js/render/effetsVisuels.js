@@ -655,7 +655,9 @@ export const EFFET_DE_CARTE = {
   100: ["cendres"], 101: ["feuilles"], 102: ["oiseaux"], 103: ["eclair"], 104: ["vague"], 105: ["miasme", "rgba(60,30,40,.5)"], 106: ["colombes"],
   107: ["chauvesouris"], 108: ["epees"], 109: ["chaines"], 110: ["etincelles"], 111: ["coeurs"], 112: ["eboulis"], 113: ["epees"], 114: ["miasme"],
   115: ["flammes", "rgba(255,80,140,.8)"], 116: ["fumee"], 117: ["flammes"], 118: ["roue"], 119: ["dome"], 120: ["dome"], 121: ["coeurs", "rgba(150,120,200,.9)"],
-  122: ["eclair"], 123: ["etincelles"]
+  122: ["eclair"], 123: ["etincelles"],
+  // les astres (invocation céleste)
+  200: ["etoiles"], 201: ["vague"], 202: ["vent"], 203: ["colombes"], 204: ["flammes"], 205: ["eclair"], 206: ["eboulis"]
 };
 
 /** Le calque d'effets d'un conteneur (positionné). */

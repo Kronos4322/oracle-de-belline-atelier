@@ -47,6 +47,7 @@ export const SCRIPTS = {
     "js/data/techniques.js",
     "js/data/lectures.js",
     "js/data/sorts.js",
+    "js/data/astres.js",
     "js/engine/hasard.js",
     "js/engine/duel.js",
     "js/engine/carnet.js",

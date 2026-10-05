@@ -34,6 +34,9 @@ import { def as defDuel, peutPoserInfluence, evolutionsPossibles, evoluer, domin
 import { SORTS, ETATS } from "../js/data/sorts.js";
 import { influencesEnReponse, revelerEnReponse, preparerReprise, influenceOmbre, terrainsEnReponse, poserTerrainEnReponse, peutActiver as peutActiverDuel } from "../js/engine/duel.js";
 import { reprendreHasard } from "../js/engine/hasard.js";
+import { superInvocationsPossibles, superInvoquer } from "../js/engine/duel.js";
+import { ASTRES } from "../js/data/astres.js";
+import { GRANDS_ACCORDS, grandAccord } from "../js/data/sorts.js";
 
 let ok = 0, echecs = 0;
 const test = (nom, f) => {
@@ -997,6 +1000,48 @@ test("Un duel enregistré reprend à l'identique (même hasard, mêmes coups)", 
   jouer(b, rngB, 60);
   assert.deepEqual(b.joueurs.map(j => [j.lp, j.main, j.cimetiere]), a.joueurs.map(j => [j.lp, j.main, j.cimetiere]));
   assert.equal(b.tour, a.tour);
+});
+
+console.log("Grands accords et astres");
+test("Les Grands accords : cartes réelles, jamais une règle de la notice ; Accident puis Fatalité ravage le terrain adverse", () => {
+  const regles = new Set(VOISINAGE.map(r => [r.a, r.b].sort((x, y) => x - y).join("-")));
+  for (const g of GRANDS_ACCORDS) {
+    assert.ok(CARTE_PAR_ID[g.a] && CARTE_PAR_ID[g.b] && g.effets.length, g.nom);
+    assert.ok(!regles.has([g.a, g.b].sort((x, y) => x - y).join("-")), `${g.nom} recouvre une règle de la notice`);
+    assert.ok(!/[\u2013\u2014]/.test(g.texte + g.nom));
+  }
+  assert.ok(grandAccord(48, 38) && grandAccord(38, 48), "ordre indifférent");
+  const d = creerDuel(creerHasard(12), "homme", { premier: 0 });
+  d.joueurs[1].monstres = [apparitionDe(8, d), apparitionDe(21, d), apparitionDe(37, d), null, null];
+  d.joueurs[0].monstres = [apparitionDe(4, d), apparitionDe(7, d), apparitionDe(8, d), apparitionDe(5, d), null];
+  d.joueurs[0].derniere = { id: 38, choix: null };   // l'Accident vient d'être révélé
+  d.joueurs[0].main = [48];
+  const lp = d.joueurs[1].lp;
+  const ev = invoquer(d, 0, 0, { sacrifices: [0, 1] }, creerHasard(1));
+  const acc = ev.find(e => e.type === "accord");
+  assert.ok(acc && acc.sorte === "majeur", JSON.stringify(acc));
+  assert.equal(d.joueurs[1].monstres.filter(Boolean).length, 0, "tout le terrain adverse est détruit");
+  assert.ok(d.joueurs[1].lp <= lp - 1500 - 1500);
+});
+test("Invocation céleste : trois apparitions d'une planète deviennent l'astre ; un astre détruit retourne au ciel", () => {
+  const d = creerDuel(creerHasard(12), "homme", { premier: 0 });
+  d.joueurs[0].monstres = [apparitionDe(4, d), apparitionDe(7, d), apparitionDe(8, d), null, null];   // trois du Soleil
+  const o = superInvocationsPossibles(d, 0);
+  assert.equal(o.length, 1); assert.equal(o[0].famille, "soleil");
+  const ev = superInvoquer(d, 0, "soleil", creerHasard(1));
+  assert.ok(ev.some(e => e.type === "celeste"));
+  const astre = d.joueurs[0].monstres.find(Boolean);
+  assert.equal(astre.id, 200); assert.equal(d.joueurs[0].monstres.filter(Boolean).length, 1);
+  assert.ok([4, 7, 8].every(id => d.joueurs[0].cimetiere.includes(id)));
+  assert.equal(superInvocationsPossibles(d, 0).length, 0, "une par tour, et le Soleil une fois par duel");
+  for (const A of Object.values(ASTRES)) assert.ok(A.niveau === 10 && A.atk >= 3000 && A.effets.length, A.nom);
+  // détruit : ni cimetière, ni réserve
+  d.joueurs[1].main = [38]; d.actif = 1;
+  const k = d.joueurs[0].monstres.findIndex(Boolean);
+  d.joueurs[0].monstres[k].position = "defense";
+  invoquer(d, 1, 0, { sacrifices: [] }, creerHasard(1));
+  assert.ok(!d.joueurs[0].monstres.some(m => m?.id === 200), "l’Accident détruit le Soleil en défense");
+  assert.ok(!d.joueurs[0].cimetiere.includes(200) && !d.joueurs[0].reserve.includes(200), "il retourne au ciel");
 });
 
 console.log("Effets visuels");

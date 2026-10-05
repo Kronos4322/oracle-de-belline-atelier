@@ -572,3 +572,14 @@ button.atelier-carte:hover:not([disabled]) { background: rgba(243,213,138,.25) !
   .encart-corps span { font-size: 13.5px; }
   #bouton-vitesse, #bouton-aide { padding: 4px 8px; font-size: 13px; }
 }
+
+/* =============== 17. Grands accords et astres =============== */
+.banniere.majeur { background: linear-gradient(90deg, transparent, rgba(60,10,20,.96) 12%, rgba(90,20,30,.97) 50%, rgba(60,10,20,.96) 88%, transparent);
+  border-top: 2px solid #ffd27a; border-bottom: 2px solid #ffd27a; }
+.banniere.majeur b { color: #ffe08a; font-size: 32px; text-shadow: 0 0 22px rgba(255,140,60,.95); }
+.banniere.majeur span { color: #ffd9b0; }
+.banniere.majeur.visible { animation-duration: calc(2.8s * var(--vitesse)); }
+.encart.majeur { border-color: #ffd27a; background: linear-gradient(180deg, rgba(70,16,26,.97), rgba(30,8,16,.97)); box-shadow: 0 10px 30px rgba(0,0,0,.6), 0 0 28px rgba(255,150,60,.45); }
+.encart.majeur .encart-corps b { color: #ffe08a; }
+.carte-env.astre { box-shadow: 0 0 16px rgba(255,240,190,.9), 0 0 34px rgba(120,100,255,.5); }
+.technique-item.celeste { border-color: #ffe08a; background: linear-gradient(180deg, rgba(60,45,120,.35), rgba(30,20,70,.35)); }

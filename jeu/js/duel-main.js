@@ -11,11 +11,12 @@ import {
   creerDuel, def, nomDe, familleDe, peutInvoquer, invoquer, peutActiver, activer, peutPoser, poser, peutChanger, changerPosition,
   fusionsPossibles, fusionner, passerAuCombat, passerPrincipale2, ciblesAttaque, calculCombat, attaquer,
   presagesActivables, presageOmbre, reagirInvocation, finTour, actionOmbre, executerOmbre, atkEffectif, defEffectif, LP,
-  accordsTerrain, accomplirAccordTerrain, peutPoserInfluence, poserInfluence, evolutionsPossibles, evoluer, MECANIQUES, domine, influencesEnReponse, revelerEnReponse, influenceOmbre, preparerReprise, terrainsEnReponse, poserTerrainEnReponse, peutRevelerInfluence, revelerInfluence, techniquesPossibles, utiliserTechnique, avancementAssociation
+  accordsTerrain, accomplirAccordTerrain, peutPoserInfluence, poserInfluence, evolutionsPossibles, evoluer, MECANIQUES, domine, influencesEnReponse, revelerEnReponse, influenceOmbre, preparerReprise, terrainsEnReponse, poserTerrainEnReponse, superInvocationsPossibles, superInvoquer, peutRevelerInfluence, revelerInfluence, techniquesPossibles, utiliserTechnique, avancementAssociation
 } from "./engine/duel.js";
 import { ALIGNEMENTS, ASSOCIATIONS } from "./data/techniques.js";
 import { accordDeLecture, definirDictionnaire, dictionnaireCharge } from "./data/lectures.js";
-import { ETATS } from "./data/sorts.js";
+import { ETATS, GRANDS_ACCORDS } from "./data/sorts.js";
+import { ASTRES } from "./data/astres.js";
 import { reconcilier, basculer, itemPanneau } from "./ui/duelOutils.js";
 import { noterVue, noterRegle, noterDuel, vaincreGardien } from "./engine/carnet.js";
 import { peindreCarteDuel, peindreHologramme } from "./render/carteDuel.js";
@@ -59,7 +60,7 @@ const reserveJoueur = () => [...new Set([...FIGURES_DEPART, ...figuresDebloquees
 const MECA_GARDIENS = [[], ["poseInfluence", "evolution"], ["poseInfluence", "evolution", "techniques"], ["poseInfluence", "evolution", "techniques", "figures"],
   ["poseInfluence", "evolution", "techniques", "figures", "accordsTerrain"], MECANIQUES, MECANIQUES];
 const NOMS_MECA = { poseInfluence: "les influences posées face cachée", evolution: "l’évolution des apparitions", techniques: "les techniques (alignements, associations)",
-  figures: "les figures d’accord", accordsTerrain: "les accords sur le terrain" };
+  figures: "les figures d’accord", accordsTerrain: "les accords sur le terrain", superInvocations: "l’invocation céleste (les astres)" };
 let accordsDuDuel = [];
 const estRare = id => id < 100 && (carnet.cartes[id]?.vecue || 0) > 0;
 
@@ -116,7 +117,7 @@ const effets = new Effets($("plateau"));
 // l'ambiance du tapis (particules lentes du ciel et des terrains)
 const ambiance = new Ambiance($("tapis"));
 /** L'élément d'une carte (sa planète) ; les figures d'accord ont le leur. */
-const elementCarte = id => elementDe(id >= 100 ? null : familleDe(id));
+const elementCarte = id => elementDe(id >= 100 && id < 200 ? null : familleDe(id));
 // la barre de vie laisse une traînée claire quand elle baisse, comme dans les jeux de combat
 for (const j of [0, 1]) { const s = document.createElement("span"); s.className = "lp-trainee"; s.id = `lp-trainee-${j}`; $(`lp-jauge-${j}`).before(s); }
 /** Joue l'effet d'une carte : sur tout le tapis, ou autour d'un élément (agrandi). */
@@ -127,7 +128,7 @@ function effetCarte(id, cible = null, agrandir = 1, avecEmbleme = false) {
 }
 function enveloppe(cv, id, face) {
   const s = document.createElement("span");
-  s.className = `carte-env${face && estRare(id) ? " rare" : ""}${face && def(id).forte ? " forte" : ""}${face && id >= 100 ? " figure" : ""}`;
+  s.className = `carte-env${face && estRare(id) ? " rare" : ""}${face && def(id).forte ? " forte" : ""}${face && id >= 100 && id < 200 ? " figure" : ""}${face && id >= 200 ? " astre" : ""}`;
   s.appendChild(cv);
   return s;
 }
@@ -396,7 +397,7 @@ function indicesMain(el, id, index) {
   const autres = [...J.main.filter((_, k) => k !== index), ...J.monstres.filter(m => m && !m.faceCachee).map(m => m.id), ...J.presages.filter(p => p?.continue).map(p => p.id)].filter(x => x < 100);
   let n = 0, belline = false;
   for (const o of new Set(autres)) {
-    if (reglesDeclenchees({ id, choix: 0 }, { id: o, choix: 0 }).length || reglesDeclenchees({ id: o, choix: 0 }, { id, choix: 0 }).length) { n++; belline = true; }
+    if (reglesDeclenchees({ id, choix: 0 }, { id: o, choix: 0 }).length || reglesDeclenchees({ id: o, choix: 0 }, { id, choix: 0 }).length || GRANDS_ACCORDS.some(g => (g.a === id && g.b === o) || (g.a === o && g.b === id))) { n++; belline = true; }
     else if (accordDeLecture(id, o, nomDe)?.sorte && accordDeLecture(id, o, nomDe).sorte !== "lecture") n++;
   }
   const evo = d.actif === 0 && evolutionsPossibles(d, 0).some(e => e.index === index);
@@ -425,7 +426,7 @@ function majCommandes() {
   const ba = $("bouton-accord");
   ba.disabled = false; ba.textContent = f ? `✦ Accords (${f})` : "✦ Accords";
   ba.classList.toggle("brille", f > 0);
-  const t = monTour ? techniquesPossibles(d, 0).length : 0;
+  const t = monTour ? techniquesPossibles(d, 0).length + superInvocationsPossibles(d, 0).length : 0;
   const bt = $("bouton-technique");
   bt.hidden = !d.mec.techniques;
   bt.textContent = t ? `☉ Technique (${t})` : "☉ Techniques";
@@ -474,7 +475,10 @@ function apercu(id, face = true, etat = "", temporaire = false) {
   $("detail-carte").classList.toggle("rare", face && estRare(id));
   $("detail-etat").textContent = etat;
   if (!face) { $("detail-notice").textContent = ""; $("detail-mot").textContent = ""; return; }
-  if (id >= 100) {
+  if (id >= 200) {
+    $("detail-notice").textContent = ASTRES[id].texte;
+    $("detail-mot").textContent = `Astre de la série ${ASTRES[id].nom} : trois apparitions de cette planète sacrifiées (invocation céleste, ajout de jeu).`;
+  } else if (id >= 100) {
     const F = FIGURES[id];
     $("detail-notice").textContent = `« ${VOISINAGE.find(r => r.id === F.regles[0]).texte} »`;
     $("detail-mot").textContent = `Figure d’accord (création de jeu) : ${F.materiaux.map(m => (Array.isArray(m) ? "une Étoile" : CARTE_PAR_ID[m].nom)).join(" et ")}.`;
@@ -625,6 +629,12 @@ async function revelerPosee(place, choix) {
   await animer(revelerInfluence(d, 0, place, { choix, contre }, rng));
   finAction();
 }
+async function executerCeleste(famille) {
+  fermerGalerie();
+  await animer(superInvoquer(d, 0, famille, rng), true);
+  finAction();
+}
+
 async function executerTechnique(cle) {
   fermerGalerie();
   await animer(utiliserTechnique(d, 0, cle, rng), true);
@@ -640,6 +650,11 @@ function ouvrirTechniques() {
   $("galerie-texte").textContent = "Ajouts de jeu. Une technique par tour, en phase principale. Alignement : trois apparitions face recto d’une même planète. Association : des cartes révélées pendant le duel, comme les cartes d’un tirage qui se répondent ; chacune sert une fois.";
   const item = itemPanneau;
   const liste = [];
+  // l'invocation céleste : trois apparitions d'une planète deviennent l'astre lui-même
+  const celestes = d.actif === 0 && !occupe ? superInvocationsPossibles(d, 0) : [];
+  for (const c of celestes) liste.push(item(`★ Invocation céleste : ${ASTRES[c.id].nom}`, ASTRES[c.id].texte,
+    `Prête : ${[...c.places.map(p => nomDe(J.monstres[p].id)), ...(c.main != null ? [`${nomDe(J.main[c.main])} (main)`] : [])].join(", ")} sont sacrifiées. Touchez pour invoquer.`, () => executerCeleste(c.famille), "prete celeste"));
+  if (d.mec.superInvocations && !celestes.length) liste.push(item("★ Invocation céleste", "Réunissez trois cartes d’une même planète : deux apparitions face recto en jeu, et une troisième en jeu ou dans la main. Sacrifiez-les pour invoquer l’astre (niveau 10). Chaque astre une fois par duel.", J.astres.length ? `Déjà invoqués : ${J.astres.map(f => ASTRES[Object.keys(ASTRES).find(k => ASTRES[k].famille === f)].nom).join(", ")}.` : "", null, "vide"));
   for (const t of pretes) liste.push(item(`${t.sorte === "alignement" ? t.glyphe : "✦"} ${t.nom}`, t.texte, "Prête : touchez pour l’utiliser", () => executerTechnique(t.cle), "prete"));
   if (!pretes.length) liste.push(item("Aucune technique prête", d.actif === 0 && J.techniqueFaite ? "Vous avez déjà utilisé une technique ce tour." : "Alignez trois apparitions d’une même planète, ou révélez les cartes d’une association.", "", null, "vide"));
   for (const [f, a] of Object.entries(ALIGNEMENTS)) {
@@ -841,6 +856,7 @@ function expliquer(a) {
     technique: `J’utilise une technique${gain}.`,
     accordTerrain: `Deux de mes cartes en jeu s’associent : j’accomplis l’accord${gain}.`,
     evoluer: c != null && `Je fais évoluer une apparition en ${nomDe(c)}${gain}.`,
+    superInvoquer: `Je sacrifie trois apparitions de ma planète : l’astre descend${gain}.`,
     attaquer: `J’attaque${a.cible === "direct" ? " directement vos points de vie" : ""}${gain}.`,
     changer: "Je change la position d’une apparition.",
     combat: "J’entre en combat.", principale2: "Je termine le combat."
@@ -1053,8 +1069,8 @@ function zoomer(id, face = true) {
   $("zoom-carte").style.width = `${l}px`;
   if (face) {
     $("zoom-effet").textContent = def(id).texte || "";
-    $("zoom-notice").textContent = id >= 100 ? `« ${VOISINAGE.find(r => r.id === FIGURES[id].regles[0]).texte} »` : `« ${CARTE_PAR_ID[id].notice} »`;
-    $("zoom-mot").textContent = id >= 100 ? "Figure d’accord" : `N° ${id} · ${CARTE_PAR_ID[id].nom} · mot de la notice : « ${DUEL[id].mot} »`;
+    $("zoom-notice").textContent = id >= 200 ? "Invocation céleste : trois apparitions de sa planète, sacrifiées." : id >= 100 ? `« ${VOISINAGE.find(r => r.id === FIGURES[id].regles[0]).texte} »` : `« ${CARTE_PAR_ID[id].notice} »`;
+    $("zoom-mot").textContent = id >= 200 ? `Astre · ${ASTRES[id].nom}` : id >= 100 ? "Figure d’accord" : `N° ${id} · ${CARTE_PAR_ID[id].nom} · mot de la notice : « ${DUEL[id].mot} »`;
   } else { $("zoom-effet").textContent = "Carte face cachée."; $("zoom-notice").textContent = ""; $("zoom-mot").textContent = ""; }
   z.hidden = false; cacherLoupe();
 }
@@ -1120,7 +1136,8 @@ async function animer(ev, garderOccupe = false) {
         journal(`${nom(e.j)} ${accorde(e.j, "invoquez", "invoque")} ${c}${e.speciale && !e.figure ? " (invocation spéciale)" : ""}.`);
         rendre();
         const z = zoneEl(e.j, e.place);
-        if (z) { z.style.setProperty("--teinte", (TEINTES[elementCarte(e.id)] || TEINTES.accord).join(",")); z.classList.add(e.figure || def(e.id).forte ? "arrivee-majeure" : "arrivee"); }
+        if (z) { z.style.setProperty("--teinte", (TEINTES[elementCarte(e.id)] || TEINTES.accord).join(",")); z.classList.add(e.figure || e.astre || def(e.id).forte ? "arrivee-majeure" : "arrivee"); }
+        if (e.astre && z) { secousse(true); effets.jouer("transformation", (() => { const r = effets.rect(z), k = 3.4; return { x: r.x + r.w / 2 - r.w * k / 2, y: r.y + r.h / 2 - r.h * k / 2, w: r.w * k, h: r.h * k }; })(), { element: elementCarte(e.id) }); effets.impact(z, elementCarte(e.id), true); jouerElement(elementCarte(e.id), "impact"); }
         if (z) effetCarte(e.id, z, e.figure || def(e.id).forte ? 3.2 : 2.4);
         jouerSon("invocation", familleDe(e.id)); eclair(e.figure ? "rgba(167,122,216,.3)" : "rgba(243,213,138,.25)");
         if (e.j === 1) apercu(e.id, true, `Invoquée par ${d.joueurs[1].nom}.`);
@@ -1196,13 +1213,19 @@ async function animer(ev, garderOccupe = false) {
         await attendre(e.v < 0 ? 520 : 380); break;
       }
       case "accord": {
-        const titre = e.cle?.startsWith("dico:") ? "Lecture de l’Atelier" : { echo: "Écho de la notice", accompagnement: "Accord d’accompagnement", lecture: "Lecture moderne" }[e.sorte] || "Règle de Belline";
+        const titre = e.cle?.startsWith("dico:") ? "Lecture de l’Atelier" : { echo: "Écho de la notice", accompagnement: "Accord d’accompagnement", lecture: "Lecture moderne", majeur: "Grand accord" }[e.sorte] || "Règle de Belline";
+        if (e.sorte === "majeur") {
+          // un Grand accord : la terre tremble, la lumière éclate
+          secousse(true); eclair(e.favorable ? "rgba(255,214,120,.5)" : "rgba(255,60,40,.45)");
+          effets.jouer(e.favorable ? "etoiles" : "eclair", effets.rect($("tapis")));
+          jouerElement(e.favorable ? "lumiere" : "foudre", "impact");
+        }
         const combo = e.combo > 1 ? ` · combo ×${e.combo}` : "";
         journal(`${titre}${e.terrain ? " (sur le terrain)" : ""}${combo} : ${e.texte} (${e.valeur} points)`, true);
         if (e.j === 0) { accordsDuDuel.push({ titre, texte: e.texte, belline: e.sorte === "belline" }); if (e.regle) { noterRegle(carnet, e.regle); sauverCarnet(carnet); } }
         encart(`${titre}${combo}`, `${e.texte} ${e.favorable ? (e.j === 0 ? "Vous gagnez" : `${d.joueurs[1].nom} gagne`) : (e.j === 0 ? `${d.joueurs[1].nom} perd` : "Vous perdez")} ${e.valeur} points${e.sorte === "belline" ? ", et le sort de la règle agit" : ""}.`,
           e.ids || [], `${e.sorte || "belline"} ${e.favorable ? "favorable" : "nefaste"}`, e.sorte === "lecture" ? 6000 : 10000);
-        if (e.sorte !== "lecture") { banniere(titre + combo, e.texte, e.sorte === "belline" ? "belline" : e.favorable ? "accord" : "sombre"); jouerSon("regle"); eclair(e.favorable ? "rgba(243,213,138,.35)" : "rgba(160,60,90,.3)"); }
+        if (e.sorte !== "lecture") { banniere(e.sorte === "majeur" ? `${titre} : ${e.texte.split(" : ")[0]}` : titre + combo, e.sorte === "majeur" ? e.texte.split(" : ").slice(1).join(" : ") : e.texte, e.sorte === "belline" ? "belline" : e.sorte === "majeur" ? "majeur" : e.favorable ? "accord" : "sombre"); jouerSon("regle"); eclair(e.favorable ? "rgba(243,213,138,.35)" : "rgba(160,60,90,.3)"); }
         else jouerSon(e.favorable ? "gain" : "perte");
         if (e.ids) {
           {
@@ -1211,7 +1234,16 @@ async function animer(ev, garderOccupe = false) {
           }
           effets.duo(e.ids[0], e.ids[1], effets.rect($("tapis")), e.favorable);
         }
-        await attendre(e.sorte === "lecture" ? 700 : e.sorte === "belline" ? 2000 : 1400); break;
+        await attendre(e.sorte === "lecture" ? 700 : e.sorte === "belline" || e.sorte === "majeur" ? 2200 : 1400); break;
+      }
+      case "celeste": {
+        const A = ASTRES[e.id];
+        journal(`Invocation céleste : ${nom(e.j) === "Vous" ? "vous sacrifiez" : `${d.joueurs[1].nom} sacrifie`} trois cartes de ${A.nom} pour invoquer l’astre.`, true);
+        banniere("Invocation céleste", `${A.glyphe} ${A.nom}`, "majeur");
+        eclair("rgba(255,240,200,.55)"); jouerElement(elementDe(A.famille), "lancer");
+        effets.jouer("etoiles", effets.rect($("tapis")));
+        encart(`Invocation céleste : ${A.nom}`, A.texte, [...e.materiaux, e.id], "majeur favorable", 11000);
+        await attendre(1300); break;
       }
       case "evolution": {
         journal(`Évolution : ${nom(e.j) === "Vous" ? "votre" : "son"} ${nomDe(e.de)} devient ${c} (+300 ATK d’élan).`, true);
@@ -1520,6 +1552,7 @@ function ouvrirAide() {
     I("3. Attaquer", "En combat, touchez une apparition prête (cadre doré), puis sa cible. ATK contre ATK : la plus faible tombe et son joueur perd la différence. Contre une défense : la DEF compte.", ""),
     I("4. Répondre", "Pendant l’attaque adverse, une fenêtre vous propose vos présages, vos influences posées et vos terrains : c’est le moment de retourner le combat.", ""),
     I("5. Les accords", "Deux cartes que la notice associe, jouées l’une après l’autre ou toutes deux en jeu, accomplissent un accord : la règle de Belline vaut le plus. Un encart l’explique ; touchez ses cartes pour les agrandir.", ""),
+    I("Grands accords et astres", `Deux cartes fortes ensemble (Accident et Fatalité, Despotisme et Fatalité, Sagesse et Fatalité…) forment un Grand accord, violent : ${GRANDS_ACCORDS.length} en tout. Trois cartes d’une même planète (deux apparitions en jeu, la troisième en jeu ou en main) se sacrifient pour invoquer l’astre lui-même (bouton Techniques) : le Soleil, la Lune… niveau 10.`, ""),
     I("✦ et ⇧ sur vos cartes", "✦ : la carte s’associe avec une autre de vos cartes (doré : une règle de Belline). ⇧ : elle peut faire évoluer une de vos apparitions.", ""),
     I("Les auras", "Vert : peut évoluer. Bleu : bloquée (n’attaque pas). Or : protégée une fois. Vert-jaune : malade. Orange : brûlée. Bleu clair : endormie. Rose : confuse.", ""),
     I("Les signes", "⛨ garde (à attaquer d’abord) · ◈ protégée · ⚒ équipée · ⛓ bloquée · ◐ posée face cachée · ☣ malade · ♨ brûlée · ☾ endormie · ✺ confuse · ▲ votre apparition domine sa planète (+500 ATK).", ""),

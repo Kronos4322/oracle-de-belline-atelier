@@ -1120,9 +1120,9 @@ const SORTS = {
   "4-47": [{ t: "stat", atk: -500, def: 0, camp: "adverse", cible: "toutes" }],                       // efforts inutiles
   "9-30": [{ t: "stat", atk: 0, def: 400, camp: "soi", cible: "toutes" }, { t: "guerir", camp: "soi" }], // pique-nique
   "12-15": [{ t: "renvoyer", camp: "adverse", cible: "plusForte" }],                                  // voyage à l'étranger
-  "13-38": [{ t: "detruireFaibles", seuil: 1200 }],                                                    // catastrophe aérienne
-  "15-38": [{ t: "defense", camp: "adverse" }, { t: "stat", atk: 0, def: -400, camp: "adverse", cible: "toutes" }], // naufrage
-  "17-48": [{ t: "statut", etat: "poison", camp: "adverse", cible: "toutes" }],                       // maladie fatale
+  "13-38": [{ t: "detruireFaibles", seuil: 1800 }, { t: "degats", v: 500 }],                         // catastrophe aérienne
+  "15-38": [{ t: "defense", camp: "adverse" }, { t: "stat", atk: 0, def: -800, camp: "adverse", cible: "toutes" }, { t: "renvoyer", camp: "adverse", cible: "plusForte" }], // naufrage
+  "17-48": [{ t: "statut", etat: "poison", camp: "adverse", cible: "toutes" }, { t: "detruire", camp: "adverse", cible: "plusFaible" }], // maladie fatale
   "17-49": [{ t: "retablir" }, { t: "guerir", camp: "soi" }],                                          // guérison
   "21-23": [{ t: "voler" }],                                                                           // affaires véreuses
   "21-35": [{ t: "voler" }, { t: "degats", v: 300 }],                                                  // attaque, vol
@@ -1132,15 +1132,15 @@ const SORTS = {
   "27-50": [{ t: "defausser", n: 1 }],                                                                 // divorce, rupture
   "29-33": [{ t: "statut", etat: "confusion", camp: "adverse", cible: "plusForte" }],                  // rivalité en amour
   "30-17": [{ t: "statut", etat: "poison", camp: "adverse", cible: "plusForte" }],                     // excès nuisibles
-  "31-34": [{ t: "statut", etat: "brulure", camp: "adverse", cible: "toutes" }],                       // passions malheureuses
+  "31-34": [{ t: "statut", etat: "brulure", camp: "adverse", cible: "toutes" }, { t: "bloquer", camp: "adverse", cible: "plusForte", tours: 2 }], // passions malheureuses
   "36-32": [{ t: "annuler" }],                                                                         // complot
-  "37-38": [{ t: "statut", etat: "brulure", camp: "adverse", cible: "toutes" }, { t: "casserTerrain", camp: "adverse" }], // incendie
+  "37-38": [{ t: "statut", etat: "brulure", camp: "adverse", cible: "toutes" }, { t: "casserTerrain", camp: "adverse" }, { t: "degats", v: 1000 }], // incendie
   "44-50": [{ t: "hasard", v: 1500 }],                                                                 // ruine au jeu
   "52-17": [{ t: "proteger", camp: "soi" }, { t: "guerir", camp: "soi" }],                             // hôpital
   "52-46": [{ t: "retablir" }, { t: "guerir", camp: "soi" }],                                          // hospice
   "52-29": [{ t: "statut", etat: "sommeil", camp: "adverse", cible: "plusForte" }],                    // amour sacrifié
-  "38>2": [{ t: "bloquer", camp: "adverse", cible: "toutes", tours: 1 }],                              // exposé à un accident
-  "38>3": [{ t: "bloquer", camp: "adverse", cible: "toutes", tours: 1 }],
+  "38>2": [{ t: "bloquer", camp: "adverse", cible: "toutes", tours: 1 }, { t: "degats", v: 600 }],   // exposé à un accident
+  "38>3": [{ t: "bloquer", camp: "adverse", cible: "toutes", tours: 1 }, { t: "degats", v: 600 }],
   "7>2": [{ t: "stat", atk: 500, def: 0, camp: "soi", cible: "plusForte" }, { t: "proteger", camp: "soi" }], // distinction
   "7>3": [{ t: "stat", atk: 500, def: 0, camp: "soi", cible: "plusForte" }, { t: "proteger", camp: "soi" }]
 };
@@ -1153,7 +1153,81 @@ const ETATS = {
   confusion: { nom: "confuse", signe: "✺", texte: "Confuse (le caractère versatile) : une attaque sur deux échoue et blesse son joueur (300 points) ; une chance sur trois de s’en remettre à chaque tour." }
 };
 
-return { SORTS, ETATS };
+/**
+ * Les Grands accords (ajout de jeu) : deux cartes fortes, ou une carte forte et la Destinée, la Réussite ou le Bonheur,
+ * dont les notices s'additionnent avec violence (« la destruction » et « la fin », « la force majeure » et « l'échéance
+ * inéluctable »…). Ils ne sont pas des règles de la notice : leurs noms et leurs effets sont des lectures du jeu, tirées
+ * des mots des deux notices. Plus forts que les échos et les lectures (1500 points, une carte s'ils sont favorables),
+ * moins sûrs que les règles de Belline qui restent prioritaires. Ordre indifférent.
+ */
+const GRANDS_ACCORDS = [
+  { a: 38, b: 48, nom: "La catastrophe inéluctable", sens: -1, texte: "L’accident, « la destruction », et la Fatalité, « la fin » : toutes les apparitions adverses sont détruites et l’adversaire perd 1500 points de vie.",
+    effets: [{ t: "detruire", camp: "adverse", cible: "toutes" }, { t: "degats", v: 1500 }] },
+  { a: 34, b: 48, nom: "Le jugement sans appel", sens: -1, texte: "« Décision arbitraire » et « échéance inéluctable » : les apparitions adverses ne pourront pas attaquer pendant deux tours, l’adversaire défausse deux cartes.",
+    effets: [{ t: "bloquer", camp: "adverse", cible: "toutes", tours: 2 }, { t: "defausser", n: 2 }] },
+  { a: 11, b: 38, nom: "La chute", sens: -1, texte: "La malchance et le bouleversement : la plus forte apparition adverse est détruite, et vous volez une carte à l’adversaire.",
+    effets: [{ t: "detruire", camp: "adverse", cible: "plusForte" }, { t: "voler" }] },
+  { a: 34, b: 38, nom: "La force majeure", sens: -1, texte: "« Le consultant est victime de la force majeure » et du bouleversement : les apparitions adverses passent en défense, celles qui y étaient sont détruites.",
+    effets: [{ t: "detruireDefense", camp: "adverse" }, { t: "defense", camp: "adverse" }, { t: "bloquer", camp: "adverse", cible: "toutes", tours: 1 }] },
+  { a: 11, b: 48, nom: "La malchance fatale", sens: -1, texte: "La malchance et la fin : toutes les apparitions adverses tombent malades et perdent 800 ATK.",
+    effets: [{ t: "statut", etat: "poison", camp: "adverse", cible: "toutes" }, { t: "stat", atk: -800, def: 0, camp: "adverse", cible: "toutes" }] },
+  { a: 11, b: 34, nom: "La convoitise", sens: -1, texte: "« La convoitise » et la « décision arbitraire » : vous volez deux cartes à l’adversaire.",
+    effets: [{ t: "voler" }, { t: "voler" }] },
+  { a: 42, b: 48, nom: "La sagesse devant la fin", sens: 1, texte: "« La raison, la réflexion » devant « l’échéance inéluctable » : vos apparitions retrouvent leurs forces, guérissent et sont protégées ; vous gagnez 2000 points de vie.",
+    effets: [{ t: "retablir" }, { t: "guerir", camp: "soi" }, { t: "proteger", camp: "soi" }, { t: "lp", v: 2000 }] },
+  { a: 34, b: 42, nom: "La raison contre l’arbitraire", sens: 1, texte: "« La raison » contre la « décision arbitraire » : vos apparitions guérissent et gagnent 600 ATK ; la prochaine carte adverse sera sans effet.",
+    effets: [{ t: "guerir", camp: "soi" }, { t: "stat", atk: 600, def: 0, camp: "soi", cible: "toutes" }, { t: "annuler" }] },
+  { a: 38, b: 42, nom: "La prudence", sens: 1, texte: "« Prudence, modération » devant l’accident : vos apparitions sont protégées une fois ; vous gagnez 1500 points de vie.",
+    effets: [{ t: "proteger", camp: "soi" }, { t: "lp", v: 1500 }] },
+  { a: 11, b: 42, nom: "La trahison déjouée", sens: 1, texte: "La sagesse voit la trahison : les présages adverses sont détruits, vous voyez la main adverse.",
+    effets: [{ t: "detruirePresages" }, { t: "voir" }] },
+  { a: 5, b: 45, nom: "L’accomplissement", sens: 1, texte: "« Succès, aboutissement » et « vocation réalisée » : vous gagnez 2500 points de vie et piochez deux cartes.",
+    effets: [{ t: "lp", v: 2500 }, { t: "piocher", n: 2 }] },
+  { a: 1, b: 48, nom: "L’heure du destin", sens: -1, texte: "La Destinée donne « une importance de premier plan » à l’échéance : l’adversaire perd 2000 points de vie.",
+    effets: [{ t: "degats", v: 2000 }] }
+];
+const INDEX_GRANDS = new Map(GRANDS_ACCORDS.map(g => [g.a < g.b ? `${g.a}-${g.b}` : `${g.b}-${g.a}`, g]));
+/** Le Grand accord que forment deux cartes (ordre indifférent), ou null. */
+const grandAccord = (a, b) => INDEX_GRANDS.get(a < b ? `${a}-${b}` : `${b}-${a}`) || null;
+
+return { SORTS, ETATS, GRANDS_ACCORDS, grandAccord };
+})();
+
+// ===== js/data/astres.js =====
+M["js/data/astres.js"] = (() => {
+// Les astres : les super-invocations du Duel (ajout de jeu, à la manière des invocations spéciales des jeux de
+// cartes à duel). Le jeu d'Edmond est rangé en sept séries planétaires ; trois cartes d'une même série, dont deux
+// apparitions face recto en jeu (la troisième en jeu ou dans la main), se sacrifient pour invoquer l'astre lui-même :
+// l'invocation céleste.
+// Une invocation céleste par tour, chaque astre une fois par duel. Un astre détruit ou renvoyé retourne au ciel
+// (il ne va ni au cimetière ni en main). Numéros 200 à 206. Effets : ceux de js/engine/duel.js, à la révélation.
+
+const ASTRES = {
+  200: { famille: "soleil", nom: "Le Soleil", glyphe: "☉", type: "apparition", niveau: 10, atk: 3500, def: 3000, forte: true, astre: true,
+    texte: "Invocation céleste. La lumière révèle tout : les apparitions adverses cachées sont retournées, celles en défense détruites ; vous gagnez 1000 points de vie.",
+    effets: [{ t: "revelerAdverses" }, { t: "detruireDefense", camp: "adverse" }, { t: "lp", v: 1000 }] },
+  201: { famille: "lune", nom: "La Lune", glyphe: "☽", type: "apparition", niveau: 10, atk: 3200, def: 3600, forte: true, astre: true,
+    texte: "Invocation céleste. La marée : toutes les apparitions adverses sont emportées dans la main de leur joueur.",
+    effets: [{ t: "renvoyer", camp: "adverse", cible: "toutes" }] },
+  202: { famille: "mercure", nom: "Mercure", glyphe: "☿", type: "apparition", niveau: 10, atk: 3300, def: 2800, forte: true, astre: true,
+    texte: "Invocation céleste. Le messager : piochez trois cartes, voyez la main adverse et volez-y une carte.",
+    effets: [{ t: "piocher", n: 3 }, { t: "voir" }, { t: "voler" }] },
+  203: { famille: "venus", nom: "Vénus", glyphe: "♀", type: "apparition", niveau: 10, atk: 3000, def: 3800, forte: true, astre: true,
+    texte: "Invocation céleste. L’harmonie : vous gagnez 3000 points de vie ; vos apparitions guérissent et sont protégées une fois.",
+    effets: [{ t: "lp", v: 3000 }, { t: "guerir", camp: "soi" }, { t: "proteger", camp: "soi" }] },
+  204: { famille: "mars", nom: "Mars", glyphe: "♂", type: "apparition", niveau: 10, atk: 3800, def: 2500, forte: true, astre: true,
+    texte: "Invocation céleste. La guerre : toutes les apparitions adverses brûlent, l’adversaire perd 1000 points de vie, vos autres apparitions gagnent 500 ATK.",
+    effets: [{ t: "statut", etat: "brulure", camp: "adverse", cible: "toutes" }, { t: "degats", v: 1000 }, { t: "stat", atk: 500, def: 0, camp: "soi", cible: "autres" }] },
+  205: { famille: "jupiter", nom: "Jupiter", glyphe: "♃", type: "apparition", niveau: 10, atk: 3600, def: 3200, forte: true, astre: true,
+    texte: "Invocation céleste. La foudre : la plus forte apparition adverse est détruite, les autres ne pourront pas attaquer à leur prochain tour.",
+    effets: [{ t: "detruire", camp: "adverse", cible: "plusForte" }, { t: "bloquer", camp: "adverse", cible: "toutes", tours: 1 }] },
+  206: { famille: "saturne", nom: "Saturne", glyphe: "♄", type: "apparition", niveau: 10, atk: 3400, def: 3400, forte: true, astre: true,
+    texte: "Invocation céleste. Le temps : les apparitions adverses ne pourront pas attaquer pendant deux tours ; l’adversaire ne piochera pas et défausse deux cartes.",
+    effets: [{ t: "bloquer", camp: "adverse", cible: "toutes", tours: 2 }, { t: "sterilite" }, { t: "defausser", n: 2 }] }
+};
+const ASTRE_DE = { soleil: 200, lune: 201, mercure: 202, venus: 203, mars: 204, jupiter: 205, saturne: 206 };
+
+return { ASTRES, ASTRE_DE };
 })();
 
 // ===== js/engine/hasard.js =====
@@ -1222,7 +1296,8 @@ const { DUEL, sacrificesRequis } = M["js/data/duel.js"];
 const { FIGURES } = M["js/data/accords.js"];
 const { ALIGNEMENTS, ASSOCIATIONS } = M["js/data/techniques.js"];
 const { accordDeLecture } = M["js/data/lectures.js"];
-const { SORTS } = M["js/data/sorts.js"];
+const { SORTS, grandAccord } = M["js/data/sorts.js"];
+const { ASTRES, ASTRE_DE } = M["js/data/astres.js"];
 const { VOISINAGE, reglesDeclenchees } = M["js/data/voisinage.js"];
 const { melanger } = M["js/engine/hasard.js"];
 
@@ -1233,15 +1308,17 @@ const REGLE = Object.fromEntries(VOISINAGE.map(r => [r.id, r]));
 const adversaire = j => 1 - j;
 const PLANETES = ["soleil", "lune", "mercure", "venus", "mars", "jupiter", "saturne"];
 /** Les mécaniques avancées ; la campagne les dévoile une à une (toutes en duel libre). */
-const MECANIQUES = ["poseInfluence", "evolution", "techniques", "figures", "accordsTerrain"];
+const MECANIQUES = ["poseInfluence", "evolution", "techniques", "figures", "accordsTerrain", "superInvocations"];
 let compteurUid = 1;
 
 /** Définition de duel d'une carte ou d'une figure d'accord. */
-const def = id => (id >= 100 ? FIGURES[id] : DUEL[id]);
+const def = id => (id >= 200 ? ASTRES[id] : id >= 100 ? FIGURES[id] : DUEL[id]);
 /** Nom d'une carte ou d'une figure. */
-const nomDe = id => (id >= 100 ? FIGURES[id].nom : CARTE_PAR_ID[id].nom);
+const nomDe = id => (id >= 200 ? ASTRES[id].nom : id >= 100 ? FIGURES[id].nom : CARTE_PAR_ID[id].nom);
 /** Planète d'une carte (les figures n'en ont pas). */
-const familleDe = id => (id >= 100 ? null : CARTE_PAR_ID[id].famille);
+const familleDe = id => (id >= 200 ? ASTRES[id].famille : id >= 100 ? null : CARTE_PAR_ID[id].famille);
+/** Un astre (super-invocation, n° 200 à 206) ? */
+const estAstre = id => id >= 200;
 
 function joueur(nom, consultant, deck, reserve, profil, rng) {
   const pioche = melanger(deck, rng);
@@ -1250,7 +1327,7 @@ function joueur(nom, consultant, deck, reserve, profil, rng) {
     monstres: Array(ZONES).fill(null), presages: Array(ZONES).fill(null), cimetiere: [],
     invocationFaite: false, fusionFaite: false, derniere: null, doubler: false, annuleProchaine: false,
     sterile: false, voitMain: false, differes: [], reveles: [], techniques: [], techniqueFaite: false,
-    accordsFaits: [], accordTerrainFait: false, terrainCarte: null, combo: 0, evolutionFaite: false
+    accordsFaits: [], accordTerrainFait: false, terrainCarte: null, combo: 0, evolutionFaite: false, astres: [], superFaite: false
   };
 }
 
@@ -1356,15 +1433,16 @@ function auCimetiere(d, j, zone, place, ev, pourquoi = "detruite") {
   const J = d.joueurs[j], x = J[zone][place];
   if (!x) return;
   J[zone][place] = null;
-  if (x.id >= 100) J.reserve.push(x.id); else J.cimetiere.push(x.id);
+  if (estAstre(x.id)) { /* un astre retourne au ciel */ } else if (x.id >= 100) J.reserve.push(x.id); else J.cimetiere.push(x.id);
   for (const e of x.equipements || []) J.cimetiere.push(e);
   ev.push({ type: pourquoi, j, place, zone, id: x.id });
+  if (estAstre(x.id)) ev.push({ type: "texte", j, texte: `${nomDe(x.id)} retourne au ciel.` });
 }
 
 function versMain(d, j, zone, place, ev) {
   const J = d.joueurs[j], x = J[zone][place];
   J[zone][place] = null;
-  if (x.id >= 100) J.reserve.push(x.id); else J.main.push(x.id);
+  if (estAstre(x.id)) { /* un astre retourne au ciel */ } else if (x.id >= 100) J.reserve.push(x.id); else J.main.push(x.id);
   for (const e of x.equipements || []) J.cimetiere.push(e);
   ev.push({ type: "renvoi", j, place, id: x.id });
 }
@@ -1542,6 +1620,8 @@ function accordEntre(prec, courante) {
   const r = reglesDeclenchees(prec, courante)[0];
   const ids = [prec.id, courante.id];
   if (r) return { texte: r.texte, favorable: r.effets.reduce((s, f) => s + (f.valeur ?? 0), 0) >= 0, regle: r.id, sorte: "belline", valeur: ACCORD, pioche: true, ids, sort: SORTS[r.id] || [] };
+  const g = grandAccord(prec.id, courante.id);
+  if (g) return { texte: `${g.nom} : ${g.texte}`, nom: g.nom, favorable: g.sens > 0, sorte: "majeur", valeur: 1500, pioche: g.sens > 0, ids, sort: g.effets };
   const l = accordDeLecture(prec.id, courante.id, nomDe);
   return l ? { texte: l.texte, favorable: l.sens > 0, sorte: l.sorte, cle: l.cle, valeur: l.valeur, pioche: l.sorte !== "lecture", ids } : null;
 }
@@ -1879,6 +1959,44 @@ function utiliserTechnique(d, j, cle, rng = Math.random) {
   return ev;
 }
 
+// ---------- Invocation céleste : les astres (ajout de jeu, js/data/astres.js) ----------
+
+/**
+ * Les invocations célestes possibles : trois cartes d'une même planète, dont deux apparitions face recto en jeu ;
+ * la troisième est une autre apparition en jeu, ou une carte de cette planète dans la main.
+ */
+function superInvocationsPossibles(d, j) {
+  const J = d.joueurs[j];
+  if (d.fini || d.actif !== j || !enPrincipale(d) || !d.mec.superInvocations || J.superFaite) return [];
+  const res = [];
+  for (const f of PLANETES) {
+    if (J.astres.includes(f)) continue;
+    const siennes = monstres(J).filter(x => !x.m.faceCachee && x.m.id < 100 && familleDe(x.m.id) === f)
+      .sort((a, b) => atkEffectif(d, j, a.m) - atkEffectif(d, j, b.m));
+    if (siennes.length < 2) continue;
+    if (siennes.length >= 3) { res.push({ famille: f, id: ASTRE_DE[f], places: siennes.slice(0, 3).map(x => x.place), main: null }); continue; }
+    const index = J.main.findIndex(id => id < 100 && familleDe(id) === f);
+    if (index >= 0) res.push({ famille: f, id: ASTRE_DE[f], places: siennes.map(x => x.place), main: index });
+  }
+  return res;
+}
+function superInvoquer(d, j, famille, rng = Math.random) {
+  const o = superInvocationsPossibles(d, j).find(x => x.famille === famille);
+  if (!o) return [{ type: "refus", j, raison: "L’invocation céleste n’est pas possible maintenant." }];
+  const J = d.joueurs[j], ev = [];
+  ev.push({ type: "celeste", j, id: o.id, famille, materiaux: [...o.places.map(p => J.monstres[p].id), ...(o.main != null ? [J.main[o.main]] : [])] });
+  for (const p of o.places) { ev.push({ type: "sacrifice", j, place: p, id: J.monstres[p].id }); auCimetiere(d, j, "monstres", p, ev, "sacrifiee"); }
+  if (o.main != null) { const id = J.main.splice(o.main, 1)[0]; J.cimetiere.push(id); ev.push({ type: "defausse", j, id, materiau: true }); }
+  const place = placeLibre(J.monstres);
+  J.monstres[place] = apparitionDe(o.id, d);
+  J.astres.push(famille); J.superFaite = true;
+  ev.push({ type: "invocation", j, place, id: o.id, speciale: true, astre: true });
+  reveler(d, j, place, ev, rng);
+  J.derniere = { id: o.id, choix: null };
+  finSiBesoin(d, ev);
+  return ev;
+}
+
 // ---------- Évolution (ajout de jeu, à la manière de Digimon et Pokémon) ----------
 
 /**
@@ -2162,7 +2280,7 @@ function finTour(d, rng = Math.random) {
     return ev;
   }
   const K = d.joueurs[d.actif];
-  K.invocationFaite = false; K.fusionFaite = false; K.techniqueFaite = false; K.accordTerrainFait = false; K.evolutionFaite = false; K.combo = 0;
+  K.invocationFaite = false; K.fusionFaite = false; K.techniqueFaite = false; K.accordTerrainFait = false; K.evolutionFaite = false; K.combo = 0; K.superFaite = false;
   ev.push({ type: "tour", j: d.actif });
   for (const x of monstres(K)) {
     x.m.aAttaque = false; x.m.changeFait = false; x.m.attaqueCeTour = false;
@@ -2276,6 +2394,7 @@ function actionsNotees(d, profil) {
     for (const t of techniquesPossibles(d, j)) noter({ type: "technique", cle: t.cle }, s => utiliserTechnique(s, j, t.cle, neutre));
     for (const t of accordsTerrain(d, j)) noter({ type: "accordTerrain", cle: t.cle }, s => accomplirAccordTerrain(s, j, t.cle));
     for (const e of evolutionsPossibles(d, j)) noter({ type: "evoluer", index: e.index, place: e.place }, s => evoluer(s, j, e.index, e.place, neutre));
+    for (const c of superInvocationsPossibles(d, j)) noter({ type: "superInvoquer", famille: c.famille }, s => superInvoquer(s, j, c.famille, neutre));
     J.presages.forEach((p, place) => {
       if (!p?.influence || !peutRevelerInfluence(d, j, place).ok) return;
       for (const c of (def(p.id).choix ? def(p.id).choix.map((_, i) => i) : [null])) noter({ type: "revelerInfluence", place, choix: c }, s => revelerInfluence(s, j, place, { choix: c }, neutre));
@@ -2296,7 +2415,7 @@ function actionOmbre(d, profil = d.joueurs[d.actif].profil, rng = Math.random) {
   if (d.fini) return { type: "rien" };
   const j = d.actif;
   const notes = actionsNotees(d, profil).sort((a, b) => b.v - a.v);
-  const seuil = { activer: 1.5, poser: 0, poserInfluence: 0.5, revelerInfluence: 1.5, technique: 1, accordTerrain: 0.5, evoluer: 0.5, invoquer: -1, fusionner: 0, changer: 0.8, attaquer: 0 };
+  const seuil = { activer: 1.5, poser: 0, poserInfluence: 0.5, revelerInfluence: 1.5, technique: 1, accordTerrain: 0.5, evoluer: 0.5, superInvoquer: 2, invoquer: -1, fusionner: 0, changer: 0.8, attaquer: 0 };
   let utiles = notes.filter(a => a.v > seuil[a.type] || (a.type === "invoquer" && !monstres(d.joueurs[j]).length));
   // la difficulté : une part de coups pris au hasard parmi les coups possibles
   if (utiles.length && profil?.hasard && rng() < profil.hasard) {
@@ -2320,6 +2439,7 @@ function executerOmbre(d, a, rng = Math.random, reponse = null) {
     case "technique": return utiliserTechnique(d, j, a.cle, rng);
     case "accordTerrain": return accomplirAccordTerrain(d, j, a.cle);
     case "evoluer": return evoluer(d, j, a.index, a.place, rng);
+    case "superInvoquer": return superInvoquer(d, j, a.famille, rng);
     case "invoquer": return invoquer(d, j, a.index, { pose: a.pose }, rng);
     case "fusionner": return fusionner(d, j, a.figure, rng);
     case "changer": return changerPosition(d, j, a.place, rng);
@@ -2330,7 +2450,7 @@ function executerOmbre(d, a, rng = Math.random, reponse = null) {
   }
 }
 
-return { OFFRANDE, LP, MECANIQUES, def, nomDe, familleDe, creerDuel, apparitionDe, atkEffectif, domine, defEffectif, terrainDe, accordsTerrain, accomplirAccordTerrain, peutInvoquer, invoquer, peutActiver, activer, peutPoser, poser, peutPoserInfluence, poserInfluence, peutRevelerInfluence, revelerInfluence, influencesEnReponse, revelerEnReponse, terrainsEnReponse, poserTerrainEnReponse, preparerReprise, influenceOmbre, avancementAssociation, associationComplete, techniquesPossibles, utiliserTechnique, evolutionsPossibles, evoluer, peutChanger, changerPosition, fusionsPossibles, fusionner, passerAuCombat, passerPrincipale2, ciblesAttaque, calculCombat, presagesActivables, attaquer, reagirInvocation, finTour, evaluer, presageOmbre, actionOmbre, executerOmbre };
+return { OFFRANDE, LP, MECANIQUES, def, nomDe, familleDe, estAstre, creerDuel, apparitionDe, atkEffectif, domine, defEffectif, terrainDe, accordsTerrain, accomplirAccordTerrain, peutInvoquer, invoquer, peutActiver, activer, peutPoser, poser, peutPoserInfluence, poserInfluence, peutRevelerInfluence, revelerInfluence, influencesEnReponse, revelerEnReponse, terrainsEnReponse, poserTerrainEnReponse, preparerReprise, influenceOmbre, avancementAssociation, associationComplete, techniquesPossibles, utiliserTechnique, superInvocationsPossibles, superInvoquer, evolutionsPossibles, evoluer, peutChanger, changerPosition, fusionsPossibles, fusionner, passerAuCombat, passerPrincipale2, ciblesAttaque, calculCombat, presagesActivables, attaquer, reagirInvocation, finTour, evaluer, presageOmbre, actionOmbre, executerOmbre };
 })();
 
 // ===== js/engine/carnet.js =====
@@ -3124,6 +3244,7 @@ const { COULEURS } = M["js/config.js"];
 const { CARTE_PAR_ID } = M["js/data/cartes.js"];
 const { DUEL } = M["js/data/duel.js"];
 const { FIGURES } = M["js/data/accords.js"];
+const { ASTRES } = M["js/data/astres.js"];
 const { ILLUSTRATIONS } = M["js/render/illustrations.js"];
 const { FAMILLES, arrondi, hexA } = M["js/render/carte.js"];
 
@@ -3135,14 +3256,36 @@ const CADRES = {
   influence: ["#3fb3a6", "#1c7d75", "#0d4743"],
   presage: ["#c9599f", "#8c2a68", "#4f0f39"],
   accord: ["#a77ad8", "#5e2f99", "#2a0f52"],
-  bleue: ["#5b8fe0", "#2b5fae", "#173a75"]
+  bleue: ["#5b8fe0", "#2b5fae", "#173a75"],
+  astre: ["#fff3c4", "#3b2f8f", "#0c0730"]
 };
 const NOMS_FAMILLE = { preambule: "Cartes maîtresses", soleil: "Soleil", lune: "Lune", mercure: "Mercure", venus: "Vénus", mars: "Mars", jupiter: "Jupiter", saturne: "Saturne", hors: "Hors jeu" };
 const ACCORD_FAM = { couleur: "#7a4bb0", glyphe: "✦" };
 
-const est = id => (id >= 100 ? FIGURES[id] : DUEL[id]);
-const nom = id => (id >= 100 ? FIGURES[id].nom : CARTE_PAR_ID[id].nom);
-const famille = id => (id >= 100 ? ACCORD_FAM : FAMILLES[CARTE_PAR_ID[id].famille]);
+const est = id => (id >= 200 ? ASTRES[id] : id >= 100 ? FIGURES[id] : DUEL[id]);
+const nom = id => (id >= 200 ? ASTRES[id].nom : id >= 100 ? FIGURES[id].nom : CARTE_PAR_ID[id].nom);
+const famille = id => (id >= 200 ? FAMILLES[ASTRES[id].famille] : id >= 100 ? ACCORD_FAM : FAMILLES[CARTE_PAR_ID[id].famille]);
+
+/** Un astre (invocation céleste) : son symbole planétaire immense, ses rayons, son orbite. */
+function dessinerAstre(c, id, cx, cy, t) {
+  const a = ASTRES[id], fam = FAMILLES[a.famille];
+  c.save();
+  c.strokeStyle = "rgba(255,240,200,.38)"; c.lineCap = "round";
+  for (let k = 0; k < 16; k++) {
+    const ang = k * Math.PI / 8, r0 = t * 0.3, r1 = t * (k % 2 ? 0.5 : 0.64);
+    c.lineWidth = Math.max(1, t * (k % 2 ? 0.012 : 0.022));
+    c.beginPath(); c.moveTo(cx + Math.cos(ang) * r0, cy + Math.sin(ang) * r0); c.lineTo(cx + Math.cos(ang) * r1, cy + Math.sin(ang) * r1); c.stroke();
+  }
+  c.strokeStyle = hexA(fam.couleur === "#57514a" ? "#cfc2a8" : fam.couleur, 0.9); c.lineWidth = Math.max(1, t * 0.018);
+  c.beginPath(); c.ellipse(cx, cy, t * 0.56, t * 0.17, -0.35, 0, Math.PI * 2); c.stroke();
+  const halo = c.createRadialGradient(cx, cy, 0, cx, cy, t * 0.42);
+  halo.addColorStop(0, "rgba(255,248,225,.55)"); halo.addColorStop(1, "rgba(255,248,225,0)");
+  c.fillStyle = halo; c.beginPath(); c.arc(cx, cy, t * 0.42, 0, Math.PI * 2); c.fill();
+  c.shadowColor = "#fff3c4"; c.shadowBlur = t * 0.14; c.fillStyle = "#fff8e6";
+  c.font = `${Math.round(t * 0.6)}px 'EB Garamond', serif`; c.textAlign = "center"; c.textBaseline = "middle";
+  c.fillText(a.glyphe, cx, cy + t * 0.03);
+  c.restore();
+}
 
 function lignes(c, texte, max) {
   const mots = texte.split(" "), res = [];
@@ -3157,7 +3300,7 @@ function fondArt(c, id, fx, fy, fl, fh, coul) {
   const art = c.createRadialGradient(fx + fl / 2, fy + fh * 0.45, 4, fx + fl / 2, fy + fh / 2, fl * 0.8);
   art.addColorStop(0, hexA(coul, 0.95)); art.addColorStop(0.55, hexA(coul, 0.55)); art.addColorStop(1, "#120a1c");
   c.fillStyle = art; c.fillRect(fx, fy, fl, fh);
-  const f = id >= 100 ? "accord" : CARTE_PAR_ID[id].famille;
+  const f = id >= 200 ? ASTRES[id].famille : id >= 100 ? "accord" : CARTE_PAR_ID[id].famille;
   const hasard = k => { const s = Math.sin((id + 1) * 91.7 + k * 12.9898) * 43758.5453; return s - Math.floor(s); };
   c.save();
   if (f === "lune" || f === "saturne" || f === "accord" || f === "preambule") {
@@ -3262,7 +3405,7 @@ function encre(c, fy, fh) {
 /** Dessine la face d'une carte de duel (ou d'une figure d'accord) à (x, y), à l'échelle `s`. */
 function dessinerCarteDuel(c, id, x = 0, y = 0, s = 1) {
   const x0 = est(id), fam = famille(id);
-  const sorte = id >= 100 ? "accord" : id === 0 ? "bleue" : x0.forte ? "forte" : x0.type;
+  const sorte = id >= 200 ? "astre" : id >= 100 ? "accord" : id === 0 ? "bleue" : x0.forte ? "forte" : x0.type;
   const [c1, c2, c3] = CADRES[sorte];
   c.save();
   c.translate(x, y); c.scale(s, s);
@@ -3307,7 +3450,8 @@ function dessinerCarteDuel(c, id, x = 0, y = 0, s = 1) {
   c.fillStyle = "#1a1224"; c.fillRect(fx - 2, fy - 2, fl + 4, fh + 4);
   fondArt(c, id, fx, fy, fl, fh, fam.couleur);
   c.save(); c.beginPath(); c.rect(fx, fy, fl, fh); c.clip();
-  if (id >= 100) {
+  if (id >= 200) dessinerAstre(c, id, fx + fl / 2, fy + fh / 2, fh * 0.95);
+  else if (id >= 100) {
     // la figure d'accord réunit les deux cartes de la règle
     const [a, b] = x0.materiaux.map(m => (Array.isArray(m) ? m[0] : m));
     c.fillStyle = "rgba(243,213,138,.25)"; c.beginPath(); c.arc(fx + fl / 2, fy + fh / 2, 32, 0, Math.PI * 2); c.fill();
@@ -3336,7 +3480,7 @@ function dessinerCarteDuel(c, id, x = 0, y = 0, s = 1) {
   c.strokeStyle = "rgba(0,0,0,.35)"; c.lineWidth = 0.8; c.stroke();
   c.textAlign = "left"; c.textBaseline = "alphabetic";
   c.fillStyle = COULEURS.encre; c.font = "bold 8px 'Cinzel', serif";
-  const typeLigne = id >= 100 ? `[ Figure d’accord / ${x0.favorable ? "Favorable" : "Néfaste"} ]`
+  const typeLigne = id >= 200 ? `[ Astre / Invocation céleste ]` : id >= 100 ? `[ Figure d’accord / ${x0.favorable ? "Favorable" : "Néfaste"} ]`
     : x0.type === "apparition" ? `[ ${NOMS_FAMILLE[CARTE_PAR_ID[id].famille]} / Figure${x0.forte ? " / Forte" : ""} ]`
     : x0.type === "presage" ? `[ Présage / ${{ attaque: "Attaque", invocation: "Invocation", influence: "Chaîne" }[x0.declencheur]} ]`
     : `[ Influence${x0.sousType === "equipement" ? " / Équipement" : x0.sousType === "continue" ? " / Continue" : x0.sousType === "terrain" ? " / Terrain" : ""} ]`;
@@ -3357,7 +3501,7 @@ function dessinerCarteDuel(c, id, x = 0, y = 0, s = 1) {
     c.fillText(`ATK/${x0.atk}   DEF/${x0.def}`, tx + tl - 4, ty + th - 3);
   }
   c.font = "6px 'Cinzel', serif"; c.fillStyle = "rgba(253,248,236,.85)"; c.textAlign = "left";
-  const pied = id >= 100 ? `Accord ${x0.regles[0].replace(">", " · ").replace("-", " · ")} · Belline` : id === 0 ? "Carte Bleue · Belline" : `N° ${id} · Belline`;
+  const pied = id >= 200 ? "Invocation céleste · Belline" : id >= 100 ? `Accord ${x0.regles[0].replace(">", " · ").replace("-", " · ")} · Belline` : id === 0 ? "Carte Bleue · Belline" : `N° ${id} · Belline`;
   c.fillText(pied, 9, DH - 4);
   c.restore();
 }
@@ -3406,7 +3550,8 @@ function dessinerHologramme(c, id, taille) {
     c.save();
     c.shadowColor = couleur; c.shadowBlur = flou;
     c.fillStyle = "#fff8e6"; c.strokeStyle = "#fff8e6";
-    if (id >= 100) {
+    if (id >= 200) dessinerAstre(c, id, cx, T * 0.48, T * 0.8);
+    else if (id >= 100) {
       const [a, b] = FIGURES[id].materiaux.map(m => (Array.isArray(m) ? m[0] : m));
       if (ILLUSTRATIONS[a]) { c.save(); ILLUSTRATIONS[a](c, T * 0.35, T * 0.5, T * 0.56); c.restore(); }
       if (ILLUSTRATIONS[b]) { c.save(); ILLUSTRATIONS[b](c, T * 0.65, T * 0.48, T * 0.56); c.restore(); }
@@ -3444,7 +3589,7 @@ const borne = (v, min, max) => Math.max(min, Math.min(max, v));
  */
 function dessinerCarteCompacte(c, id, l, jeton = false) {
   const h = l * DH / DL, x0 = est(id), fam = famille(id);
-  const sorte = id >= 100 ? "accord" : id === 0 ? "bleue" : x0.forte ? "forte" : x0.type;
+  const sorte = id >= 200 ? "astre" : id >= 100 ? "accord" : id === 0 ? "bleue" : x0.forte ? "forte" : x0.type;
   const [c1, c2, c3] = CADRES[sorte];
   c.save();
   const g = c.createLinearGradient(0, 0, l, h);
@@ -3476,7 +3621,8 @@ function dessinerCarteCompacte(c, id, l, jeton = false) {
   c.save(); c.beginPath(); c.rect(ax, ay, al, ah); c.clip();
   fondArt(c, id, ax, ay, al, ah, fam.couleur);
   const t = Math.min(al, ah) * 0.82, cx = ax + al / 2, cy = ay + ah / 2;
-  if (id >= 100) {
+  if (id >= 200) dessinerAstre(c, id, cx, cy, t * 1.05);
+  else if (id >= 100) {
     const [a, b] = x0.materiaux.map(mm => (Array.isArray(mm) ? mm[0] : mm));
     encre(c, ay, ah); if (ILLUSTRATIONS[a]) { c.save(); ILLUSTRATIONS[a](c, cx - al * 0.18, cy, t * 0.7); c.restore(); }
     encre(c, ay, ah); if (ILLUSTRATIONS[b]) { c.save(); ILLUSTRATIONS[b](c, cx + al * 0.18, cy, t * 0.7); c.restore(); }
@@ -3554,7 +3700,7 @@ function recopier(canvas, img) {
 function peindreCarteDuel(canvas, id, face = true, largeur = DL, format = "complete") {
   const h = largeur * DH / DL;
   const f = face ? format : "dos";
-  recopier(canvas, image(`v5:${f}:${id}`, largeur, h, c => {
+  recopier(canvas, image(`v6:${f}:${id}`, largeur, h, c => {
     if (!face) dessinerDosDuel(c, 0, 0, largeur / DL);
     else if (format === "complete") dessinerCarteDuel(c, id, 0, 0, largeur / DL);
     else dessinerCarteCompacte(c, id, largeur, format === "jeton");
@@ -3563,7 +3709,7 @@ function peindreCarteDuel(canvas, id, face = true, largeur = DL, format = "compl
 
 /** Peint l'hologramme d'une apparition dans un canvas carré de `taille` px CSS. */
 function peindreHologramme(canvas, id, taille) {
-  recopier(canvas, image(`holo2:${id}`, taille, taille, c => dessinerHologramme(c, id, taille)));
+  recopier(canvas, image(`holo3:${id}`, taille, taille, c => dessinerHologramme(c, id, taille)));
 }
 
 return { DL, dessinerCarteDuel, dessinerDosDuel, dessinerHologramme, dessinerCarteCompacte, peindreCarteDuel, peindreHologramme };
@@ -4228,7 +4374,9 @@ const EFFET_DE_CARTE = {
   100: ["cendres"], 101: ["feuilles"], 102: ["oiseaux"], 103: ["eclair"], 104: ["vague"], 105: ["miasme", "rgba(60,30,40,.5)"], 106: ["colombes"],
   107: ["chauvesouris"], 108: ["epees"], 109: ["chaines"], 110: ["etincelles"], 111: ["coeurs"], 112: ["eboulis"], 113: ["epees"], 114: ["miasme"],
   115: ["flammes", "rgba(255,80,140,.8)"], 116: ["fumee"], 117: ["flammes"], 118: ["roue"], 119: ["dome"], 120: ["dome"], 121: ["coeurs", "rgba(150,120,200,.9)"],
-  122: ["eclair"], 123: ["etincelles"]
+  122: ["eclair"], 123: ["etincelles"],
+  // les astres (invocation céleste)
+  200: ["etoiles"], 201: ["vague"], 202: ["vent"], 203: ["colombes"], 204: ["flammes"], 205: ["eclair"], 206: ["eboulis"]
 };
 
 /** Le calque d'effets d'un conteneur (positionné). */
@@ -4655,11 +4803,12 @@ const {
   creerDuel, def, nomDe, familleDe, peutInvoquer, invoquer, peutActiver, activer, peutPoser, poser, peutChanger, changerPosition,
   fusionsPossibles, fusionner, passerAuCombat, passerPrincipale2, ciblesAttaque, calculCombat, attaquer,
   presagesActivables, presageOmbre, reagirInvocation, finTour, actionOmbre, executerOmbre, atkEffectif, defEffectif, LP,
-  accordsTerrain, accomplirAccordTerrain, peutPoserInfluence, poserInfluence, evolutionsPossibles, evoluer, MECANIQUES, domine, influencesEnReponse, revelerEnReponse, influenceOmbre, preparerReprise, terrainsEnReponse, poserTerrainEnReponse, peutRevelerInfluence, revelerInfluence, techniquesPossibles, utiliserTechnique, avancementAssociation
+  accordsTerrain, accomplirAccordTerrain, peutPoserInfluence, poserInfluence, evolutionsPossibles, evoluer, MECANIQUES, domine, influencesEnReponse, revelerEnReponse, influenceOmbre, preparerReprise, terrainsEnReponse, poserTerrainEnReponse, superInvocationsPossibles, superInvoquer, peutRevelerInfluence, revelerInfluence, techniquesPossibles, utiliserTechnique, avancementAssociation
 } = M["js/engine/duel.js"];
 const { ALIGNEMENTS, ASSOCIATIONS } = M["js/data/techniques.js"];
 const { accordDeLecture, definirDictionnaire, dictionnaireCharge } = M["js/data/lectures.js"];
-const { ETATS } = M["js/data/sorts.js"];
+const { ETATS, GRANDS_ACCORDS } = M["js/data/sorts.js"];
+const { ASTRES } = M["js/data/astres.js"];
 const { reconcilier, basculer, itemPanneau } = M["js/ui/duelOutils.js"];
 const { noterVue, noterRegle, noterDuel, vaincreGardien } = M["js/engine/carnet.js"];
 const { peindreCarteDuel, peindreHologramme } = M["js/render/carteDuel.js"];
@@ -4703,7 +4852,7 @@ const reserveJoueur = () => [...new Set([...FIGURES_DEPART, ...figuresDebloquees
 const MECA_GARDIENS = [[], ["poseInfluence", "evolution"], ["poseInfluence", "evolution", "techniques"], ["poseInfluence", "evolution", "techniques", "figures"],
   ["poseInfluence", "evolution", "techniques", "figures", "accordsTerrain"], MECANIQUES, MECANIQUES];
 const NOMS_MECA = { poseInfluence: "les influences posées face cachée", evolution: "l’évolution des apparitions", techniques: "les techniques (alignements, associations)",
-  figures: "les figures d’accord", accordsTerrain: "les accords sur le terrain" };
+  figures: "les figures d’accord", accordsTerrain: "les accords sur le terrain", superInvocations: "l’invocation céleste (les astres)" };
 let accordsDuDuel = [];
 const estRare = id => id < 100 && (carnet.cartes[id]?.vecue || 0) > 0;
 
@@ -4760,7 +4909,7 @@ const effets = new Effets($("plateau"));
 // l'ambiance du tapis (particules lentes du ciel et des terrains)
 const ambiance = new Ambiance($("tapis"));
 /** L'élément d'une carte (sa planète) ; les figures d'accord ont le leur. */
-const elementCarte = id => elementDe(id >= 100 ? null : familleDe(id));
+const elementCarte = id => elementDe(id >= 100 && id < 200 ? null : familleDe(id));
 // la barre de vie laisse une traînée claire quand elle baisse, comme dans les jeux de combat
 for (const j of [0, 1]) { const s = document.createElement("span"); s.className = "lp-trainee"; s.id = `lp-trainee-${j}`; $(`lp-jauge-${j}`).before(s); }
 /** Joue l'effet d'une carte : sur tout le tapis, ou autour d'un élément (agrandi). */
@@ -4771,7 +4920,7 @@ function effetCarte(id, cible = null, agrandir = 1, avecEmbleme = false) {
 }
 function enveloppe(cv, id, face) {
   const s = document.createElement("span");
-  s.className = `carte-env${face && estRare(id) ? " rare" : ""}${face && def(id).forte ? " forte" : ""}${face && id >= 100 ? " figure" : ""}`;
+  s.className = `carte-env${face && estRare(id) ? " rare" : ""}${face && def(id).forte ? " forte" : ""}${face && id >= 100 && id < 200 ? " figure" : ""}${face && id >= 200 ? " astre" : ""}`;
   s.appendChild(cv);
   return s;
 }
@@ -5040,7 +5189,7 @@ function indicesMain(el, id, index) {
   const autres = [...J.main.filter((_, k) => k !== index), ...J.monstres.filter(m => m && !m.faceCachee).map(m => m.id), ...J.presages.filter(p => p?.continue).map(p => p.id)].filter(x => x < 100);
   let n = 0, belline = false;
   for (const o of new Set(autres)) {
-    if (reglesDeclenchees({ id, choix: 0 }, { id: o, choix: 0 }).length || reglesDeclenchees({ id: o, choix: 0 }, { id, choix: 0 }).length) { n++; belline = true; }
+    if (reglesDeclenchees({ id, choix: 0 }, { id: o, choix: 0 }).length || reglesDeclenchees({ id: o, choix: 0 }, { id, choix: 0 }).length || GRANDS_ACCORDS.some(g => (g.a === id && g.b === o) || (g.a === o && g.b === id))) { n++; belline = true; }
     else if (accordDeLecture(id, o, nomDe)?.sorte && accordDeLecture(id, o, nomDe).sorte !== "lecture") n++;
   }
   const evo = d.actif === 0 && evolutionsPossibles(d, 0).some(e => e.index === index);
@@ -5069,7 +5218,7 @@ function majCommandes() {
   const ba = $("bouton-accord");
   ba.disabled = false; ba.textContent = f ? `✦ Accords (${f})` : "✦ Accords";
   ba.classList.toggle("brille", f > 0);
-  const t = monTour ? techniquesPossibles(d, 0).length : 0;
+  const t = monTour ? techniquesPossibles(d, 0).length + superInvocationsPossibles(d, 0).length : 0;
   const bt = $("bouton-technique");
   bt.hidden = !d.mec.techniques;
   bt.textContent = t ? `☉ Technique (${t})` : "☉ Techniques";
@@ -5118,7 +5267,10 @@ function apercu(id, face = true, etat = "", temporaire = false) {
   $("detail-carte").classList.toggle("rare", face && estRare(id));
   $("detail-etat").textContent = etat;
   if (!face) { $("detail-notice").textContent = ""; $("detail-mot").textContent = ""; return; }
-  if (id >= 100) {
+  if (id >= 200) {
+    $("detail-notice").textContent = ASTRES[id].texte;
+    $("detail-mot").textContent = `Astre de la série ${ASTRES[id].nom} : trois apparitions de cette planète sacrifiées (invocation céleste, ajout de jeu).`;
+  } else if (id >= 100) {
     const F = FIGURES[id];
     $("detail-notice").textContent = `« ${VOISINAGE.find(r => r.id === F.regles[0]).texte} »`;
     $("detail-mot").textContent = `Figure d’accord (création de jeu) : ${F.materiaux.map(m => (Array.isArray(m) ? "une Étoile" : CARTE_PAR_ID[m].nom)).join(" et ")}.`;
@@ -5269,6 +5421,12 @@ async function revelerPosee(place, choix) {
   await animer(revelerInfluence(d, 0, place, { choix, contre }, rng));
   finAction();
 }
+async function executerCeleste(famille) {
+  fermerGalerie();
+  await animer(superInvoquer(d, 0, famille, rng), true);
+  finAction();
+}
+
 async function executerTechnique(cle) {
   fermerGalerie();
   await animer(utiliserTechnique(d, 0, cle, rng), true);
@@ -5284,6 +5442,11 @@ function ouvrirTechniques() {
   $("galerie-texte").textContent = "Ajouts de jeu. Une technique par tour, en phase principale. Alignement : trois apparitions face recto d’une même planète. Association : des cartes révélées pendant le duel, comme les cartes d’un tirage qui se répondent ; chacune sert une fois.";
   const item = itemPanneau;
   const liste = [];
+  // l'invocation céleste : trois apparitions d'une planète deviennent l'astre lui-même
+  const celestes = d.actif === 0 && !occupe ? superInvocationsPossibles(d, 0) : [];
+  for (const c of celestes) liste.push(item(`★ Invocation céleste : ${ASTRES[c.id].nom}`, ASTRES[c.id].texte,
+    `Prête : ${[...c.places.map(p => nomDe(J.monstres[p].id)), ...(c.main != null ? [`${nomDe(J.main[c.main])} (main)`] : [])].join(", ")} sont sacrifiées. Touchez pour invoquer.`, () => executerCeleste(c.famille), "prete celeste"));
+  if (d.mec.superInvocations && !celestes.length) liste.push(item("★ Invocation céleste", "Réunissez trois cartes d’une même planète : deux apparitions face recto en jeu, et une troisième en jeu ou dans la main. Sacrifiez-les pour invoquer l’astre (niveau 10). Chaque astre une fois par duel.", J.astres.length ? `Déjà invoqués : ${J.astres.map(f => ASTRES[Object.keys(ASTRES).find(k => ASTRES[k].famille === f)].nom).join(", ")}.` : "", null, "vide"));
   for (const t of pretes) liste.push(item(`${t.sorte === "alignement" ? t.glyphe : "✦"} ${t.nom}`, t.texte, "Prête : touchez pour l’utiliser", () => executerTechnique(t.cle), "prete"));
   if (!pretes.length) liste.push(item("Aucune technique prête", d.actif === 0 && J.techniqueFaite ? "Vous avez déjà utilisé une technique ce tour." : "Alignez trois apparitions d’une même planète, ou révélez les cartes d’une association.", "", null, "vide"));
   for (const [f, a] of Object.entries(ALIGNEMENTS)) {
@@ -5485,6 +5648,7 @@ function expliquer(a) {
     technique: `J’utilise une technique${gain}.`,
     accordTerrain: `Deux de mes cartes en jeu s’associent : j’accomplis l’accord${gain}.`,
     evoluer: c != null && `Je fais évoluer une apparition en ${nomDe(c)}${gain}.`,
+    superInvoquer: `Je sacrifie trois apparitions de ma planète : l’astre descend${gain}.`,
     attaquer: `J’attaque${a.cible === "direct" ? " directement vos points de vie" : ""}${gain}.`,
     changer: "Je change la position d’une apparition.",
     combat: "J’entre en combat.", principale2: "Je termine le combat."
@@ -5697,8 +5861,8 @@ function zoomer(id, face = true) {
   $("zoom-carte").style.width = `${l}px`;
   if (face) {
     $("zoom-effet").textContent = def(id).texte || "";
-    $("zoom-notice").textContent = id >= 100 ? `« ${VOISINAGE.find(r => r.id === FIGURES[id].regles[0]).texte} »` : `« ${CARTE_PAR_ID[id].notice} »`;
-    $("zoom-mot").textContent = id >= 100 ? "Figure d’accord" : `N° ${id} · ${CARTE_PAR_ID[id].nom} · mot de la notice : « ${DUEL[id].mot} »`;
+    $("zoom-notice").textContent = id >= 200 ? "Invocation céleste : trois apparitions de sa planète, sacrifiées." : id >= 100 ? `« ${VOISINAGE.find(r => r.id === FIGURES[id].regles[0]).texte} »` : `« ${CARTE_PAR_ID[id].notice} »`;
+    $("zoom-mot").textContent = id >= 200 ? `Astre · ${ASTRES[id].nom}` : id >= 100 ? "Figure d’accord" : `N° ${id} · ${CARTE_PAR_ID[id].nom} · mot de la notice : « ${DUEL[id].mot} »`;
   } else { $("zoom-effet").textContent = "Carte face cachée."; $("zoom-notice").textContent = ""; $("zoom-mot").textContent = ""; }
   z.hidden = false; cacherLoupe();
 }
@@ -5764,7 +5928,8 @@ async function animer(ev, garderOccupe = false) {
         journal(`${nom(e.j)} ${accorde(e.j, "invoquez", "invoque")} ${c}${e.speciale && !e.figure ? " (invocation spéciale)" : ""}.`);
         rendre();
         const z = zoneEl(e.j, e.place);
-        if (z) { z.style.setProperty("--teinte", (TEINTES[elementCarte(e.id)] || TEINTES.accord).join(",")); z.classList.add(e.figure || def(e.id).forte ? "arrivee-majeure" : "arrivee"); }
+        if (z) { z.style.setProperty("--teinte", (TEINTES[elementCarte(e.id)] || TEINTES.accord).join(",")); z.classList.add(e.figure || e.astre || def(e.id).forte ? "arrivee-majeure" : "arrivee"); }
+        if (e.astre && z) { secousse(true); effets.jouer("transformation", (() => { const r = effets.rect(z), k = 3.4; return { x: r.x + r.w / 2 - r.w * k / 2, y: r.y + r.h / 2 - r.h * k / 2, w: r.w * k, h: r.h * k }; })(), { element: elementCarte(e.id) }); effets.impact(z, elementCarte(e.id), true); jouerElement(elementCarte(e.id), "impact"); }
         if (z) effetCarte(e.id, z, e.figure || def(e.id).forte ? 3.2 : 2.4);
         jouerSon("invocation", familleDe(e.id)); eclair(e.figure ? "rgba(167,122,216,.3)" : "rgba(243,213,138,.25)");
         if (e.j === 1) apercu(e.id, true, `Invoquée par ${d.joueurs[1].nom}.`);
@@ -5840,13 +6005,19 @@ async function animer(ev, garderOccupe = false) {
         await attendre(e.v < 0 ? 520 : 380); break;
       }
       case "accord": {
-        const titre = e.cle?.startsWith("dico:") ? "Lecture de l’Atelier" : { echo: "Écho de la notice", accompagnement: "Accord d’accompagnement", lecture: "Lecture moderne" }[e.sorte] || "Règle de Belline";
+        const titre = e.cle?.startsWith("dico:") ? "Lecture de l’Atelier" : { echo: "Écho de la notice", accompagnement: "Accord d’accompagnement", lecture: "Lecture moderne", majeur: "Grand accord" }[e.sorte] || "Règle de Belline";
+        if (e.sorte === "majeur") {
+          // un Grand accord : la terre tremble, la lumière éclate
+          secousse(true); eclair(e.favorable ? "rgba(255,214,120,.5)" : "rgba(255,60,40,.45)");
+          effets.jouer(e.favorable ? "etoiles" : "eclair", effets.rect($("tapis")));
+          jouerElement(e.favorable ? "lumiere" : "foudre", "impact");
+        }
         const combo = e.combo > 1 ? ` · combo ×${e.combo}` : "";
         journal(`${titre}${e.terrain ? " (sur le terrain)" : ""}${combo} : ${e.texte} (${e.valeur} points)`, true);
         if (e.j === 0) { accordsDuDuel.push({ titre, texte: e.texte, belline: e.sorte === "belline" }); if (e.regle) { noterRegle(carnet, e.regle); sauverCarnet(carnet); } }
         encart(`${titre}${combo}`, `${e.texte} ${e.favorable ? (e.j === 0 ? "Vous gagnez" : `${d.joueurs[1].nom} gagne`) : (e.j === 0 ? `${d.joueurs[1].nom} perd` : "Vous perdez")} ${e.valeur} points${e.sorte === "belline" ? ", et le sort de la règle agit" : ""}.`,
           e.ids || [], `${e.sorte || "belline"} ${e.favorable ? "favorable" : "nefaste"}`, e.sorte === "lecture" ? 6000 : 10000);
-        if (e.sorte !== "lecture") { banniere(titre + combo, e.texte, e.sorte === "belline" ? "belline" : e.favorable ? "accord" : "sombre"); jouerSon("regle"); eclair(e.favorable ? "rgba(243,213,138,.35)" : "rgba(160,60,90,.3)"); }
+        if (e.sorte !== "lecture") { banniere(e.sorte === "majeur" ? `${titre} : ${e.texte.split(" : ")[0]}` : titre + combo, e.sorte === "majeur" ? e.texte.split(" : ").slice(1).join(" : ") : e.texte, e.sorte === "belline" ? "belline" : e.sorte === "majeur" ? "majeur" : e.favorable ? "accord" : "sombre"); jouerSon("regle"); eclair(e.favorable ? "rgba(243,213,138,.35)" : "rgba(160,60,90,.3)"); }
         else jouerSon(e.favorable ? "gain" : "perte");
         if (e.ids) {
           {
@@ -5855,7 +6026,16 @@ async function animer(ev, garderOccupe = false) {
           }
           effets.duo(e.ids[0], e.ids[1], effets.rect($("tapis")), e.favorable);
         }
-        await attendre(e.sorte === "lecture" ? 700 : e.sorte === "belline" ? 2000 : 1400); break;
+        await attendre(e.sorte === "lecture" ? 700 : e.sorte === "belline" || e.sorte === "majeur" ? 2200 : 1400); break;
+      }
+      case "celeste": {
+        const A = ASTRES[e.id];
+        journal(`Invocation céleste : ${nom(e.j) === "Vous" ? "vous sacrifiez" : `${d.joueurs[1].nom} sacrifie`} trois cartes de ${A.nom} pour invoquer l’astre.`, true);
+        banniere("Invocation céleste", `${A.glyphe} ${A.nom}`, "majeur");
+        eclair("rgba(255,240,200,.55)"); jouerElement(elementDe(A.famille), "lancer");
+        effets.jouer("etoiles", effets.rect($("tapis")));
+        encart(`Invocation céleste : ${A.nom}`, A.texte, [...e.materiaux, e.id], "majeur favorable", 11000);
+        await attendre(1300); break;
       }
       case "evolution": {
         journal(`Évolution : ${nom(e.j) === "Vous" ? "votre" : "son"} ${nomDe(e.de)} devient ${c} (+300 ATK d’élan).`, true);
@@ -6164,6 +6344,7 @@ function ouvrirAide() {
     I("3. Attaquer", "En combat, touchez une apparition prête (cadre doré), puis sa cible. ATK contre ATK : la plus faible tombe et son joueur perd la différence. Contre une défense : la DEF compte.", ""),
     I("4. Répondre", "Pendant l’attaque adverse, une fenêtre vous propose vos présages, vos influences posées et vos terrains : c’est le moment de retourner le combat.", ""),
     I("5. Les accords", "Deux cartes que la notice associe, jouées l’une après l’autre ou toutes deux en jeu, accomplissent un accord : la règle de Belline vaut le plus. Un encart l’explique ; touchez ses cartes pour les agrandir.", ""),
+    I("Grands accords et astres", `Deux cartes fortes ensemble (Accident et Fatalité, Despotisme et Fatalité, Sagesse et Fatalité…) forment un Grand accord, violent : ${GRANDS_ACCORDS.length} en tout. Trois cartes d’une même planète (deux apparitions en jeu, la troisième en jeu ou en main) se sacrifient pour invoquer l’astre lui-même (bouton Techniques) : le Soleil, la Lune… niveau 10.`, ""),
     I("✦ et ⇧ sur vos cartes", "✦ : la carte s’associe avec une autre de vos cartes (doré : une règle de Belline). ⇧ : elle peut faire évoluer une de vos apparitions.", ""),
     I("Les auras", "Vert : peut évoluer. Bleu : bloquée (n’attaque pas). Or : protégée une fois. Vert-jaune : malade. Orange : brûlée. Bleu clair : endormie. Rose : confuse.", ""),
     I("Les signes", "⛨ garde (à attaquer d’abord) · ◈ protégée · ⚒ équipée · ⛓ bloquée · ◐ posée face cachée · ☣ malade · ♨ brûlée · ☾ endormie · ✺ confuse · ▲ votre apparition domine sa planète (+500 ATK).", ""),

@@ -53,6 +53,8 @@ Duel (tout le mode est une adaptation) :
 - Évolution (Digimon, Pokémon) : une apparition en jeu depuis un tour évolue en une apparition de la même planète, d'un à trois niveaux plus haut, sans sacrifice (+300 ATK, équipements gardés). Une par tour.
 - États (`js/data/sorts.js`) : poison (Maladie), brûlure (Feu), sommeil (Eau, passivité), confusion (Inconstance) ; guéris par la Grâce, la Campagne-Santé, certaines règles.
 - Affinité entre planètes : chacune domine la suivante dans l'ordre d'Edmond (+500 ATK contre elle).
+- Grands accords (`GRANDS_ACCORDS`, `js/data/sorts.js`) : deux cartes fortes ou lourdes réunies hors des règles de la notice (Accident et Fatalité : « La catastrophe inéluctable », Despotisme et Fatalité…) ; ordre indifférent ; 1500 points et un effet violent. Ils ne recouvrent jamais une règle de la notice (test), qui reste prioritaire. Les sorts néfastes de la notice (Accident, Fatalité, Ruine, Feu) ont été durcis.
+- Invocation céleste (`js/data/astres.js`, mécanique `superInvocations`) : trois cartes d'une même planète (deux apparitions face recto en jeu, la troisième en jeu ou dans la main) sont sacrifiées pour invoquer l'astre (numéros 200 à 206, niveau 10, effet à l'arrivée). Une par tour, chaque astre une fois par duel ; un astre détruit ou renvoyé retourne au ciel.
 - La Fatalité : au-delà du 40e tour, le plus de points de vie l'emporte (aucun duel sans fin).
 - Mécaniques dévoilées pas à pas dans la campagne (`MECA_GARDIENS` dans `js/duel-main.js`, `d.mec` dans le moteur) ; toutes ouvertes en duel libre.
 - Difficulté adaptative (selon les victoires du carnet) et mode apprenti (l'Ombre explique ses coups dans le journal).
@@ -99,6 +101,7 @@ js/data/cartes.js       les 53 cartes : notice, mot-clé, effets, choix, effet d
 js/data/voisinage.js    règles de voisinage de Belline (avec leur source)
 js/data/duel.js         fiche de combat de chaque carte
 js/data/accords.js      figures d'accord (une par règle de voisinage)
+js/data/astres.js       les sept astres (invocation céleste)
 js/data/gardiens.js     les Sept Gardiens, profils de difficulté
 js/data/techniques.js   alignements planétaires et associations (techniques du Duel)
 js/data/lectures.js     accords hors notice du Duel : échos, accompagnement, lectures modernes

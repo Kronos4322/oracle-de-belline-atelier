@@ -29,7 +29,12 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
 const reduit = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
 const survol = window.matchMedia?.("(hover: hover)").matches ?? false;
-const attendre = ms => new Promise(r => setTimeout(r, reduit ? Math.min(ms, 150) : ms));
+// La vitesse des animations : lente pour lire les combos, normale, ou rapide. Elle allonge aussi les bannières.
+const VITESSES = [["lente", 1.9, "🐢 Lent"], ["normale", 1.3, "⏱ Normal"], ["rapide", 0.8, "⚡ Rapide"]];
+let vitesse = 1;
+try { const v = VITESSES.findIndex(x => x[0] === localStorage.getItem("chemin-du-mage.vitesse")); if (v >= 0) vitesse = v; } catch { /* rien */ }
+const facteur = () => VITESSES[vitesse][1];
+const attendre = ms => new Promise(r => setTimeout(r, reduit ? Math.min(ms, 150) : ms * facteur()));
 const carnet = chargerCarnet();
 const CLE_DECK = "chemin-du-mage.deck";
 const PLANETES = ["soleil", "lune", "mercure", "venus", "mars", "jupiter", "saturne"];
@@ -91,6 +96,8 @@ function montrerLoupe(id, face, ancre) {
 function cacherLoupe() { loupe.classList.remove("visible"); }
 /** Branche la loupe (et l'aperçu passager du panneau) sur un élément. `quoi()` → [id, face, état] ou null. */
 function loupable(el, quoi) {
+  // double-clic (ou double toucher) : la carte en grand
+  el.addEventListener("dblclick", e => { const q = quoi(); if (q) { e.preventDefault(); zoomer(q[0], q[1]); } });
   if (survol) {
     el.addEventListener("mouseenter", () => { const q = quoi(); if (!q) return; montrerLoupe(q[0], q[1], el); apercu(q[0], q[1], q[2], true); });
     el.addEventListener("mouseleave", () => { cacherLoupe(); retablirApercu(); });
@@ -1011,6 +1018,50 @@ function secousse(fort = false) {
   p.classList.remove("secoue", "secoue-fort"); void p.offsetWidth; p.classList.add(fort ? "secoue-fort" : "secoue");
 }
 
+/**
+ * Un encart : ce qui vient de se passer d'important (accord, sort, évolution, technique…), avec ses cartes, qui reste
+ * le temps d'être lu (plus longtemps en vitesse lente) ; toucher une carte l'agrandit, toucher l'encart le ferme.
+ */
+function encart(titre, texte, ids = [], classe = "", duree = 8000) {
+  const box = $("encarts");
+  const el = document.createElement("div");
+  el.className = `encart ${classe}`;
+  const cartes = document.createElement("div"); cartes.className = "encart-cartes";
+  for (const id of ids.filter(x => x != null)) {
+    const b = document.createElement("button"); b.className = "encart-carte"; b.setAttribute("aria-label", `Agrandir ${nomDe(id)}`);
+    b.appendChild(carteCanvas(id, true, 52, "", "compacte"));
+    b.addEventListener("click", ev => { ev.stopPropagation(); zoomer(id); });
+    cartes.appendChild(b);
+  }
+  const corps = document.createElement("div"); corps.className = "encart-corps";
+  corps.innerHTML = "<b></b><span></span>";
+  corps.querySelector("b").textContent = titre; corps.querySelector("span").textContent = texte;
+  el.append(cartes, corps);
+  const fermer = () => { el.classList.add("part"); setTimeout(() => el.remove(), 300); };
+  el.addEventListener("click", fermer);
+  box.prepend(el);
+  while (box.children.length > 3) box.lastChild.remove();
+  setTimeout(fermer, duree * facteur());
+}
+
+/** La carte en grand, avec son effet et sa notice ; toucher pour fermer. */
+function zoomer(id, face = true) {
+  if (id == null) return;
+  const z = $("zoom");
+  const l = Math.min(420, window.innerWidth * 0.86, (window.innerHeight * 0.6) * 150 / 219);
+  peindreCarteDuel($("zoom-carte"), id, face, l);
+  $("zoom-carte").style.width = `${l}px`;
+  if (face) {
+    $("zoom-effet").textContent = def(id).texte || "";
+    $("zoom-notice").textContent = id >= 100 ? `« ${VOISINAGE.find(r => r.id === FIGURES[id].regles[0]).texte} »` : `« ${CARTE_PAR_ID[id].notice} »`;
+    $("zoom-mot").textContent = id >= 100 ? "Figure d’accord" : `N° ${id} · ${CARTE_PAR_ID[id].nom} · mot de la notice : « ${DUEL[id].mot} »`;
+  } else { $("zoom-effet").textContent = "Carte face cachée."; $("zoom-notice").textContent = ""; $("zoom-mot").textContent = ""; }
+  z.hidden = false; cacherLoupe();
+}
+$("zoom").addEventListener("click", () => { $("zoom").hidden = true; });
+$("detail-carte").addEventListener("click", () => { if (apercuFixe) zoomer(apercuFixe[0], apercuFixe[1]); });
+$("detail-zoom").addEventListener("click", () => { if (apercuFixe) zoomer(apercuFixe[0], apercuFixe[1]); });
+
 function banniere(titre, texte, classe = "") {
   const b = $("banniere");
   b.className = `banniere ${classe}`;
@@ -1061,6 +1112,7 @@ async function animer(ev, garderOccupe = false) {
         if (e.j === 0) { noterRegle(carnet, e.regle); sauverCarnet(carnet); }
         eclair("rgba(167,122,216,.4)"); jouerSon("regle");
         banniere("Figure d’accord", e.texte, "accord");
+        encart(`Figure d’accord : ${c}`, `${e.texte} ${def(e.id).texte}`, [...e.materiaux, e.id], "technique", 10000);
         effetCarte(e.id);
         await carteAuCentre(e.materiaux, "fusion");
         break;
@@ -1095,6 +1147,7 @@ async function animer(ev, garderOccupe = false) {
         apercu(e.id, true, `Présage activé par ${e.j === 0 ? "vous" : d.joueurs[1].nom}.`);
         eclair("rgba(201,89,159,.35)"); jouerSon("regle");
         banniere(e.maillon === 2 ? "Chaîne : maillon 2" : "Présage", c, "presage");
+        encart(`${e.maillon === 2 ? "Chaîne" : "Présage"} : ${c}`, `${e.j === 0 ? "Vous activez" : `${d.joueurs[1].nom} active`} ${c}. ${def(e.id).texte}`, [e.id], "presage", 8000);
         effetCarte(e.id, null, 1, true);
         await carteAuCentre(e.id, "presage"); break;
       case "sacrifice":
@@ -1143,14 +1196,16 @@ async function animer(ev, garderOccupe = false) {
         await attendre(e.v < 0 ? 520 : 380); break;
       }
       case "accord": {
-        const titre = { echo: "Écho de la notice", accompagnement: "Accord d’accompagnement", lecture: "Lecture moderne" }[e.sorte] || "Règle de Belline";
+        const titre = e.cle?.startsWith("dico:") ? "Lecture de l’Atelier" : { echo: "Écho de la notice", accompagnement: "Accord d’accompagnement", lecture: "Lecture moderne" }[e.sorte] || "Règle de Belline";
         const combo = e.combo > 1 ? ` · combo ×${e.combo}` : "";
         journal(`${titre}${e.terrain ? " (sur le terrain)" : ""}${combo} : ${e.texte} (${e.valeur} points)`, true);
         if (e.j === 0) { accordsDuDuel.push({ titre, texte: e.texte, belline: e.sorte === "belline" }); if (e.regle) { noterRegle(carnet, e.regle); sauverCarnet(carnet); } }
+        encart(`${titre}${combo}`, `${e.texte} ${e.favorable ? (e.j === 0 ? "Vous gagnez" : `${d.joueurs[1].nom} gagne`) : (e.j === 0 ? `${d.joueurs[1].nom} perd` : "Vous perdez")} ${e.valeur} points${e.sorte === "belline" ? ", et le sort de la règle agit" : ""}.`,
+          e.ids || [], `${e.sorte || "belline"} ${e.favorable ? "favorable" : "nefaste"}`, e.sorte === "lecture" ? 6000 : 10000);
         if (e.sorte !== "lecture") { banniere(titre + combo, e.texte, e.sorte === "belline" ? "belline" : e.favorable ? "accord" : "sombre"); jouerSon("regle"); eclair(e.favorable ? "rgba(243,213,138,.35)" : "rgba(160,60,90,.3)"); }
         else jouerSon(e.favorable ? "gain" : "perte");
         if (e.ids) {
-          if (e.terrain) {
+          {
             const zs = e.ids.map(id => [...document.querySelectorAll(`#monstres-${e.j} .zone, #presages-${e.j} .zone`)].find(z => { const P = +z.dataset.place, sorte = z.closest(".rang-presages") ? "presages" : "monstres"; return d.joueurs[e.j][sorte][P]?.id === id; }));
             if (zs[0] && zs[1]) effets.lien(zs[0], zs[1], e.favorable);
           }
@@ -1164,6 +1219,8 @@ async function animer(ev, garderOccupe = false) {
         const z = zoneEl(e.j, e.place); z?.classList.add("evolue");
         if (z) effetCarte(e.id, z, 2.6, true);
         banniere("Évolution", `${nomDe(e.de)} ⇧ ${c}`, "accord"); jouerSon("invocation", familleDe(e.id));
+        if (z) effets.jouer("transformation", (() => { const r = effets.rect(z), k = 2.2; return { x: r.x + r.w / 2 - r.w * k / 2, y: r.y + r.h / 2 - r.h * k / 2, w: r.w * k, h: r.h * k }; })(), { element: elementCarte(e.id) });
+        encart("Évolution", `${nomDe(e.de)} évolue en ${c} : même planète, niveau plus haut, +300 ATK d’élan. ${def(e.id).texte}`, [e.de, e.id], "evolution", 9000);
         if (e.j === 1) apercu(e.id, true, `Évolution de ${d.joueurs[1].nom}.`, true);
         await attendre(1200); break;
       }
@@ -1206,6 +1263,7 @@ async function animer(ev, garderOccupe = false) {
         journal(`${e.sorte === "alignement" ? "Alignement" : "Association"} : ${e.j === 0 ? "vous utilisez" : `${d.joueurs[1].nom} utilise`} « ${e.nom} ». ${e.texte}`, true);
         for (const p of e.places) zoneEl(e.j, p)?.classList.add("aligne");
         banniere(e.nom, e.sorte === "alignement" ? "Alignement planétaire" : "Association", "accord");
+        encart(`${e.sorte === "alignement" ? "Alignement" : "Association"} : ${e.nom}`, e.texte, e.cartes || [], "technique", 10000);
         jouerSon("regle"); eclair("rgba(243,213,138,.35)");
         effets.jouer(EFFET_TECHNIQUE[e.cle.split(":")[1]] || "etoiles", effets.rect($("tapis")));
         await attendre(1500); break;
@@ -1414,7 +1472,7 @@ $("bouton-retour-accueil").addEventListener("click", () => { $("fin-duel").class
 
 window.addEventListener("keydown", e => {
   if (e.target instanceof HTMLElement && e.target.closest("input, textarea")) return;
-  if (e.code === "Escape") { if ($("galerie").classList.contains("visible")) fermerGalerie(); else annuler(); }
+  if (e.code === "Escape") { if (!$("zoom").hidden) $("zoom").hidden = true; else if ($("galerie").classList.contains("visible")) fermerGalerie(); else annuler(); }
   if (!d || $("accueil-duel").classList.contains("visible")) return;
   if (e.code === "KeyE") finDeTour();
   if (e.code === "KeyC") $("bouton-combat").click();
@@ -1438,6 +1496,40 @@ function chargerDictionnaire() {
   document.head.appendChild(s);
 }
 setTimeout(chargerDictionnaire, 1500);
+
+// La vitesse : un toucher la change (lente pour lire les combos)
+function majVitesse() {
+  $("bouton-vitesse").textContent = VITESSES[vitesse][2];
+  document.documentElement.style.setProperty("--vitesse", facteur());
+}
+$("bouton-vitesse").addEventListener("click", () => {
+  vitesse = (vitesse + 1) % VITESSES.length;
+  try { localStorage.setItem("chemin-du-mage.vitesse", VITESSES[vitesse][0]); } catch { /* rien */ }
+  majVitesse();
+});
+majVitesse();
+
+// L'aide : comment jouer, et ce que veulent dire les signes
+function ouvrirAide() {
+  const I = itemPanneau;
+  $("galerie-titre").textContent = "Comment jouer";
+  $("galerie-texte").textContent = "Le but : faire tomber les points de vie de l’adversaire à zéro. Touchez une carte pour voir ce qu’elle peut faire ; touchez la carte du panneau pour l’agrandir.";
+  $("galerie-cartes").replaceChildren(
+    I("1. Votre tour", "Vous piochez 2 cartes (7 en main au plus). En phase principale : invoquez une apparition (une par tour), activez ou posez vos influences, posez vos présages. Puis « Combat », puis « Fin ».", "", null, "titre-aide"),
+    I("2. Invoquer", "Niveau 4 ou moins : sans sacrifice. Niveau 5 et 6 : une apparition à sacrifier ; 7 et 8 : deux. S’il en manque, l’offrande les remplace (1500 points de vie chacune).", ""),
+    I("3. Attaquer", "En combat, touchez une apparition prête (cadre doré), puis sa cible. ATK contre ATK : la plus faible tombe et son joueur perd la différence. Contre une défense : la DEF compte.", ""),
+    I("4. Répondre", "Pendant l’attaque adverse, une fenêtre vous propose vos présages, vos influences posées et vos terrains : c’est le moment de retourner le combat.", ""),
+    I("5. Les accords", "Deux cartes que la notice associe, jouées l’une après l’autre ou toutes deux en jeu, accomplissent un accord : la règle de Belline vaut le plus. Un encart l’explique ; touchez ses cartes pour les agrandir.", ""),
+    I("✦ et ⇧ sur vos cartes", "✦ : la carte s’associe avec une autre de vos cartes (doré : une règle de Belline). ⇧ : elle peut faire évoluer une de vos apparitions.", ""),
+    I("Les auras", "Vert : peut évoluer. Bleu : bloquée (n’attaque pas). Or : protégée une fois. Vert-jaune : malade. Orange : brûlée. Bleu clair : endormie. Rose : confuse.", ""),
+    I("Les signes", "⛨ garde (à attaquer d’abord) · ◈ protégée · ⚒ équipée · ⛓ bloquée · ◐ posée face cachée · ☣ malade · ♨ brûlée · ☾ endormie · ✺ confuse · ▲ votre apparition domine sa planète (+500 ATK).", ""),
+    I("Les éléments", "Soleil lumière, Lune eau, Mercure air, Vénus fleurs, Mars feu, Jupiter foudre, Saturne terre. Chaque planète domine la suivante dans l’ordre d’Edmond.", ""),
+    I("Trop rapide ?", "Le bouton ⏱ change la vitesse : 🐢 Lent laisse le temps de lire chaque combo. Le journal (☰) garde tout ce qui s’est passé.", "")
+  );
+  $("galerie").classList.add("visible");
+  $("galerie-fermer").focus();
+}
+$("bouton-aide").addEventListener("click", ouvrirAide);
 
 // Téléphone : le journal s'ouvre par un bouton, par-dessus le jeu
 $("bouton-journal")?.addEventListener("click", () => {

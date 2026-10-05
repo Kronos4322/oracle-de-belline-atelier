@@ -3241,22 +3241,38 @@ const EFFETS = {
     }
   },
   // un lien lumineux entre deux points (accord sur le terrain)
+  // un lien entre deux cartes associées : une corde de lumière qui se tend, des perles qui courent, deux nœuds qui brillent
   lien: {
-    duree: 1.8,
-    init: () => ({ p: [] }),
+    duree: 2.4,
+    init: () => ({}),
     dessiner(c, r, p, e, dt, o) {
-      const [x1, y1, x2, y2] = o.points, a = fondu(p, 0.1, 0.35);
-      const teinte = o.favorable ? "243,213,138" : "190,110,230";
-      const mx = (x1 + x2) / 2, my = Math.min(y1, y2) - 50;
-      c.strokeStyle = `rgba(${teinte},${a})`; c.lineWidth = 4; c.shadowColor = `rgb(${teinte})`; c.shadowBlur = 18;
-      c.beginPath(); c.moveTo(x1, y1); c.quadraticCurveTo(mx, my, x2, y2); c.stroke(); c.shadowBlur = 0;
-      for (let k = 0; k < 6; k++) {
-        const t = (p * 1.5 + k / 6) % 1, u = 1 - t;
-        const x = u * u * x1 + 2 * u * t * mx + t * t * x2, y = u * u * y1 + 2 * u * t * my + t * t * y2;
-        c.fillStyle = `rgba(255,250,230,${a})`; c.beginPath(); c.arc(x, y, 4, 0, TAU); c.fill();
+      const [x1, y1, x2, y2] = o.points, a = fondu(p, 0.12, 0.3);
+      const teinte = o.favorable ? [243, 213, 138] : [190, 110, 230];
+      const tendu = ease(Math.min(1, p * 2.2)), mx = (x1 + x2) / 2, my = Math.min(y1, y2) - 60 * (1.4 - tendu * 0.4);
+      const pt = t => { const u = 1 - t; return [u * u * x1 + 2 * u * t * mx + t * t * x2, u * u * y1 + 2 * u * t * my + t * t * y2]; };
+      // la corde se déroule d'un bout à l'autre
+      c.lineCap = "round";
+      for (const [l, al] of [[10, 0.18], [5, 0.55], [2, 1]]) {
+        c.strokeStyle = l === 2 ? `rgba(255,250,232,${a * al})` : rgba(teinte, a * al); c.lineWidth = l;
+        c.beginPath(); c.moveTo(x1, y1);
+        for (let k = 1; k <= 30; k++) { const t = (k / 30) * tendu; const [x, y] = pt(t); c.lineTo(x, y + Math.sin(k * 0.9 + p * 10) * 1.5 * (1 - tendu)); }
+        c.stroke();
+      }
+      // les perles qui courent le long du lien
+      if (tendu > 0.9) for (let k = 0; k < 7; k++) {
+        const [x, y] = pt((p * 1.8 + k / 7) % 1);
+        const g = c.createRadialGradient(x, y, 0, x, y, 7); g.addColorStop(0, `rgba(255,255,240,${a})`); g.addColorStop(1, rgba(teinte, 0));
+        c.fillStyle = g; c.beginPath(); c.arc(x, y, 7, 0, TAU); c.fill();
+      }
+      // les deux nœuds
+      for (const [x, y] of [[x1, y1], [x2, y2]]) {
+        const R = 14 + 6 * Math.sin(p * 12), g = c.createRadialGradient(x, y, 0, x, y, R);
+        g.addColorStop(0, `rgba(255,252,240,${a})`); g.addColorStop(0.5, rgba(teinte, a * 0.6)); g.addColorStop(1, rgba(teinte, 0));
+        c.fillStyle = g; c.beginPath(); c.arc(x, y, R, 0, TAU); c.fill();
       }
     }
   },
+
   vague: {
     duree: 1.8,
     init: r => ({ gouttes: Array.from({ length: 40 }, () => ({ x: hasard(0, 1), y: hasard(0.3, 1), v: hasard(0.4, 1), t: hasard(2, 5) })) }),
@@ -3766,10 +3782,41 @@ const EFFETS_ELEMENTS = {
     }
   }
 };
+// la transformation (évolution) : la matière de l'élément s'enroule et monte en spirale, une colonne de lumière, un anneau
+EFFETS_ELEMENTS.transformation = {
+  duree: 1.6,
+  init: () => ({ p: Array.from({ length: 36 }, (_, k) => ({ a: k * TAU / 36 + hasard(0, 0.3), r: hasard(0.8, 1.2), v: hasard(0.8, 1.3), t: hasard(2, 5) })) }),
+  dessiner(c, r, p, e, dt, o) {
+    const cx = r.x + r.w / 2, cy = r.y + r.h / 2, t = TEINTES[o.element] || TEINTES.accord, R = Math.max(r.w, r.h) * 0.55;
+    const monte = ease(Math.min(1, p * 1.4)), a = fondu(p, 0.1, 0.3);
+    // colonne de lumière
+    const col = c.createLinearGradient(0, cy + R * 0.4, 0, cy - R * 2.2);
+    col.addColorStop(0, rgba(t, 0.55 * a)); col.addColorStop(1, rgba(t, 0));
+    c.globalCompositeOperation = "lighter";
+    c.fillStyle = col; c.fillRect(cx - R * 0.35 * (1 - p * 0.5), cy - R * 2.2, R * 0.7 * (1 - p * 0.5), R * 2.6);
+    // la spirale qui se resserre en montant
+    for (const s of e.p) {
+      const ang = s.a + p * 9 * s.v, rr = R * s.r * (1 - monte * 0.85), y = cy + R * 0.3 - monte * R * 1.6 * s.v * 0.7;
+      const x = cx + Math.cos(ang) * rr, yy = y + Math.sin(ang) * rr * 0.35;
+      if (o.element === "fleurs") petale(c, x, yy, s.t * 1.3, ang, a);
+      else if (o.element === "terre") caillou(c, x, yy, s.t, ang, `rgba(150,115,80,${a})`);
+      else { c.fillStyle = rgba(t, a); c.beginPath(); c.arc(x, yy, s.t * (1 - p * 0.5), 0, TAU); c.fill(); }
+    }
+    // l'anneau et l'éclat de la nouvelle forme
+    if (p > 0.55) {
+      const q = (p - 0.55) / 0.45;
+      c.strokeStyle = `rgba(255,250,230,${1 - q})`; c.lineWidth = 4 * (1 - q) + 1;
+      c.beginPath(); c.arc(cx, cy, R * (0.3 + q * 1.3), 0, TAU); c.stroke();
+      const g = c.createRadialGradient(cx, cy, 0, cx, cy, R); g.addColorStop(0, `rgba(255,255,245,${(1 - q) * 0.8})`); g.addColorStop(1, rgba(t, 0));
+      c.fillStyle = g; c.beginPath(); c.arc(cx, cy, R, 0, TAU); c.fill();
+    }
+    c.globalCompositeOperation = "source-over";
+  }
+};
 Object.assign(EFFETS, EFFETS_ELEMENTS);
 
 /** Les noms des effets disponibles. */
-const NOMS_EFFETS = Object.keys(EFFETS).filter(n => !["embleme", "duo", "lien", "projectile", "impact", "eclatsCarte"].includes(n));
+const NOMS_EFFETS = Object.keys(EFFETS).filter(n => !["embleme", "duo", "lien", "projectile", "impact", "eclatsCarte", "transformation"].includes(n));
 
 /** L'effet de chaque carte (d'après son image) : [effet, couleur facultative]. */
 const EFFET_DE_CARTE = {

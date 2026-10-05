@@ -523,3 +523,52 @@ button.atelier-carte:hover:not([disabled]) { background: rgba(243,213,138,.25) !
 .lp-jauge { position: relative; }
 .lp-jauge .lp-trainee { position: absolute; left: 0; top: 0; bottom: 0; width: 100%; background: rgba(255,244,214,.85); transition: width .7s ease-out .45s; }
 .lp-jauge span:not(.lp-trainee) { position: relative; }
+
+/* =============== 16. Lisibilité : vitesse, encarts, zoom, aide =============== */
+:root { --vitesse: 1.3; }
+.banniere.visible { animation-duration: calc(1.8s * var(--vitesse)); }
+.banniere.belline.visible { animation-duration: calc(2.6s * var(--vitesse)); }
+.carte-centre.visible { animation-duration: calc(1.15s * var(--vitesse)); }
+
+/* Les encarts : ce qui vient de se passer, le temps de le lire */
+.encarts { position: absolute; left: 50%; top: 8px; transform: translateX(-50%); z-index: 12; width: min(560px, calc(100% - 16px));
+  display: flex; flex-direction: column; gap: 6px; pointer-events: none; }
+.encart { pointer-events: auto; cursor: pointer; display: flex; gap: 10px; align-items: center; padding: 8px 12px; border-radius: 12px;
+  background: linear-gradient(180deg, rgba(36,26,60,.97), rgba(20,14,36,.97)); border: 1px solid var(--or); color: var(--creme);
+  box-shadow: 0 10px 30px rgba(0,0,0,.55), 0 0 18px rgba(243,213,138,.2); animation: encart-entre .35s ease-out; }
+.encart.part { animation: encart-sort .3s ease-in forwards; }
+@keyframes encart-entre { from { transform: translateY(-14px); opacity: 0; } }
+@keyframes encart-sort { to { transform: translateY(-10px); opacity: 0; } }
+.encart.belline { border-color: #ffe08a; box-shadow: 0 10px 30px rgba(0,0,0,.55), 0 0 26px rgba(255,214,120,.45); }
+.encart.nefaste { border-color: #c98bff; }
+.encart.evolution { border-color: #8ff0a8; }
+.encart.presage { border-color: var(--violet); }
+.encart-cartes { display: flex; gap: 4px; flex: none; }
+.encart-carte { padding: 0; background: none; border: none; box-shadow: none; line-height: 0; border-radius: 6px; }
+.encart-carte canvas { width: 52px; border-radius: 6px; }
+.encart-corps { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.encart-corps b { font-family: "Cinzel", serif; font-size: 14px; color: var(--or-clair); }
+.encart.belline .encart-corps b { color: #ffe08a; }
+.encart-corps span { font-size: 15px; line-height: 1.3; }
+
+/* La carte en grand */
+.zoom { position: fixed; inset: 0; z-index: 70; display: flex; align-items: center; justify-content: center; padding: 16px;
+  background: rgba(8,4,16,.88); backdrop-filter: blur(3px); cursor: zoom-out; animation: apparaitre .2s ease-out; }
+.zoom[hidden] { display: none; }
+.zoom-corps { display: flex; flex-direction: column; align-items: center; gap: 10px; max-width: 460px; max-height: 100%; overflow: auto; color: var(--creme); text-align: center; }
+.zoom-corps canvas { border-radius: 14px; box-shadow: 0 0 0 1px rgba(243,213,138,.6), 0 20px 60px rgba(0,0,0,.8); }
+.zoom-texte p { margin: 4px 0; }
+#zoom-effet { font-size: 17px; }
+.zoom .notice { color: #d9cdf2; font-size: 17px; }
+.zoom-fermer { color: #a99cc8; }
+.detail-carte { cursor: zoom-in; }
+.detail-zoom { position: absolute; top: 8px; left: 8px; z-index: 2; width: 34px; height: 34px; padding: 0; border-radius: 50%; font-size: 16px; box-shadow: none;
+  background: rgba(14,10,24,.85); border: 1px solid var(--or); color: var(--or-clair); }
+@media (max-width: 1040px) { .detail-zoom { top: 10px; left: 10px; } }
+@media (max-width: 640px) {
+  .encarts { top: 4px; }
+  .encart { padding: 6px 8px; gap: 8px; }
+  .encart-carte canvas { width: 40px; }
+  .encart-corps span { font-size: 13.5px; }
+  #bouton-vitesse, #bouton-aide { padding: 4px 8px; font-size: 13px; }
+}

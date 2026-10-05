@@ -22,6 +22,8 @@
     <a class="retour" href="../index.html#/jeux" aria-label="Retour à l’Atelier">‹ Atelier</a>
     <h1>Le Duel des Apparitions</h1>
     <span id="numero-duel" class="numero-partie"></span>
+    <button id="bouton-aide" class="discret" aria-label="Aide : comment jouer, les signes">❔ Aide</button>
+    <button id="bouton-vitesse" class="discret" aria-label="Vitesse des animations">⏱ Normal</button>
     <button id="bouton-journal" class="discret" aria-expanded="false">☰ Journal</button>
     <button id="bouton-plein-ecran" class="discret" aria-pressed="false">⤢ Plein écran</button>
     <button id="bouton-son" class="discret" aria-pressed="true">♪ Son</button>
@@ -94,6 +96,7 @@
       <div id="calcul" class="calcul" aria-hidden="true"></div>
       <div id="carte-centre" class="carte-centre" aria-hidden="true"></div>
       <div id="banniere" class="banniere" aria-hidden="true"></div>
+      <div id="encarts" class="encarts" aria-live="polite"></div>
       <div id="eclair" class="eclair" aria-hidden="true"></div>
 
       <div id="reaction" class="reaction" role="dialog" aria-modal="true" aria-labelledby="reaction-titre">
@@ -201,7 +204,8 @@
     <aside class="cote-duel">
       <section id="detail" class="detail vide" aria-live="polite">
         <button id="detail-fermer" class="detail-fermer" aria-label="Fermer le détail">×</button>
-        <canvas id="detail-carte" class="detail-carte"></canvas>
+        <canvas id="detail-carte" class="detail-carte" title="Toucher pour agrandir"></canvas>
+        <button id="detail-zoom" class="detail-zoom" aria-label="Voir la carte en grand">🔍</button>
         <div class="detail-texte">
           <p id="detail-etat" class="detail-etat"></p>
           <p id="detail-notice" class="notice"></p>
@@ -216,6 +220,13 @@
     </aside>
   </main>
 
+  <div id="zoom" class="zoom" role="dialog" aria-modal="true" aria-label="La carte en grand" hidden>
+    <div class="zoom-corps">
+      <canvas id="zoom-carte"></canvas>
+      <div class="zoom-texte"><p id="zoom-effet"></p><p id="zoom-notice" class="notice"></p><p id="zoom-mot" class="petit"></p></div>
+      <p class="petit zoom-fermer">Touchez pour fermer</p>
+    </div>
+  </div>
   <p id="annonce" class="lecteur" aria-live="polite"></p>
   <script src="js/jeu-duel.js"></script>
   <script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("../sw.js").catch(() => {});</script>

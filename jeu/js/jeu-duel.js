@@ -3638,22 +3638,38 @@ const EFFETS = {
     }
   },
   // un lien lumineux entre deux points (accord sur le terrain)
+  // un lien entre deux cartes associées : une corde de lumière qui se tend, des perles qui courent, deux nœuds qui brillent
   lien: {
-    duree: 1.8,
-    init: () => ({ p: [] }),
+    duree: 2.4,
+    init: () => ({}),
     dessiner(c, r, p, e, dt, o) {
-      const [x1, y1, x2, y2] = o.points, a = fondu(p, 0.1, 0.35);
-      const teinte = o.favorable ? "243,213,138" : "190,110,230";
-      const mx = (x1 + x2) / 2, my = Math.min(y1, y2) - 50;
-      c.strokeStyle = `rgba(${teinte},${a})`; c.lineWidth = 4; c.shadowColor = `rgb(${teinte})`; c.shadowBlur = 18;
-      c.beginPath(); c.moveTo(x1, y1); c.quadraticCurveTo(mx, my, x2, y2); c.stroke(); c.shadowBlur = 0;
-      for (let k = 0; k < 6; k++) {
-        const t = (p * 1.5 + k / 6) % 1, u = 1 - t;
-        const x = u * u * x1 + 2 * u * t * mx + t * t * x2, y = u * u * y1 + 2 * u * t * my + t * t * y2;
-        c.fillStyle = `rgba(255,250,230,${a})`; c.beginPath(); c.arc(x, y, 4, 0, TAU); c.fill();
+      const [x1, y1, x2, y2] = o.points, a = fondu(p, 0.12, 0.3);
+      const teinte = o.favorable ? [243, 213, 138] : [190, 110, 230];
+      const tendu = ease(Math.min(1, p * 2.2)), mx = (x1 + x2) / 2, my = Math.min(y1, y2) - 60 * (1.4 - tendu * 0.4);
+      const pt = t => { const u = 1 - t; return [u * u * x1 + 2 * u * t * mx + t * t * x2, u * u * y1 + 2 * u * t * my + t * t * y2]; };
+      // la corde se déroule d'un bout à l'autre
+      c.lineCap = "round";
+      for (const [l, al] of [[10, 0.18], [5, 0.55], [2, 1]]) {
+        c.strokeStyle = l === 2 ? `rgba(255,250,232,${a * al})` : rgba(teinte, a * al); c.lineWidth = l;
+        c.beginPath(); c.moveTo(x1, y1);
+        for (let k = 1; k <= 30; k++) { const t = (k / 30) * tendu; const [x, y] = pt(t); c.lineTo(x, y + Math.sin(k * 0.9 + p * 10) * 1.5 * (1 - tendu)); }
+        c.stroke();
+      }
+      // les perles qui courent le long du lien
+      if (tendu > 0.9) for (let k = 0; k < 7; k++) {
+        const [x, y] = pt((p * 1.8 + k / 7) % 1);
+        const g = c.createRadialGradient(x, y, 0, x, y, 7); g.addColorStop(0, `rgba(255,255,240,${a})`); g.addColorStop(1, rgba(teinte, 0));
+        c.fillStyle = g; c.beginPath(); c.arc(x, y, 7, 0, TAU); c.fill();
+      }
+      // les deux nœuds
+      for (const [x, y] of [[x1, y1], [x2, y2]]) {
+        const R = 14 + 6 * Math.sin(p * 12), g = c.createRadialGradient(x, y, 0, x, y, R);
+        g.addColorStop(0, `rgba(255,252,240,${a})`); g.addColorStop(0.5, rgba(teinte, a * 0.6)); g.addColorStop(1, rgba(teinte, 0));
+        c.fillStyle = g; c.beginPath(); c.arc(x, y, R, 0, TAU); c.fill();
       }
     }
   },
+
   vague: {
     duree: 1.8,
     init: r => ({ gouttes: Array.from({ length: 40 }, () => ({ x: hasard(0, 1), y: hasard(0.3, 1), v: hasard(0.4, 1), t: hasard(2, 5) })) }),
@@ -4163,10 +4179,41 @@ const EFFETS_ELEMENTS = {
     }
   }
 };
+// la transformation (évolution) : la matière de l'élément s'enroule et monte en spirale, une colonne de lumière, un anneau
+EFFETS_ELEMENTS.transformation = {
+  duree: 1.6,
+  init: () => ({ p: Array.from({ length: 36 }, (_, k) => ({ a: k * TAU / 36 + hasard(0, 0.3), r: hasard(0.8, 1.2), v: hasard(0.8, 1.3), t: hasard(2, 5) })) }),
+  dessiner(c, r, p, e, dt, o) {
+    const cx = r.x + r.w / 2, cy = r.y + r.h / 2, t = TEINTES[o.element] || TEINTES.accord, R = Math.max(r.w, r.h) * 0.55;
+    const monte = ease(Math.min(1, p * 1.4)), a = fondu(p, 0.1, 0.3);
+    // colonne de lumière
+    const col = c.createLinearGradient(0, cy + R * 0.4, 0, cy - R * 2.2);
+    col.addColorStop(0, rgba(t, 0.55 * a)); col.addColorStop(1, rgba(t, 0));
+    c.globalCompositeOperation = "lighter";
+    c.fillStyle = col; c.fillRect(cx - R * 0.35 * (1 - p * 0.5), cy - R * 2.2, R * 0.7 * (1 - p * 0.5), R * 2.6);
+    // la spirale qui se resserre en montant
+    for (const s of e.p) {
+      const ang = s.a + p * 9 * s.v, rr = R * s.r * (1 - monte * 0.85), y = cy + R * 0.3 - monte * R * 1.6 * s.v * 0.7;
+      const x = cx + Math.cos(ang) * rr, yy = y + Math.sin(ang) * rr * 0.35;
+      if (o.element === "fleurs") petale(c, x, yy, s.t * 1.3, ang, a);
+      else if (o.element === "terre") caillou(c, x, yy, s.t, ang, `rgba(150,115,80,${a})`);
+      else { c.fillStyle = rgba(t, a); c.beginPath(); c.arc(x, yy, s.t * (1 - p * 0.5), 0, TAU); c.fill(); }
+    }
+    // l'anneau et l'éclat de la nouvelle forme
+    if (p > 0.55) {
+      const q = (p - 0.55) / 0.45;
+      c.strokeStyle = `rgba(255,250,230,${1 - q})`; c.lineWidth = 4 * (1 - q) + 1;
+      c.beginPath(); c.arc(cx, cy, R * (0.3 + q * 1.3), 0, TAU); c.stroke();
+      const g = c.createRadialGradient(cx, cy, 0, cx, cy, R); g.addColorStop(0, `rgba(255,255,245,${(1 - q) * 0.8})`); g.addColorStop(1, rgba(t, 0));
+      c.fillStyle = g; c.beginPath(); c.arc(cx, cy, R, 0, TAU); c.fill();
+    }
+    c.globalCompositeOperation = "source-over";
+  }
+};
 Object.assign(EFFETS, EFFETS_ELEMENTS);
 
 /** Les noms des effets disponibles. */
-const NOMS_EFFETS = Object.keys(EFFETS).filter(n => !["embleme", "duo", "lien", "projectile", "impact", "eclatsCarte"].includes(n));
+const NOMS_EFFETS = Object.keys(EFFETS).filter(n => !["embleme", "duo", "lien", "projectile", "impact", "eclatsCarte", "transformation"].includes(n));
 
 /** L'effet de chaque carte (d'après son image) : [effet, couleur facultative]. */
 const EFFET_DE_CARTE = {
@@ -4626,7 +4673,12 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
 const reduit = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
 const survol = window.matchMedia?.("(hover: hover)").matches ?? false;
-const attendre = ms => new Promise(r => setTimeout(r, reduit ? Math.min(ms, 150) : ms));
+// La vitesse des animations : lente pour lire les combos, normale, ou rapide. Elle allonge aussi les bannières.
+const VITESSES = [["lente", 1.9, "🐢 Lent"], ["normale", 1.3, "⏱ Normal"], ["rapide", 0.8, "⚡ Rapide"]];
+let vitesse = 1;
+try { const v = VITESSES.findIndex(x => x[0] === localStorage.getItem("chemin-du-mage.vitesse")); if (v >= 0) vitesse = v; } catch { /* rien */ }
+const facteur = () => VITESSES[vitesse][1];
+const attendre = ms => new Promise(r => setTimeout(r, reduit ? Math.min(ms, 150) : ms * facteur()));
 const carnet = chargerCarnet();
 const CLE_DECK = "chemin-du-mage.deck";
 const PLANETES = ["soleil", "lune", "mercure", "venus", "mars", "jupiter", "saturne"];
@@ -4688,6 +4740,8 @@ function montrerLoupe(id, face, ancre) {
 function cacherLoupe() { loupe.classList.remove("visible"); }
 /** Branche la loupe (et l'aperçu passager du panneau) sur un élément. `quoi()` → [id, face, état] ou null. */
 function loupable(el, quoi) {
+  // double-clic (ou double toucher) : la carte en grand
+  el.addEventListener("dblclick", e => { const q = quoi(); if (q) { e.preventDefault(); zoomer(q[0], q[1]); } });
   if (survol) {
     el.addEventListener("mouseenter", () => { const q = quoi(); if (!q) return; montrerLoupe(q[0], q[1], el); apercu(q[0], q[1], q[2], true); });
     el.addEventListener("mouseleave", () => { cacherLoupe(); retablirApercu(); });
@@ -5608,6 +5662,50 @@ function secousse(fort = false) {
   p.classList.remove("secoue", "secoue-fort"); void p.offsetWidth; p.classList.add(fort ? "secoue-fort" : "secoue");
 }
 
+/**
+ * Un encart : ce qui vient de se passer d'important (accord, sort, évolution, technique…), avec ses cartes, qui reste
+ * le temps d'être lu (plus longtemps en vitesse lente) ; toucher une carte l'agrandit, toucher l'encart le ferme.
+ */
+function encart(titre, texte, ids = [], classe = "", duree = 8000) {
+  const box = $("encarts");
+  const el = document.createElement("div");
+  el.className = `encart ${classe}`;
+  const cartes = document.createElement("div"); cartes.className = "encart-cartes";
+  for (const id of ids.filter(x => x != null)) {
+    const b = document.createElement("button"); b.className = "encart-carte"; b.setAttribute("aria-label", `Agrandir ${nomDe(id)}`);
+    b.appendChild(carteCanvas(id, true, 52, "", "compacte"));
+    b.addEventListener("click", ev => { ev.stopPropagation(); zoomer(id); });
+    cartes.appendChild(b);
+  }
+  const corps = document.createElement("div"); corps.className = "encart-corps";
+  corps.innerHTML = "<b></b><span></span>";
+  corps.querySelector("b").textContent = titre; corps.querySelector("span").textContent = texte;
+  el.append(cartes, corps);
+  const fermer = () => { el.classList.add("part"); setTimeout(() => el.remove(), 300); };
+  el.addEventListener("click", fermer);
+  box.prepend(el);
+  while (box.children.length > 3) box.lastChild.remove();
+  setTimeout(fermer, duree * facteur());
+}
+
+/** La carte en grand, avec son effet et sa notice ; toucher pour fermer. */
+function zoomer(id, face = true) {
+  if (id == null) return;
+  const z = $("zoom");
+  const l = Math.min(420, window.innerWidth * 0.86, (window.innerHeight * 0.6) * 150 / 219);
+  peindreCarteDuel($("zoom-carte"), id, face, l);
+  $("zoom-carte").style.width = `${l}px`;
+  if (face) {
+    $("zoom-effet").textContent = def(id).texte || "";
+    $("zoom-notice").textContent = id >= 100 ? `« ${VOISINAGE.find(r => r.id === FIGURES[id].regles[0]).texte} »` : `« ${CARTE_PAR_ID[id].notice} »`;
+    $("zoom-mot").textContent = id >= 100 ? "Figure d’accord" : `N° ${id} · ${CARTE_PAR_ID[id].nom} · mot de la notice : « ${DUEL[id].mot} »`;
+  } else { $("zoom-effet").textContent = "Carte face cachée."; $("zoom-notice").textContent = ""; $("zoom-mot").textContent = ""; }
+  z.hidden = false; cacherLoupe();
+}
+$("zoom").addEventListener("click", () => { $("zoom").hidden = true; });
+$("detail-carte").addEventListener("click", () => { if (apercuFixe) zoomer(apercuFixe[0], apercuFixe[1]); });
+$("detail-zoom").addEventListener("click", () => { if (apercuFixe) zoomer(apercuFixe[0], apercuFixe[1]); });
+
 function banniere(titre, texte, classe = "") {
   const b = $("banniere");
   b.className = `banniere ${classe}`;
@@ -5658,6 +5756,7 @@ async function animer(ev, garderOccupe = false) {
         if (e.j === 0) { noterRegle(carnet, e.regle); sauverCarnet(carnet); }
         eclair("rgba(167,122,216,.4)"); jouerSon("regle");
         banniere("Figure d’accord", e.texte, "accord");
+        encart(`Figure d’accord : ${c}`, `${e.texte} ${def(e.id).texte}`, [...e.materiaux, e.id], "technique", 10000);
         effetCarte(e.id);
         await carteAuCentre(e.materiaux, "fusion");
         break;
@@ -5692,6 +5791,7 @@ async function animer(ev, garderOccupe = false) {
         apercu(e.id, true, `Présage activé par ${e.j === 0 ? "vous" : d.joueurs[1].nom}.`);
         eclair("rgba(201,89,159,.35)"); jouerSon("regle");
         banniere(e.maillon === 2 ? "Chaîne : maillon 2" : "Présage", c, "presage");
+        encart(`${e.maillon === 2 ? "Chaîne" : "Présage"} : ${c}`, `${e.j === 0 ? "Vous activez" : `${d.joueurs[1].nom} active`} ${c}. ${def(e.id).texte}`, [e.id], "presage", 8000);
         effetCarte(e.id, null, 1, true);
         await carteAuCentre(e.id, "presage"); break;
       case "sacrifice":
@@ -5740,14 +5840,16 @@ async function animer(ev, garderOccupe = false) {
         await attendre(e.v < 0 ? 520 : 380); break;
       }
       case "accord": {
-        const titre = { echo: "Écho de la notice", accompagnement: "Accord d’accompagnement", lecture: "Lecture moderne" }[e.sorte] || "Règle de Belline";
+        const titre = e.cle?.startsWith("dico:") ? "Lecture de l’Atelier" : { echo: "Écho de la notice", accompagnement: "Accord d’accompagnement", lecture: "Lecture moderne" }[e.sorte] || "Règle de Belline";
         const combo = e.combo > 1 ? ` · combo ×${e.combo}` : "";
         journal(`${titre}${e.terrain ? " (sur le terrain)" : ""}${combo} : ${e.texte} (${e.valeur} points)`, true);
         if (e.j === 0) { accordsDuDuel.push({ titre, texte: e.texte, belline: e.sorte === "belline" }); if (e.regle) { noterRegle(carnet, e.regle); sauverCarnet(carnet); } }
+        encart(`${titre}${combo}`, `${e.texte} ${e.favorable ? (e.j === 0 ? "Vous gagnez" : `${d.joueurs[1].nom} gagne`) : (e.j === 0 ? `${d.joueurs[1].nom} perd` : "Vous perdez")} ${e.valeur} points${e.sorte === "belline" ? ", et le sort de la règle agit" : ""}.`,
+          e.ids || [], `${e.sorte || "belline"} ${e.favorable ? "favorable" : "nefaste"}`, e.sorte === "lecture" ? 6000 : 10000);
         if (e.sorte !== "lecture") { banniere(titre + combo, e.texte, e.sorte === "belline" ? "belline" : e.favorable ? "accord" : "sombre"); jouerSon("regle"); eclair(e.favorable ? "rgba(243,213,138,.35)" : "rgba(160,60,90,.3)"); }
         else jouerSon(e.favorable ? "gain" : "perte");
         if (e.ids) {
-          if (e.terrain) {
+          {
             const zs = e.ids.map(id => [...document.querySelectorAll(`#monstres-${e.j} .zone, #presages-${e.j} .zone`)].find(z => { const P = +z.dataset.place, sorte = z.closest(".rang-presages") ? "presages" : "monstres"; return d.joueurs[e.j][sorte][P]?.id === id; }));
             if (zs[0] && zs[1]) effets.lien(zs[0], zs[1], e.favorable);
           }
@@ -5761,6 +5863,8 @@ async function animer(ev, garderOccupe = false) {
         const z = zoneEl(e.j, e.place); z?.classList.add("evolue");
         if (z) effetCarte(e.id, z, 2.6, true);
         banniere("Évolution", `${nomDe(e.de)} ⇧ ${c}`, "accord"); jouerSon("invocation", familleDe(e.id));
+        if (z) effets.jouer("transformation", (() => { const r = effets.rect(z), k = 2.2; return { x: r.x + r.w / 2 - r.w * k / 2, y: r.y + r.h / 2 - r.h * k / 2, w: r.w * k, h: r.h * k }; })(), { element: elementCarte(e.id) });
+        encart("Évolution", `${nomDe(e.de)} évolue en ${c} : même planète, niveau plus haut, +300 ATK d’élan. ${def(e.id).texte}`, [e.de, e.id], "evolution", 9000);
         if (e.j === 1) apercu(e.id, true, `Évolution de ${d.joueurs[1].nom}.`, true);
         await attendre(1200); break;
       }
@@ -5803,6 +5907,7 @@ async function animer(ev, garderOccupe = false) {
         journal(`${e.sorte === "alignement" ? "Alignement" : "Association"} : ${e.j === 0 ? "vous utilisez" : `${d.joueurs[1].nom} utilise`} « ${e.nom} ». ${e.texte}`, true);
         for (const p of e.places) zoneEl(e.j, p)?.classList.add("aligne");
         banniere(e.nom, e.sorte === "alignement" ? "Alignement planétaire" : "Association", "accord");
+        encart(`${e.sorte === "alignement" ? "Alignement" : "Association"} : ${e.nom}`, e.texte, e.cartes || [], "technique", 10000);
         jouerSon("regle"); eclair("rgba(243,213,138,.35)");
         effets.jouer(EFFET_TECHNIQUE[e.cle.split(":")[1]] || "etoiles", effets.rect($("tapis")));
         await attendre(1500); break;
@@ -6011,7 +6116,7 @@ $("bouton-retour-accueil").addEventListener("click", () => { $("fin-duel").class
 
 window.addEventListener("keydown", e => {
   if (e.target instanceof HTMLElement && e.target.closest("input, textarea")) return;
-  if (e.code === "Escape") { if ($("galerie").classList.contains("visible")) fermerGalerie(); else annuler(); }
+  if (e.code === "Escape") { if (!$("zoom").hidden) $("zoom").hidden = true; else if ($("galerie").classList.contains("visible")) fermerGalerie(); else annuler(); }
   if (!d || $("accueil-duel").classList.contains("visible")) return;
   if (e.code === "KeyE") finDeTour();
   if (e.code === "KeyC") $("bouton-combat").click();
@@ -6035,6 +6140,40 @@ function chargerDictionnaire() {
   document.head.appendChild(s);
 }
 setTimeout(chargerDictionnaire, 1500);
+
+// La vitesse : un toucher la change (lente pour lire les combos)
+function majVitesse() {
+  $("bouton-vitesse").textContent = VITESSES[vitesse][2];
+  document.documentElement.style.setProperty("--vitesse", facteur());
+}
+$("bouton-vitesse").addEventListener("click", () => {
+  vitesse = (vitesse + 1) % VITESSES.length;
+  try { localStorage.setItem("chemin-du-mage.vitesse", VITESSES[vitesse][0]); } catch { /* rien */ }
+  majVitesse();
+});
+majVitesse();
+
+// L'aide : comment jouer, et ce que veulent dire les signes
+function ouvrirAide() {
+  const I = itemPanneau;
+  $("galerie-titre").textContent = "Comment jouer";
+  $("galerie-texte").textContent = "Le but : faire tomber les points de vie de l’adversaire à zéro. Touchez une carte pour voir ce qu’elle peut faire ; touchez la carte du panneau pour l’agrandir.";
+  $("galerie-cartes").replaceChildren(
+    I("1. Votre tour", "Vous piochez 2 cartes (7 en main au plus). En phase principale : invoquez une apparition (une par tour), activez ou posez vos influences, posez vos présages. Puis « Combat », puis « Fin ».", "", null, "titre-aide"),
+    I("2. Invoquer", "Niveau 4 ou moins : sans sacrifice. Niveau 5 et 6 : une apparition à sacrifier ; 7 et 8 : deux. S’il en manque, l’offrande les remplace (1500 points de vie chacune).", ""),
+    I("3. Attaquer", "En combat, touchez une apparition prête (cadre doré), puis sa cible. ATK contre ATK : la plus faible tombe et son joueur perd la différence. Contre une défense : la DEF compte.", ""),
+    I("4. Répondre", "Pendant l’attaque adverse, une fenêtre vous propose vos présages, vos influences posées et vos terrains : c’est le moment de retourner le combat.", ""),
+    I("5. Les accords", "Deux cartes que la notice associe, jouées l’une après l’autre ou toutes deux en jeu, accomplissent un accord : la règle de Belline vaut le plus. Un encart l’explique ; touchez ses cartes pour les agrandir.", ""),
+    I("✦ et ⇧ sur vos cartes", "✦ : la carte s’associe avec une autre de vos cartes (doré : une règle de Belline). ⇧ : elle peut faire évoluer une de vos apparitions.", ""),
+    I("Les auras", "Vert : peut évoluer. Bleu : bloquée (n’attaque pas). Or : protégée une fois. Vert-jaune : malade. Orange : brûlée. Bleu clair : endormie. Rose : confuse.", ""),
+    I("Les signes", "⛨ garde (à attaquer d’abord) · ◈ protégée · ⚒ équipée · ⛓ bloquée · ◐ posée face cachée · ☣ malade · ♨ brûlée · ☾ endormie · ✺ confuse · ▲ votre apparition domine sa planète (+500 ATK).", ""),
+    I("Les éléments", "Soleil lumière, Lune eau, Mercure air, Vénus fleurs, Mars feu, Jupiter foudre, Saturne terre. Chaque planète domine la suivante dans l’ordre d’Edmond.", ""),
+    I("Trop rapide ?", "Le bouton ⏱ change la vitesse : 🐢 Lent laisse le temps de lire chaque combo. Le journal (☰) garde tout ce qui s’est passé.", "")
+  );
+  $("galerie").classList.add("visible");
+  $("galerie-fermer").focus();
+}
+$("bouton-aide").addEventListener("click", ouvrirAide);
 
 // Téléphone : le journal s'ouvre par un bouton, par-dessus le jeu
 $("bouton-journal")?.addEventListener("click", () => {

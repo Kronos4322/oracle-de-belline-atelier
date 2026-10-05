@@ -70,6 +70,9 @@ Duel (tout le mode est une adaptation) :
   tensions, tendances et qualifications restrictives : néfaste ; mixte et contextuelle : rien). Elles remplacent
   les lectures modernes, sans bannière.
 - Terrains (sousType 'terrain') : Campagne-Santé, Pénates, Table, Cloître, des lieux que nomme la notice. Posé de son côté, un terrain teinte sa moitié du tapis et agit tant qu'il demeure ; il s'use (5 tours, le Cloître qui « arrête » 3 tours, et empêche d'attaquer) ; un nouveau terrain casse l'ancien ; l'Accident (« la destruction ») casse le terrain adverse ; la lunaison (Changement) rend tous les terrains à la main.
+- Éléments du combat (`ELEMENTS`, `js/render/effetsVisuels.js`) : Soleil lumière, Lune eau, Mercure air, Vénus fleurs, Mars feu, Jupiter foudre, Saturne terre. Une attaque part en projectile de l'élément et frappe d'un impact à sa mesure ; une apparition détruite vole en éclats de sa couleur ; cercles d'invocation à la couleur de la planète ; sons d'éléments (`jouerElement`, `js/ui/son.js`) ; le fond des cartes porte le motif de l'élément (vagues, flammes, strates, éclairs).
+- Ambiance du tapis (`js/render/ambiance.js`) : particules lentes selon le ciel du duel et les terrains posés ; elles naissent et meurent en fondu, sans clignoter. Décoratif.
+- Barre de vie : une traînée claire suit la perte, avec un temps de retard.
 - Hologrammes : dessinés une fois (cône de lumière, lignes de balayage, fondu) ; aucune animation en boucle, aucun filtre ni mode de fusion CSS, sinon ils scintillent.
 - Les Sept Gardiens (`js/data/gardiens.js`) : campagne, decks et styles par planète ; un Gardien vaincu enseigne ses règles.
 - Influences posées face cachée, alignements planétaires et associations (`js/data/techniques.js`) : effets tirés de la structure du jeu d'Edmond (régions, vitesses, cartes maîtresses et fortes) et des images de la notice.

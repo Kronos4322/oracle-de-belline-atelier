@@ -54,6 +54,43 @@ function fondArt(c, id, fx, fy, fl, fh, coul) {
     c.strokeStyle = "rgba(255,240,200,.12)"; c.lineWidth = 6;
     for (let k = 0; k < 12; k++) { const a = k * Math.PI / 6; c.beginPath(); c.moveTo(fx + fl / 2, fy + fh / 2); c.lineTo(fx + fl / 2 + Math.cos(a) * 120, fy + fh / 2 + Math.sin(a) * 120); c.stroke(); }
   }
+  // l'élément de la planète, au pied de l'image
+  if (f === "lune") {   // l'eau : trois vagues superposées
+    for (let k = 0; k < 3; k++) {
+      const base = fy + fh * (0.74 + k * 0.09), amp = fh * (0.035 - k * 0.006);
+      c.fillStyle = `rgba(${150 - k * 30},${190 - k * 25},255,${0.2 - k * 0.03})`;
+      c.beginPath(); c.moveTo(fx, fy + fh);
+      for (let x = 0; x <= fl; x += 4) c.lineTo(fx + x, base - amp * Math.sin(x / (fl * 0.16) + k * 1.7 + hasard(k) * 3));
+      c.lineTo(fx + fl, fy + fh); c.closePath(); c.fill();
+      c.strokeStyle = `rgba(230,245,255,${0.28 - k * 0.07})`; c.lineWidth = 1;
+      c.beginPath(); for (let x = 0; x <= fl; x += 4) c[x ? "lineTo" : "moveTo"](fx + x, base - amp * Math.sin(x / (fl * 0.16) + k * 1.7 + hasard(k) * 3)); c.stroke();
+    }
+  }
+  if (f === "mars") {   // le feu : des langues de flamme qui montent du bas
+    for (let k = 0; k < 7; k++) {
+      const x = fx + (k + 0.5) * fl / 7 + (hasard(k + 30) - 0.5) * 8, H = fh * (0.18 + hasard(k + 31) * 0.22), l = fl / 9;
+      const g = c.createLinearGradient(0, fy + fh, 0, fy + fh - H);
+      g.addColorStop(0, "rgba(255,190,80,.32)"); g.addColorStop(1, "rgba(255,80,30,0)");
+      c.fillStyle = g; c.beginPath(); c.moveTo(x - l, fy + fh);
+      c.quadraticCurveTo(x - l * 0.6, fy + fh - H * 0.6, x + (hasard(k) - 0.5) * l, fy + fh - H);
+      c.quadraticCurveTo(x + l * 0.6, fy + fh - H * 0.5, x + l, fy + fh); c.closePath(); c.fill();
+    }
+  }
+  if (f === "saturne") {   // la terre : des strates et des galets
+    for (let k = 0; k < 4; k++) {
+      c.strokeStyle = `rgba(210,190,160,${0.16 - k * 0.025})`; c.lineWidth = 1.2;
+      c.beginPath(); const y = fy + fh * (0.78 + k * 0.06);
+      for (let x = 0; x <= fl; x += 6) c[x ? "lineTo" : "moveTo"](fx + x, y + Math.sin(x / 14 + k * 2 + hasard(k)) * 1.6); c.stroke();
+    }
+    for (let k = 0; k < 9; k++) { c.fillStyle = `rgba(180,160,135,${0.22 + hasard(k + 60) * 0.15})`; c.beginPath(); c.ellipse(fx + hasard(k + 61) * fl, fy + fh * (0.84 + hasard(k + 62) * 0.13), 2 + hasard(k + 63) * 3, 1.3 + hasard(k + 64) * 1.6, hasard(k) * 3, 0, Math.PI * 2); c.fill(); }
+  }
+  if (f === "jupiter") {   // la foudre, au loin dans les nuées
+    c.strokeStyle = "rgba(220,230,255,.16)"; c.lineWidth = 1.4;
+    for (let k = 0; k < 2; k++) {
+      let x = fx + fl * (0.2 + k * 0.55 + hasard(k + 70) * 0.1), y = fy + 4; c.beginPath(); c.moveTo(x, y);
+      for (let n = 0; n < 6; n++) { x += (hasard(k * 10 + n + 71) - 0.5) * 14; y += fh * 0.08; c.lineTo(x, y); } c.stroke();
+    }
+  }
   // vignette
   const v = c.createRadialGradient(fx + fl / 2, fy + fh / 2, fl * 0.3, fx + fl / 2, fy + fh / 2, fl * 0.75);
   v.addColorStop(0, "rgba(0,0,0,0)"); v.addColorStop(1, "rgba(0,0,0,.45)");
@@ -399,7 +436,7 @@ function recopier(canvas, img) {
 export function peindreCarteDuel(canvas, id, face = true, largeur = DL, format = "complete") {
   const h = largeur * DH / DL;
   const f = face ? format : "dos";
-  recopier(canvas, image(`v4:${f}:${id}`, largeur, h, c => {
+  recopier(canvas, image(`v5:${f}:${id}`, largeur, h, c => {
     if (!face) dessinerDosDuel(c, 0, 0, largeur / DL);
     else if (format === "complete") dessinerCarteDuel(c, id, 0, 0, largeur / DL);
     else dessinerCarteCompacte(c, id, largeur, format === "jeton");

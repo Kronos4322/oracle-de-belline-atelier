@@ -3145,6 +3145,43 @@ function fondArt(c, id, fx, fy, fl, fh, coul) {
     c.strokeStyle = "rgba(255,240,200,.12)"; c.lineWidth = 6;
     for (let k = 0; k < 12; k++) { const a = k * Math.PI / 6; c.beginPath(); c.moveTo(fx + fl / 2, fy + fh / 2); c.lineTo(fx + fl / 2 + Math.cos(a) * 120, fy + fh / 2 + Math.sin(a) * 120); c.stroke(); }
   }
+  // l'élément de la planète, au pied de l'image
+  if (f === "lune") {   // l'eau : trois vagues superposées
+    for (let k = 0; k < 3; k++) {
+      const base = fy + fh * (0.74 + k * 0.09), amp = fh * (0.035 - k * 0.006);
+      c.fillStyle = `rgba(${150 - k * 30},${190 - k * 25},255,${0.2 - k * 0.03})`;
+      c.beginPath(); c.moveTo(fx, fy + fh);
+      for (let x = 0; x <= fl; x += 4) c.lineTo(fx + x, base - amp * Math.sin(x / (fl * 0.16) + k * 1.7 + hasard(k) * 3));
+      c.lineTo(fx + fl, fy + fh); c.closePath(); c.fill();
+      c.strokeStyle = `rgba(230,245,255,${0.28 - k * 0.07})`; c.lineWidth = 1;
+      c.beginPath(); for (let x = 0; x <= fl; x += 4) c[x ? "lineTo" : "moveTo"](fx + x, base - amp * Math.sin(x / (fl * 0.16) + k * 1.7 + hasard(k) * 3)); c.stroke();
+    }
+  }
+  if (f === "mars") {   // le feu : des langues de flamme qui montent du bas
+    for (let k = 0; k < 7; k++) {
+      const x = fx + (k + 0.5) * fl / 7 + (hasard(k + 30) - 0.5) * 8, H = fh * (0.18 + hasard(k + 31) * 0.22), l = fl / 9;
+      const g = c.createLinearGradient(0, fy + fh, 0, fy + fh - H);
+      g.addColorStop(0, "rgba(255,190,80,.32)"); g.addColorStop(1, "rgba(255,80,30,0)");
+      c.fillStyle = g; c.beginPath(); c.moveTo(x - l, fy + fh);
+      c.quadraticCurveTo(x - l * 0.6, fy + fh - H * 0.6, x + (hasard(k) - 0.5) * l, fy + fh - H);
+      c.quadraticCurveTo(x + l * 0.6, fy + fh - H * 0.5, x + l, fy + fh); c.closePath(); c.fill();
+    }
+  }
+  if (f === "saturne") {   // la terre : des strates et des galets
+    for (let k = 0; k < 4; k++) {
+      c.strokeStyle = `rgba(210,190,160,${0.16 - k * 0.025})`; c.lineWidth = 1.2;
+      c.beginPath(); const y = fy + fh * (0.78 + k * 0.06);
+      for (let x = 0; x <= fl; x += 6) c[x ? "lineTo" : "moveTo"](fx + x, y + Math.sin(x / 14 + k * 2 + hasard(k)) * 1.6); c.stroke();
+    }
+    for (let k = 0; k < 9; k++) { c.fillStyle = `rgba(180,160,135,${0.22 + hasard(k + 60) * 0.15})`; c.beginPath(); c.ellipse(fx + hasard(k + 61) * fl, fy + fh * (0.84 + hasard(k + 62) * 0.13), 2 + hasard(k + 63) * 3, 1.3 + hasard(k + 64) * 1.6, hasard(k) * 3, 0, Math.PI * 2); c.fill(); }
+  }
+  if (f === "jupiter") {   // la foudre, au loin dans les nuées
+    c.strokeStyle = "rgba(220,230,255,.16)"; c.lineWidth = 1.4;
+    for (let k = 0; k < 2; k++) {
+      let x = fx + fl * (0.2 + k * 0.55 + hasard(k + 70) * 0.1), y = fy + 4; c.beginPath(); c.moveTo(x, y);
+      for (let n = 0; n < 6; n++) { x += (hasard(k * 10 + n + 71) - 0.5) * 14; y += fh * 0.08; c.lineTo(x, y); } c.stroke();
+    }
+  }
   // vignette
   const v = c.createRadialGradient(fx + fl / 2, fy + fh / 2, fl * 0.3, fx + fl / 2, fy + fh / 2, fl * 0.75);
   v.addColorStop(0, "rgba(0,0,0,0)"); v.addColorStop(1, "rgba(0,0,0,.45)");
@@ -3490,7 +3527,7 @@ function recopier(canvas, img) {
 function peindreCarteDuel(canvas, id, face = true, largeur = DL, format = "complete") {
   const h = largeur * DH / DL;
   const f = face ? format : "dos";
-  recopier(canvas, image(`v4:${f}:${id}`, largeur, h, c => {
+  recopier(canvas, image(`v5:${f}:${id}`, largeur, h, c => {
     if (!face) dessinerDosDuel(c, 0, 0, largeur / DL);
     else if (format === "complete") dessinerCarteDuel(c, id, 0, 0, largeur / DL);
     else dessinerCarteCompacte(c, id, largeur, format === "jeton");
@@ -3968,8 +4005,141 @@ function coeur(c, x, y, r) {
   c.bezierCurveTo(x + r * 0.8, y - r, x + r * 1.3, y, x, y + r * 0.9); c.closePath();
 }
 
+
+// ---------- Les éléments du combat ----------
+// Chaque planète a son élément ; il colore ce que font ses apparitions (attaque, impact, éclats).
+const ELEMENTS = { soleil: "lumiere", lune: "eau", mercure: "air", venus: "fleurs", mars: "feu", jupiter: "foudre", saturne: "terre", preambule: "lumiere", hors: "eau" };
+const TEINTES = {
+  lumiere: [255, 214, 120], eau: [110, 178, 255], air: [190, 245, 232], fleurs: [255, 150, 190],
+  feu: [255, 118, 40], foudre: [175, 195, 255], terre: [176, 132, 88], accord: [196, 150, 255]
+};
+/** L'élément d'une famille (planète) ; les figures d'accord ont le leur. */
+const elementDe = famille => ELEMENTS[famille] || "accord";
+const rgba = (t, a) => `rgba(${t[0]},${t[1]},${t[2]},${a})`;
+const bez = (o, q) => {
+  const [x1, y1] = o.de, [x2, y2] = o.vers, mx = (x1 + x2) / 2, my = Math.min(y1, y2) - Math.abs(x2 - x1) * 0.15 - 30, u = 1 - q;
+  return [u * u * x1 + 2 * u * q * mx + q * q * x2, u * u * y1 + 2 * u * q * my + q * q * y2];
+};
+function zigzag(c, x1, y1, x2, y2, n, amp) {
+  c.beginPath(); c.moveTo(x1, y1);
+  for (let k = 1; k < n; k++) { const t = k / n; c.lineTo(x1 + (x2 - x1) * t + hasard(-amp, amp), y1 + (y2 - y1) * t + hasard(-amp, amp)); }
+  c.lineTo(x2, y2); c.stroke();
+}
+function caillou(c, x, y, t, rot, coul) {
+  c.save(); c.translate(x, y); c.rotate(rot); c.fillStyle = coul;
+  c.beginPath(); c.moveTo(-t, -t * 0.4); c.lineTo(-t * 0.3, -t); c.lineTo(t * 0.8, -t * 0.6); c.lineTo(t, t * 0.3); c.lineTo(t * 0.1, t); c.lineTo(-t * 0.8, t * 0.6); c.closePath(); c.fill();
+  c.fillStyle = "rgba(255,255,255,.18)"; c.beginPath(); c.moveTo(-t * 0.3, -t); c.lineTo(t * 0.8, -t * 0.6); c.lineTo(t * 0.1, -t * 0.1); c.closePath(); c.fill();
+  c.restore();
+}
+function petale(c, x, y, t, rot, a) {
+  c.save(); c.translate(x, y); c.rotate(rot);
+  const g = c.createLinearGradient(-t, 0, t, 0); g.addColorStop(0, `rgba(255,190,215,${a})`); g.addColorStop(1, `rgba(255,120,170,${a})`);
+  c.fillStyle = g; c.beginPath(); c.ellipse(0, 0, t, t * 0.45, 0, 0, TAU); c.fill(); c.restore();
+}
+
+const EFFETS_ELEMENTS = {
+  // le coup part de l'attaquant et file vers sa cible
+  projectile: {
+    duree: 0.5,
+    init: () => ({ p: [], ancien: null }),
+    dessiner(c, r, p, e, dt, o) {
+      const q = p * p * (3 - 2 * p), [x, y] = bez(o, q), t = TEINTES[o.element] || TEINTES.accord;
+      const [px, py] = e.ancien || [x, y]; e.ancien = [x, y];
+      const ang = Math.atan2(y - py, x - px);
+      // sillage
+      for (let k = 0; k < 3; k++) e.p.push({ x: x + hasard(-4, 4), y: y + hasard(-4, 4), vx: hasard(-30, 30), vy: hasard(-30, 30) + (o.element === "eau" ? 40 : o.element === "feu" ? -50 : 0), vie: 1, t: hasard(2, 6), rot: hasard(0, 6) });
+      c.globalCompositeOperation = o.element === "terre" ? "source-over" : "lighter";
+      for (const s of e.p) {
+        s.vie -= dt * 2.6; if (s.vie <= 0) continue;
+        s.x += s.vx * dt; s.y += s.vy * dt; s.rot += dt * 6;
+        if (o.element === "terre") caillou(c, s.x, s.y, s.t * 0.7, s.rot, `rgba(120,90,60,${s.vie})`);
+        else if (o.element === "fleurs") petale(c, s.x, s.y, s.t, s.rot, s.vie);
+        else { c.fillStyle = rgba(t, s.vie * 0.8); c.beginPath(); c.arc(s.x, s.y, s.t * s.vie, 0, TAU); c.fill(); }
+      }
+      e.p = e.p.filter(s => s.vie > 0);
+      // la tête du coup
+      if (o.element === "foudre") {
+        c.strokeStyle = "rgba(235,245,255,.95)"; c.lineWidth = 3; c.shadowColor = rgba(t, 1); c.shadowBlur = 18;
+        zigzag(c, o.de[0], o.de[1], x, y, 9, 10); c.lineWidth = 1.2; c.strokeStyle = "#fff"; zigzag(c, o.de[0], o.de[1], x, y, 9, 6); c.shadowBlur = 0;
+      } else if (o.element === "lumiere") {
+        const g = c.createLinearGradient(o.de[0], o.de[1], x, y); g.addColorStop(0, rgba(t, 0)); g.addColorStop(1, rgba(t, 0.9));
+        c.strokeStyle = g; c.lineWidth = 6 + q * 8; c.lineCap = "round"; c.beginPath(); c.moveTo(o.de[0], o.de[1]); c.lineTo(x, y); c.stroke();
+      } else if (o.element === "air") {
+        c.strokeStyle = rgba(t, 0.8); c.lineWidth = 2.5;
+        for (let k = 0; k < 3; k++) { c.beginPath(); c.arc(x - Math.cos(ang) * k * 14, y - Math.sin(ang) * k * 14, 9 - k * 2, ang + 1, ang + 4); c.stroke(); }
+      } else if (o.element === "terre") {
+        caillou(c, x, y, 13, q * 9, "#7b5a3c");
+      }
+      const g = c.createRadialGradient(x, y, 0, x, y, o.element === "eau" ? 16 : 20);
+      g.addColorStop(0, "rgba(255,255,255,.95)"); g.addColorStop(0.35, rgba(t, 0.9)); g.addColorStop(1, rgba(t, 0));
+      c.fillStyle = g;
+      c.save(); c.translate(x, y); c.rotate(ang); c.beginPath();
+      if (o.element === "eau" || o.element === "feu") c.ellipse(0, 0, 24, 11, 0, 0, TAU); else c.arc(0, 0, 20, 0, TAU);
+      c.fill(); c.restore();
+      c.globalCompositeOperation = "source-over";
+    }
+  },
+  // l'impact sur la cible, selon l'élément ; `fort` : un coup puissant (plus grand, plus de matière)
+  impact: {
+    duree: 0.9,
+    init: (r, o) => {
+      const n = o.fort ? 46 : 28, t = [];
+      for (let k = 0; k < n; k++) { const a = hasard(0, TAU), v = hasard(60, o.fort ? 320 : 220); t.push({ x: 0, y: 0, vx: Math.cos(a) * v, vy: Math.sin(a) * v - (o.element === "eau" ? 120 : 0), t: hasard(2, 7), rot: hasard(0, 6), vr: hasard(-8, 8) }); }
+      return { p: t, eclair: Array.from({ length: 8 }, () => hasard(-14, 14)) };
+    },
+    dessiner(c, r, p, e, dt, o) {
+      const cx = r.x + r.w / 2, cy = r.y + r.h / 2, t = TEINTES[o.element] || TEINTES.accord, a = 1 - p, R = Math.max(r.w, r.h) * (o.fort ? 1.1 : 0.8);
+      // onde
+      c.strokeStyle = rgba(t, a * 0.9); c.lineWidth = 3 + 4 * a;
+      c.beginPath(); c.arc(cx, cy, R * ease(Math.min(1, p * 1.6)), 0, TAU); c.stroke();
+      if (o.element === "feu" || o.element === "lumiere") {
+        const g = c.createRadialGradient(cx, cy, 0, cx, cy, R * 0.8 * ease(Math.min(1, p * 2.5)));
+        g.addColorStop(0, `rgba(255,250,220,${a})`); g.addColorStop(0.4, rgba(t, a * 0.85)); g.addColorStop(1, rgba(t, 0));
+        c.globalCompositeOperation = "lighter"; c.fillStyle = g; c.beginPath(); c.arc(cx, cy, R, 0, TAU); c.fill(); c.globalCompositeOperation = "source-over";
+      }
+      if (o.element === "foudre" && p < 0.45) {
+        c.strokeStyle = "rgba(240,248,255,.95)"; c.lineWidth = 4; c.shadowColor = rgba(t, 1); c.shadowBlur = 22;
+        c.beginPath(); let y = r.y - R * 1.2, x = cx; c.moveTo(x, y);
+        for (const d of e.eclair) { y += (cy - (r.y - R * 1.2)) / 8; x = cx + d; c.lineTo(x, y); }
+        c.stroke(); c.shadowBlur = 0;
+      }
+      if (o.element === "terre") {
+        const g = c.createRadialGradient(cx, cy + 10, 0, cx, cy + 10, R);
+        g.addColorStop(0, `rgba(150,120,90,${0.55 * a})`); g.addColorStop(1, "rgba(150,120,90,0)");
+        c.fillStyle = g; c.beginPath(); c.arc(cx, cy + 10, R, 0, TAU); c.fill();
+      }
+      for (const s of e.p) {
+        s.x += s.vx * dt; s.y += s.vy * dt; s.vx *= 0.96; s.vy = s.vy * 0.96 + (o.element === "eau" || o.element === "terre" ? 520 : o.element === "feu" ? -80 : 60) * dt; s.rot += s.vr * dt;
+        const x = cx + s.x, y = cy + s.y;
+        if (o.element === "terre") caillou(c, x, y, s.t, s.rot, `rgba(110,82,56,${a})`);
+        else if (o.element === "fleurs") petale(c, x, y, s.t * 1.2, s.rot, a);
+        else if (o.element === "air") { c.strokeStyle = rgba(t, a * 0.8); c.lineWidth = 2; c.beginPath(); c.arc(x, y, s.t * 2, s.rot, s.rot + 2.5); c.stroke(); }
+        else if (o.element === "eau") { c.fillStyle = `rgba(200,230,255,${a})`; c.beginPath(); c.ellipse(x, y, s.t * 0.6, s.t, Math.atan2(s.vy, s.vx) + Math.PI / 2, 0, TAU); c.fill(); }
+        else { c.globalCompositeOperation = "lighter"; c.fillStyle = rgba(t, a); c.beginPath(); c.arc(x, y, s.t * (0.4 + a * 0.6), 0, TAU); c.fill(); c.globalCompositeOperation = "source-over"; }
+      }
+    }
+  },
+  // une apparition détruite vole en éclats de sa couleur
+  eclatsCarte: {
+    duree: 1.1,
+    init: r => ({ p: Array.from({ length: 22 }, () => ({ x: hasard(0.15, 0.85) * r.w, y: hasard(0.1, 0.9) * r.h, vx: hasard(-160, 160), vy: hasard(-260, -40), t: hasard(5, 13), rot: hasard(0, 6), vr: hasard(-9, 9) })) }),
+    dessiner(c, r, p, e, dt, o) {
+      const t = TEINTES[o.element] || TEINTES.accord, a = 1 - p;
+      for (const s of e.p) {
+        s.vy += 640 * dt; s.x += s.vx * dt; s.y += s.vy * dt; s.rot += s.vr * dt;
+        c.save(); c.translate(r.x + s.x, r.y + s.y); c.rotate(s.rot);
+        c.fillStyle = rgba(t, a * 0.95); c.strokeStyle = `rgba(255,243,207,${a})`; c.lineWidth = 1;
+        c.beginPath(); c.moveTo(-s.t, -s.t * 0.6); c.lineTo(s.t, -s.t * 0.2); c.lineTo(-s.t * 0.1, s.t); c.closePath(); c.fill(); c.stroke();
+        c.restore();
+      }
+      if (p < 0.3) { c.globalCompositeOperation = "lighter"; c.fillStyle = rgba(t, (0.3 - p) * 2); c.fillRect(r.x, r.y, r.w, r.h); c.globalCompositeOperation = "source-over"; }
+    }
+  }
+};
+Object.assign(EFFETS, EFFETS_ELEMENTS);
+
 /** Les noms des effets disponibles. */
-const NOMS_EFFETS = Object.keys(EFFETS).filter(n => !["embleme", "duo", "lien"].includes(n));
+const NOMS_EFFETS = Object.keys(EFFETS).filter(n => !["embleme", "duo", "lien", "projectile", "impact", "eclatsCarte"].includes(n));
 
 /** L'effet de chaque carte (d'après son image) : [effet, couleur facultative]. */
 const EFFET_DE_CARTE = {
@@ -4024,7 +4194,7 @@ class Effets {
     if (!def) return Promise.resolve();
     const r = cible && cible.getBoundingClientRect ? this.rect(cible) : cible || this.rect(null);
     return new Promise(resolve => {
-      this.actifs.push({ def, r, options: { ...options, reduit: this.reduit }, etat: def.init(r), t: 0, resolve });
+      this.actifs.push({ def, r, options: { ...options, reduit: this.reduit }, etat: def.init(r, options), t: 0, resolve });
       if (!this.boucle) { this.dernier = performance.now(); this.boucle = requestAnimationFrame(t => this.pas(t)); }
     });
   }
@@ -4042,6 +4212,18 @@ class Effets {
     setTimeout(() => { this.carte(a, cible); this.carte(b, cible); }, 1100);
   }
 
+  /** Le coup d'une apparition : il file de l'attaquant à sa cible, dans son élément. Résout à l'arrivée. */
+  attaque(de, vers, element) {
+    const a = this.rect(de), b = this.rect(vers);
+    return this.jouer("projectile", null, { element, de: [a.x + a.w / 2, a.y + a.h * 0.35], vers: [b.x + b.w / 2, b.y + b.h / 2] });
+  }
+
+  /** L'impact d'un coup sur sa cible (`fort` : un coup puissant). */
+  impact(cible, element, fort = false) { return this.jouer("impact", cible, { element, fort }); }
+
+  /** Une apparition détruite vole en éclats, de la couleur de son élément. */
+  eclatsCarte(cible, element) { return this.jouer("eclatsCarte", cible, { element }); }
+
   /** Un lien lumineux entre deux éléments. */
   lien(el1, el2, favorable) {
     const r1 = this.rect(el1), r2 = this.rect(el2);
@@ -4049,14 +4231,15 @@ class Effets {
   }
 
   pas(t) {
-    const dt = Math.min(0.05, (t - this.dernier) / 1000); this.dernier = t;
+    // l'horodatage du premier dessin peut précéder le départ : jamais de temps négatif
+    const dt = Math.max(0, Math.min(0.05, (t - this.dernier) / 1000)); this.dernier = Math.max(t, this.dernier);
     this.c.clearRect(0, 0, this.l, this.h);
     for (const a of this.actifs) {
       a.t += dt;
       const p = Math.min(1, a.t / a.def.duree);
       this.c.save();
       // un effet qui échoue s'arrête seul, sans bloquer les autres
-      try { a.def.dessiner(this.c, a.r, p, a.etat, dt, a.options); } catch { a.t = a.def.duree; }
+      try { a.def.dessiner(this.c, a.r, p, a.etat, dt, a.options); } catch (err) { a.t = a.def.duree; console.warn("Effet visuel interrompu :", err); }
       this.c.restore();
       if (p >= 1) { a.fini = true; a.resolve(); }
     }
@@ -4066,7 +4249,134 @@ class Effets {
   }
 }
 
-return { NOMS_EFFETS, EFFET_DE_CARTE, Effets };
+return { ELEMENTS, TEINTES, elementDe, NOMS_EFFETS, EFFET_DE_CARTE, Effets };
+})();
+
+// ===== js/render/ambiance.js =====
+M["js/render/ambiance.js"] = (() => {
+// L'ambiance du tapis : de fines particules qui dérivent lentement, selon le ciel du duel (la planète) et le terrain
+// que chaque joueur a posé de son côté. Elles naissent et s'effacent en fondu, sans jamais clignoter.
+// Décoratif : rien ne change au jeu. Avec « animations réduites », un seul dessin immobile.
+
+const TAU = Math.PI * 2;
+const h = (a, b) => a + Math.random() * (b - a);
+
+// sorte de particule : [couleur (r,g,b), taille, vitesse x, vitesse y, nombre, forme]
+const CIELS = {
+  soleil: { c: [255, 214, 130], t: [1, 2.4], vx: [-4, 4], vy: [-14, -5], n: 26, forme: "point" },        // poussière d'or qui monte
+  lune: { c: [190, 215, 255], t: [1.2, 3.2], vx: [-3, 3], vy: [-12, -4], n: 24, forme: "bulle" },        // bulles d'argent
+  mercure: { c: [200, 250, 240], t: [8, 18], vx: [12, 26], vy: [-2, 2], n: 12, forme: "souffle" },      // souffles de vent
+  venus: { c: [255, 170, 200], t: [2.5, 4.5], vx: [-6, 6], vy: [5, 13], n: 16, forme: "petale" },       // pétales qui tombent
+  mars: { c: [255, 130, 50], t: [1, 2.2], vx: [-5, 5], vy: [-20, -8], n: 26, forme: "braise" },         // braises qui montent
+  jupiter: { c: [175, 195, 255], t: [1, 2], vx: [-8, 8], vy: [-6, 6], n: 22, forme: "point" },          // étincelles bleues
+  saturne: { c: [190, 175, 155], t: [1, 2.6], vx: [-2, 2], vy: [3, 9], n: 26, forme: "point" }          // poussière qui retombe
+};
+const LIEUX = {
+  9: { c: [150, 220, 110], t: [2.5, 4.5], vx: [-8, 8], vy: [3, 9], n: 10, forme: "feuille" },          // Campagne : feuilles
+  16: { c: [255, 150, 60], t: [1, 2.2], vx: [-4, 4], vy: [-16, -7], n: 12, forme: "braise" },          // Pénates : braises de l'âtre
+  30: { c: [255, 220, 130], t: [1, 2], vx: [-3, 3], vy: [-6, 6], n: 12, forme: "point" },              // Table : poussière d'or
+  52: { c: [200, 200, 215], t: [1, 2.4], vx: [-2, 2], vy: [2, 6], n: 12, forme: "point" }              // Cloître : poussière de pierre
+};
+
+class Ambiance {
+  constructor(conteneur) {
+    this.conteneur = conteneur;
+    this.canvas = document.createElement("canvas");
+    this.canvas.className = "ambiance";
+    this.canvas.setAttribute("aria-hidden", "true");
+    conteneur.prepend(this.canvas);
+    this.c = this.canvas.getContext("2d");
+    this.p = [];
+    this.cle = "";
+    this.reduit = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+    this.ajuster();
+    if (window.ResizeObserver) new ResizeObserver(() => this.ajuster()).observe(conteneur);
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) this.lancer(); });
+  }
+
+  ajuster() {
+    const l = this.conteneur.clientWidth, H = this.conteneur.clientHeight, dpr = Math.min(window.devicePixelRatio || 1, 2);
+    if (!l || !H) return;
+    this.l = l; this.h = H;
+    this.canvas.width = Math.round(l * dpr); this.canvas.height = Math.round(H * dpr);
+    this.c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    if (this.reduit) this.dessiner(0);
+  }
+
+  /** Le ciel du duel (famille) et les terrains des deux joueurs ([vous, adversaire]). */
+  regler(ciel, lieux = [null, null]) {
+    const cle = `${ciel}|${lieux[0]}|${lieux[1]}`;
+    if (cle === this.cle) return;
+    this.cle = cle;
+    this.sortes = [];
+    if (CIELS[ciel]) this.sortes.push({ ...CIELS[ciel], zone: [0, 1] });
+    // la moitié du bas est la vôtre, celle du haut est celle de l'adversaire
+    if (LIEUX[lieux[0]]) this.sortes.push({ ...LIEUX[lieux[0]], zone: [0.5, 1] });
+    if (LIEUX[lieux[1]]) this.sortes.push({ ...LIEUX[lieux[1]], zone: [0, 0.5] });
+    // les particules des sortes qui ne sont plus là s'effacent d'elles-mêmes
+    for (const q of this.p) {
+      const m = this.sortes.find(s => s.c === q.s.c && s.zone[0] === q.s.zone[0]);
+      if (m) q.s = m; else q.vie = Math.min(q.vie, q.age + 1.5);
+    }
+    this.lancer();
+  }
+
+  naitre(s, partout = false) {
+    const y0 = s.zone[0] * this.h, y1 = s.zone[1] * this.h;
+    return { s, x: h(0, this.l), y: partout ? h(y0, y1) : s.vy[0] < 0 ? y1 : s.vy[0] > 0 ? y0 : h(y0, y1), vx: h(...s.vx), vy: h(...s.vy), t: h(...s.t),
+      rot: h(0, TAU), vr: h(-0.6, 0.6), age: 0, vie: h(7, 14), y0, y1 };
+  }
+
+  lancer() {
+    if (this.boucle || !this.sortes || !this.l) return;
+    if (this.reduit) { this.dessiner(0); return; }
+    // au premier lancement, les particules sont déjà là (pas d'apparition en masse)
+    for (const s of this.sortes) while (this.p.filter(q => q.s === s).length < s.n) { const q = this.naitre(s, true); q.age = h(1.5, q.vie - 1); this.p.push(q); }
+    this.dernier = performance.now();
+    const pas = t => {
+      if (document.hidden) { this.boucle = null; return; }
+      const dt = Math.min(0.1, (t - this.dernier) / 1000);
+      if (dt >= 1 / 32) { this.dernier = t; this.avancer(dt); this.dessiner(); }
+      this.boucle = requestAnimationFrame(pas);
+    };
+    this.boucle = requestAnimationFrame(pas);
+  }
+
+  avancer(dt) {
+    for (const q of this.p) {
+      q.age += dt; q.x += q.vx * dt + Math.sin(q.age * 0.7 + q.rot) * 3 * dt; q.y += q.vy * dt; q.rot += q.vr * dt;
+      if (q.x < -20) q.x = this.l + 20; if (q.x > this.l + 20) q.x = -20;
+    }
+    this.p = this.p.filter(q => q.age < q.vie && q.y > q.y0 - 30 && q.y < q.y1 + 30);
+    for (const s of this.sortes) { const n = this.p.filter(q => q.s === s).length; for (let k = n; k < s.n; k++) if (Math.random() < 0.08) this.p.push(this.naitre(s)); }
+  }
+
+  dessiner() {
+    const c = this.c;
+    c.clearRect(0, 0, this.l, this.h);
+    for (const q of this.p) {
+      // fondu doux à la naissance et à la fin : ni pop, ni clignotement
+      const a = Math.min(1, q.age / 1.5, (q.vie - q.age) / 1.5) * 0.55;
+      if (a <= 0) continue;
+      const [r, g, b] = q.s.c;
+      c.fillStyle = `rgba(${r},${g},${b},${a})`; c.strokeStyle = `rgba(${r},${g},${b},${a})`;
+      switch (q.s.forme) {
+        case "bulle": c.lineWidth = 0.8; c.beginPath(); c.arc(q.x, q.y, q.t, 0, TAU); c.stroke(); break;
+        case "souffle": c.lineWidth = 1.2; c.beginPath(); c.moveTo(q.x - q.t, q.y); c.quadraticCurveTo(q.x, q.y - q.t * 0.3, q.x + q.t, q.y); c.stroke(); break;
+        case "petale": case "feuille":
+          c.save(); c.translate(q.x, q.y); c.rotate(q.rot); c.beginPath(); c.ellipse(0, 0, q.t, q.t * 0.45, 0, 0, TAU); c.fill(); c.restore(); break;
+        case "braise": {
+          const gr = c.createRadialGradient(q.x, q.y, 0, q.x, q.y, q.t * 3);
+          gr.addColorStop(0, `rgba(255,230,180,${a})`); gr.addColorStop(0.4, `rgba(${r},${g},${b},${a * 0.7})`); gr.addColorStop(1, `rgba(${r},${g},${b},0)`);
+          c.fillStyle = gr; c.beginPath(); c.arc(q.x, q.y, q.t * 3, 0, TAU); c.fill(); break;
+        }
+        default: c.beginPath(); c.arc(q.x, q.y, q.t, 0, TAU); c.fill();
+      }
+    }
+  }
+}
+
+return { Ambiance };
 })();
 
 // ===== js/ui/stockage.js =====
@@ -4159,7 +4469,36 @@ function basculerSon() {
   return actif;
 }
 
-return { jouerSon, sonActif, basculerSon };
+// ---------- Les sons des éléments (bruit filtré : l'eau, le feu, la roche, le vent…) ----------
+let bruit = null;
+function souffle(duree, filtre, f0, f1, volume = 0.18, delai = 0) {
+  const a = audio(); if (!a) return;
+  if (!bruit) {
+    bruit = a.createBuffer(1, a.sampleRate * 1.5, a.sampleRate);
+    const d = bruit.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  }
+  const t = a.currentTime + delai, src = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
+  src.buffer = bruit; f.type = filtre; f.frequency.setValueAtTime(f0, t); f.frequency.exponentialRampToValueAtTime(f1, t + duree);
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(volume, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + duree);
+  src.connect(f).connect(g).connect(a.destination); src.start(t); src.stop(t + duree + 0.05);
+}
+
+/** Le son d'un élément : `phase` 'lancer' (le coup part) ou 'impact' (il frappe). */
+function jouerElement(element, phase = "impact") {
+  const lancer = phase === "lancer";
+  switch (element) {
+    case "eau": lancer ? souffle(0.45, "bandpass", 600, 1800, 0.12) : (souffle(0.6, "lowpass", 2400, 300, 0.22), note(180, 0.25, "sine", 0.08)); break;
+    case "feu": lancer ? souffle(0.4, "bandpass", 900, 2400, 0.12) : (souffle(0.7, "lowpass", 3000, 200, 0.25), note(90, 0.4, "triangle", 0.1)); break;
+    case "terre": lancer ? souffle(0.3, "lowpass", 400, 200, 0.14) : (souffle(0.5, "lowpass", 300, 60, 0.3), note(55, 0.5, "sine", 0.2)); break;
+    case "air": souffle(lancer ? 0.4 : 0.6, "highpass", lancer ? 1500 : 3000, lancer ? 4000 : 800, 0.12); break;
+    case "foudre": lancer ? souffle(0.15, "highpass", 3000, 6000, 0.1) : (souffle(0.35, "highpass", 6000, 600, 0.28), note(70, 0.45, "sawtooth", 0.06)); break;
+    case "fleurs": [1047, 1319, 1568].forEach((f, k) => note(f, 0.3, "sine", 0.05, k * 0.05)); break;
+    default: lancer ? note(880, 0.2, "sine", 0.06) : [784, 1047, 1319].forEach((f, k) => note(f, 0.4, "sine", 0.07, k * 0.04));
+  }
+}
+
+return { jouerSon, sonActif, basculerSon, jouerElement };
 })();
 
 // ===== js/ui/pleinEcran.js =====
@@ -4250,9 +4589,10 @@ const { ETATS } = M["js/data/sorts.js"];
 const { reconcilier, basculer, itemPanneau } = M["js/ui/duelOutils.js"];
 const { noterVue, noterRegle, noterDuel, vaincreGardien } = M["js/engine/carnet.js"];
 const { peindreCarteDuel, peindreHologramme } = M["js/render/carteDuel.js"];
-const { Effets } = M["js/render/effetsVisuels.js"];
+const { Effets, elementDe, TEINTES } = M["js/render/effetsVisuels.js"];
+const { Ambiance } = M["js/render/ambiance.js"];
 const { chargerCarnet, sauverCarnet } = M["js/ui/stockage.js"];
-const { jouerSon, basculerSon, sonActif } = M["js/ui/son.js"];
+const { jouerSon, basculerSon, sonActif, jouerElement } = M["js/ui/son.js"];
 const { installerPleinEcran } = M["js/ui/pleinEcran.js"];
 
 const $ = id => document.getElementById(id);
@@ -4336,6 +4676,12 @@ function loupable(el, quoi) {
 
 // ---------- Effets visuels propres à chaque carte ----------
 const effets = new Effets($("plateau"));
+// l'ambiance du tapis (particules lentes du ciel et des terrains)
+const ambiance = new Ambiance($("tapis"));
+/** L'élément d'une carte (sa planète) ; les figures d'accord ont le leur. */
+const elementCarte = id => elementDe(id >= 100 ? null : familleDe(id));
+// la barre de vie laisse une traînée claire quand elle baisse, comme dans les jeux de combat
+for (const j of [0, 1]) { const s = document.createElement("span"); s.className = "lp-trainee"; s.id = `lp-trainee-${j}`; $(`lp-jauge-${j}`).before(s); }
 /** Joue l'effet d'une carte : sur tout le tapis, ou autour d'un élément (agrandi). */
 function effetCarte(id, cible = null, agrandir = 1, avecEmbleme = false) {
   if (!cible) return effets.carte(id, effets.rect($("tapis")), avecEmbleme);
@@ -4416,6 +4762,7 @@ function rendre() {
   $("terrain-nom").textContent = t ? `Ciel du duel : ${t.glyphe} ${t.nom}` : "";
   for (const j of [0, 1]) majLieu(j);
   $("tapis").dataset.terrain = d.terrain || "";
+  ambiance.regler(d.terrain, [d.joueurs[0].terrainCarte, d.joueurs[1].terrainCarte]);
   majCommandes();
   $("indication").textContent = indication();
 }
@@ -5180,6 +5527,8 @@ function allerLP(j, cible) {
   const el = $(`lp-val-${j}`), jauge = $(`lp-jauge-${j}`);
   const depart = lpAffiche[j];
   jauge.style.width = `${Math.max(0, Math.min(100, cible / LP * 100))}%`;
+  const trainee = $(`lp-trainee-${j}`);
+  if (trainee) trainee.style.width = `${Math.max(0, Math.min(100, cible / LP * 100))}%`;
   jauge.parentElement.classList.toggle("critique", cible <= 2000);
   jauge.parentElement.classList.toggle("deborde", cible > LP);
   if (depart === cible) { el.textContent = cible; return; }
@@ -5224,10 +5573,10 @@ function eclair(couleur) {
   e.classList.remove("visible"); void e.offsetWidth; e.classList.add("visible");
 }
 
-function secousse() {
+function secousse(fort = false) {
   if (reduit) return;
   const p = $("plateau");
-  p.classList.remove("secoue"); void p.offsetWidth; p.classList.add("secoue");
+  p.classList.remove("secoue", "secoue-fort"); void p.offsetWidth; p.classList.add(fort ? "secoue-fort" : "secoue");
 }
 
 function banniere(titre, texte, classe = "") {
@@ -5286,7 +5635,8 @@ async function animer(ev, garderOccupe = false) {
       case "invocation": {
         journal(`${nom(e.j)} ${accorde(e.j, "invoquez", "invoque")} ${c}${e.speciale && !e.figure ? " (invocation spéciale)" : ""}.`);
         rendre();
-        const z = zoneEl(e.j, e.place); z?.classList.add(e.figure || def(e.id).forte ? "arrivee-majeure" : "arrivee");
+        const z = zoneEl(e.j, e.place);
+        if (z) { z.style.setProperty("--teinte", (TEINTES[elementCarte(e.id)] || TEINTES.accord).join(",")); z.classList.add(e.figure || def(e.id).forte ? "arrivee-majeure" : "arrivee"); }
         if (z) effetCarte(e.id, z, e.figure || def(e.id).forte ? 3.2 : 2.4);
         jouerSon("invocation", familleDe(e.id)); eclair(e.figure ? "rgba(167,122,216,.3)" : "rgba(243,213,138,.25)");
         if (e.j === 1) apercu(e.id, true, `Invoquée par ${d.joueurs[1].nom}.`);
@@ -5327,34 +5677,35 @@ async function animer(ev, garderOccupe = false) {
         const cible = e.cible === "direct" ? $(`lp-${1 - e.j}`) : zoneEl(1 - e.j, e.cible);
         journal(`${c} attaque ${e.cible === "direct" ? (e.j === 0 ? `les points de vie de ${d.joueurs[1].nom}` : "vos points de vie") : nomDe(e.idCible)}.`);
         montrerFleche(a, cible); montrerCalcul(e.calcul);
-        await attendre(650);
-        if (a && cible) {
-          const ra = a.getBoundingClientRect(), rc = cible.getBoundingClientRect();
-          a.style.setProperty("--dx", `${(rc.left + rc.width / 2) - (ra.left + ra.width / 2)}px`);
-          a.style.setProperty("--dy", `${(rc.top + rc.height / 2) - (ra.top + ra.height / 2)}px`);
-          a.classList.add("assaut");
-        }
-        jouerSon("saut");
-        await attendre(380);
+        await attendre(600);
+        // le coup part dans l'élément de l'apparition (feu, eau, terre, air, foudre, lumière, fleurs)
+        const elem = elementCarte(e.id), c0 = e.calcul || {};
+        const fort = c0.avantage || (c0.atk || 0) >= 2400 || (c0.valeur != null && Math.abs((c0.atk || 0) - c0.valeur) >= 1000);
+        if (a) a.classList.add("elan");
         cacherFleche();
-        cible?.classList.remove("impact"); void cible?.offsetWidth; cible?.classList.add("impact"); jouerSon("frappe"); secousse();
-        if (cible) effets.jouer("entaille", cible);
-        await attendre(260);
-        a?.classList.remove("assaut");
+        jouerElement(elem, "lancer");
+        if (a && cible) await effets.attaque(a, cible, elem); else await attendre(300);
+        a?.classList.remove("elan");
+        cible?.classList.remove("impact"); void cible?.offsetWidth; cible?.classList.add("impact");
+        if (cible) effets.impact(cible, elem, fort);
+        jouerElement(elem, "impact"); jouerSon("frappe"); secousse(fort);
+        if (c0.avantage) flotter(cible, "▲ domination", "neutre");
+        await attendre(fort ? 420 : 300);
         break;
       }
       case "detruite": case "sacrifiee": case "epuisee": {
         const z = zoneEl(e.j, e.place, e.zone === "presages" ? "presages" : "monstres");
         if (e.type === "detruite") journal(`${c} est détruite.`);
         if (e.type === "epuisee") journal(`${c} a fini d’agir.`);
-        z?.classList.add("eclate"); eclats(z, e.j === 0 ? "#ff8a5c" : "#b9a0ff", e.id >= 100 ? 30 : 18);
+        z?.classList.add("eclate");
+        if (z) effets.eclatsCarte(z, elementCarte(e.id));
         await attendre(500); break;
       }
       case "protegee": flotter(zoneEl(e.j, e.place), "protégée", "neutre"); journal(`${c} n’est pas détruite (protégée une fois).`); await attendre(450); break;
       case "lp": {
         flotter($(`lp-${e.j}`), `${e.v > 0 ? "+" : "−"}${Math.abs(e.v)}`, e.v > 0 ? "bien" : "mal");
         allerLP(e.j, e.lp);
-        if (e.v < 0) { const p = $(`lp-${e.j}`); p.classList.remove("touche"); void p.offsetWidth; p.classList.add("touche"); if (-e.v >= 1500) eclair("rgba(255,60,40,.3)"); }
+        if (e.v < 0) { const p = $(`lp-${e.j}`); p.classList.remove("touche"); void p.offsetWidth; p.classList.add("touche"); if (-e.v >= 1500) { eclair("rgba(255,60,40,.3)"); secousse(true); } }
         journal(`${nom(e.j)} ${e.v > 0 ? accorde(e.j, "gagnez", "gagne") : accorde(e.j, "perdez", "perd")} ${Math.abs(e.v)} points de vie${e.pourquoi ? ` (${e.pourquoi})` : ""}.`);
         jouerSon(e.v > 0 ? "gain" : "perte");
         await attendre(e.v < 0 ? 520 : 380); break;
@@ -5554,6 +5905,10 @@ function terminer() {
   sauverCarnet(carnet);
   jouerSon(gagne ? "victoire" : "defaite");
   banniere(gagne ? "Victoire" : "Défaite", "", gagne ? "accord" : "sombre");
+  // la fin du duel : une pluie d'étoiles à la victoire, des cendres à la défaite
+  const tout = effets.rect($("plateau"));
+  if (gagne) { effets.jouer("etincelles", tout); effets.jouer("etoiles", tout); setTimeout(() => effets.jouer("etincelles", tout), 500); }
+  else effets.jouer("cendres", tout);
   setTimeout(() => {
     $("fin-duel-titre").textContent = d.gagnant == null ? "Égalité" : gagne ? "Les apparitions vous obéissent" : `${d.joueurs[1].nom} l’emporte`;
     $("fin-duel-texte").textContent = `Duel n° ${partie.graine} en ${Math.ceil(d.tour / 2)} tours · points de vie : vous ${d.joueurs[0].lp}, ${d.joueurs[1].nom} ${d.joueurs[1].lp} · duels gagnés ${carnet.duels.gagnes} sur ${carnet.duels.joues}.`;
@@ -5648,7 +6003,7 @@ $("bouton-journal")?.addEventListener("click", () => {
 });
 
 // Outil de vérification (?test) : lire l'état depuis la console ou un script.
-if (new URLSearchParams(location.search).has("test")) window.__duel = { etat: () => d, occupe: () => occupe, demarrer, effet: id => effetCarte(id) };
+if (new URLSearchParams(location.search).has("test")) window.__duel = { etat: () => d, occupe: () => occupe, demarrer, effet: id => effetCarte(id), effets, zone: zoneEl };
 
 // Accueil : un duel de démonstration derrière le voile
 majAccueil();

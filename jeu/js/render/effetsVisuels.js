@@ -459,8 +459,141 @@ function coeur(c, x, y, r) {
   c.bezierCurveTo(x + r * 0.8, y - r, x + r * 1.3, y, x, y + r * 0.9); c.closePath();
 }
 
+
+// ---------- Les éléments du combat ----------
+// Chaque planète a son élément ; il colore ce que font ses apparitions (attaque, impact, éclats).
+export const ELEMENTS = { soleil: "lumiere", lune: "eau", mercure: "air", venus: "fleurs", mars: "feu", jupiter: "foudre", saturne: "terre", preambule: "lumiere", hors: "eau" };
+export const TEINTES = {
+  lumiere: [255, 214, 120], eau: [110, 178, 255], air: [190, 245, 232], fleurs: [255, 150, 190],
+  feu: [255, 118, 40], foudre: [175, 195, 255], terre: [176, 132, 88], accord: [196, 150, 255]
+};
+/** L'élément d'une famille (planète) ; les figures d'accord ont le leur. */
+export const elementDe = famille => ELEMENTS[famille] || "accord";
+const rgba = (t, a) => `rgba(${t[0]},${t[1]},${t[2]},${a})`;
+const bez = (o, q) => {
+  const [x1, y1] = o.de, [x2, y2] = o.vers, mx = (x1 + x2) / 2, my = Math.min(y1, y2) - Math.abs(x2 - x1) * 0.15 - 30, u = 1 - q;
+  return [u * u * x1 + 2 * u * q * mx + q * q * x2, u * u * y1 + 2 * u * q * my + q * q * y2];
+};
+function zigzag(c, x1, y1, x2, y2, n, amp) {
+  c.beginPath(); c.moveTo(x1, y1);
+  for (let k = 1; k < n; k++) { const t = k / n; c.lineTo(x1 + (x2 - x1) * t + hasard(-amp, amp), y1 + (y2 - y1) * t + hasard(-amp, amp)); }
+  c.lineTo(x2, y2); c.stroke();
+}
+function caillou(c, x, y, t, rot, coul) {
+  c.save(); c.translate(x, y); c.rotate(rot); c.fillStyle = coul;
+  c.beginPath(); c.moveTo(-t, -t * 0.4); c.lineTo(-t * 0.3, -t); c.lineTo(t * 0.8, -t * 0.6); c.lineTo(t, t * 0.3); c.lineTo(t * 0.1, t); c.lineTo(-t * 0.8, t * 0.6); c.closePath(); c.fill();
+  c.fillStyle = "rgba(255,255,255,.18)"; c.beginPath(); c.moveTo(-t * 0.3, -t); c.lineTo(t * 0.8, -t * 0.6); c.lineTo(t * 0.1, -t * 0.1); c.closePath(); c.fill();
+  c.restore();
+}
+function petale(c, x, y, t, rot, a) {
+  c.save(); c.translate(x, y); c.rotate(rot);
+  const g = c.createLinearGradient(-t, 0, t, 0); g.addColorStop(0, `rgba(255,190,215,${a})`); g.addColorStop(1, `rgba(255,120,170,${a})`);
+  c.fillStyle = g; c.beginPath(); c.ellipse(0, 0, t, t * 0.45, 0, 0, TAU); c.fill(); c.restore();
+}
+
+const EFFETS_ELEMENTS = {
+  // le coup part de l'attaquant et file vers sa cible
+  projectile: {
+    duree: 0.5,
+    init: () => ({ p: [], ancien: null }),
+    dessiner(c, r, p, e, dt, o) {
+      const q = p * p * (3 - 2 * p), [x, y] = bez(o, q), t = TEINTES[o.element] || TEINTES.accord;
+      const [px, py] = e.ancien || [x, y]; e.ancien = [x, y];
+      const ang = Math.atan2(y - py, x - px);
+      // sillage
+      for (let k = 0; k < 3; k++) e.p.push({ x: x + hasard(-4, 4), y: y + hasard(-4, 4), vx: hasard(-30, 30), vy: hasard(-30, 30) + (o.element === "eau" ? 40 : o.element === "feu" ? -50 : 0), vie: 1, t: hasard(2, 6), rot: hasard(0, 6) });
+      c.globalCompositeOperation = o.element === "terre" ? "source-over" : "lighter";
+      for (const s of e.p) {
+        s.vie -= dt * 2.6; if (s.vie <= 0) continue;
+        s.x += s.vx * dt; s.y += s.vy * dt; s.rot += dt * 6;
+        if (o.element === "terre") caillou(c, s.x, s.y, s.t * 0.7, s.rot, `rgba(120,90,60,${s.vie})`);
+        else if (o.element === "fleurs") petale(c, s.x, s.y, s.t, s.rot, s.vie);
+        else { c.fillStyle = rgba(t, s.vie * 0.8); c.beginPath(); c.arc(s.x, s.y, s.t * s.vie, 0, TAU); c.fill(); }
+      }
+      e.p = e.p.filter(s => s.vie > 0);
+      // la tête du coup
+      if (o.element === "foudre") {
+        c.strokeStyle = "rgba(235,245,255,.95)"; c.lineWidth = 3; c.shadowColor = rgba(t, 1); c.shadowBlur = 18;
+        zigzag(c, o.de[0], o.de[1], x, y, 9, 10); c.lineWidth = 1.2; c.strokeStyle = "#fff"; zigzag(c, o.de[0], o.de[1], x, y, 9, 6); c.shadowBlur = 0;
+      } else if (o.element === "lumiere") {
+        const g = c.createLinearGradient(o.de[0], o.de[1], x, y); g.addColorStop(0, rgba(t, 0)); g.addColorStop(1, rgba(t, 0.9));
+        c.strokeStyle = g; c.lineWidth = 6 + q * 8; c.lineCap = "round"; c.beginPath(); c.moveTo(o.de[0], o.de[1]); c.lineTo(x, y); c.stroke();
+      } else if (o.element === "air") {
+        c.strokeStyle = rgba(t, 0.8); c.lineWidth = 2.5;
+        for (let k = 0; k < 3; k++) { c.beginPath(); c.arc(x - Math.cos(ang) * k * 14, y - Math.sin(ang) * k * 14, 9 - k * 2, ang + 1, ang + 4); c.stroke(); }
+      } else if (o.element === "terre") {
+        caillou(c, x, y, 13, q * 9, "#7b5a3c");
+      }
+      const g = c.createRadialGradient(x, y, 0, x, y, o.element === "eau" ? 16 : 20);
+      g.addColorStop(0, "rgba(255,255,255,.95)"); g.addColorStop(0.35, rgba(t, 0.9)); g.addColorStop(1, rgba(t, 0));
+      c.fillStyle = g;
+      c.save(); c.translate(x, y); c.rotate(ang); c.beginPath();
+      if (o.element === "eau" || o.element === "feu") c.ellipse(0, 0, 24, 11, 0, 0, TAU); else c.arc(0, 0, 20, 0, TAU);
+      c.fill(); c.restore();
+      c.globalCompositeOperation = "source-over";
+    }
+  },
+  // l'impact sur la cible, selon l'élément ; `fort` : un coup puissant (plus grand, plus de matière)
+  impact: {
+    duree: 0.9,
+    init: (r, o) => {
+      const n = o.fort ? 46 : 28, t = [];
+      for (let k = 0; k < n; k++) { const a = hasard(0, TAU), v = hasard(60, o.fort ? 320 : 220); t.push({ x: 0, y: 0, vx: Math.cos(a) * v, vy: Math.sin(a) * v - (o.element === "eau" ? 120 : 0), t: hasard(2, 7), rot: hasard(0, 6), vr: hasard(-8, 8) }); }
+      return { p: t, eclair: Array.from({ length: 8 }, () => hasard(-14, 14)) };
+    },
+    dessiner(c, r, p, e, dt, o) {
+      const cx = r.x + r.w / 2, cy = r.y + r.h / 2, t = TEINTES[o.element] || TEINTES.accord, a = 1 - p, R = Math.max(r.w, r.h) * (o.fort ? 1.1 : 0.8);
+      // onde
+      c.strokeStyle = rgba(t, a * 0.9); c.lineWidth = 3 + 4 * a;
+      c.beginPath(); c.arc(cx, cy, R * ease(Math.min(1, p * 1.6)), 0, TAU); c.stroke();
+      if (o.element === "feu" || o.element === "lumiere") {
+        const g = c.createRadialGradient(cx, cy, 0, cx, cy, R * 0.8 * ease(Math.min(1, p * 2.5)));
+        g.addColorStop(0, `rgba(255,250,220,${a})`); g.addColorStop(0.4, rgba(t, a * 0.85)); g.addColorStop(1, rgba(t, 0));
+        c.globalCompositeOperation = "lighter"; c.fillStyle = g; c.beginPath(); c.arc(cx, cy, R, 0, TAU); c.fill(); c.globalCompositeOperation = "source-over";
+      }
+      if (o.element === "foudre" && p < 0.45) {
+        c.strokeStyle = "rgba(240,248,255,.95)"; c.lineWidth = 4; c.shadowColor = rgba(t, 1); c.shadowBlur = 22;
+        c.beginPath(); let y = r.y - R * 1.2, x = cx; c.moveTo(x, y);
+        for (const d of e.eclair) { y += (cy - (r.y - R * 1.2)) / 8; x = cx + d; c.lineTo(x, y); }
+        c.stroke(); c.shadowBlur = 0;
+      }
+      if (o.element === "terre") {
+        const g = c.createRadialGradient(cx, cy + 10, 0, cx, cy + 10, R);
+        g.addColorStop(0, `rgba(150,120,90,${0.55 * a})`); g.addColorStop(1, "rgba(150,120,90,0)");
+        c.fillStyle = g; c.beginPath(); c.arc(cx, cy + 10, R, 0, TAU); c.fill();
+      }
+      for (const s of e.p) {
+        s.x += s.vx * dt; s.y += s.vy * dt; s.vx *= 0.96; s.vy = s.vy * 0.96 + (o.element === "eau" || o.element === "terre" ? 520 : o.element === "feu" ? -80 : 60) * dt; s.rot += s.vr * dt;
+        const x = cx + s.x, y = cy + s.y;
+        if (o.element === "terre") caillou(c, x, y, s.t, s.rot, `rgba(110,82,56,${a})`);
+        else if (o.element === "fleurs") petale(c, x, y, s.t * 1.2, s.rot, a);
+        else if (o.element === "air") { c.strokeStyle = rgba(t, a * 0.8); c.lineWidth = 2; c.beginPath(); c.arc(x, y, s.t * 2, s.rot, s.rot + 2.5); c.stroke(); }
+        else if (o.element === "eau") { c.fillStyle = `rgba(200,230,255,${a})`; c.beginPath(); c.ellipse(x, y, s.t * 0.6, s.t, Math.atan2(s.vy, s.vx) + Math.PI / 2, 0, TAU); c.fill(); }
+        else { c.globalCompositeOperation = "lighter"; c.fillStyle = rgba(t, a); c.beginPath(); c.arc(x, y, s.t * (0.4 + a * 0.6), 0, TAU); c.fill(); c.globalCompositeOperation = "source-over"; }
+      }
+    }
+  },
+  // une apparition détruite vole en éclats de sa couleur
+  eclatsCarte: {
+    duree: 1.1,
+    init: r => ({ p: Array.from({ length: 22 }, () => ({ x: hasard(0.15, 0.85) * r.w, y: hasard(0.1, 0.9) * r.h, vx: hasard(-160, 160), vy: hasard(-260, -40), t: hasard(5, 13), rot: hasard(0, 6), vr: hasard(-9, 9) })) }),
+    dessiner(c, r, p, e, dt, o) {
+      const t = TEINTES[o.element] || TEINTES.accord, a = 1 - p;
+      for (const s of e.p) {
+        s.vy += 640 * dt; s.x += s.vx * dt; s.y += s.vy * dt; s.rot += s.vr * dt;
+        c.save(); c.translate(r.x + s.x, r.y + s.y); c.rotate(s.rot);
+        c.fillStyle = rgba(t, a * 0.95); c.strokeStyle = `rgba(255,243,207,${a})`; c.lineWidth = 1;
+        c.beginPath(); c.moveTo(-s.t, -s.t * 0.6); c.lineTo(s.t, -s.t * 0.2); c.lineTo(-s.t * 0.1, s.t); c.closePath(); c.fill(); c.stroke();
+        c.restore();
+      }
+      if (p < 0.3) { c.globalCompositeOperation = "lighter"; c.fillStyle = rgba(t, (0.3 - p) * 2); c.fillRect(r.x, r.y, r.w, r.h); c.globalCompositeOperation = "source-over"; }
+    }
+  }
+};
+Object.assign(EFFETS, EFFETS_ELEMENTS);
+
 /** Les noms des effets disponibles. */
-export const NOMS_EFFETS = Object.keys(EFFETS).filter(n => !["embleme", "duo", "lien"].includes(n));
+export const NOMS_EFFETS = Object.keys(EFFETS).filter(n => !["embleme", "duo", "lien", "projectile", "impact", "eclatsCarte"].includes(n));
 
 /** L'effet de chaque carte (d'après son image) : [effet, couleur facultative]. */
 export const EFFET_DE_CARTE = {
@@ -515,7 +648,7 @@ export class Effets {
     if (!def) return Promise.resolve();
     const r = cible && cible.getBoundingClientRect ? this.rect(cible) : cible || this.rect(null);
     return new Promise(resolve => {
-      this.actifs.push({ def, r, options: { ...options, reduit: this.reduit }, etat: def.init(r), t: 0, resolve });
+      this.actifs.push({ def, r, options: { ...options, reduit: this.reduit }, etat: def.init(r, options), t: 0, resolve });
       if (!this.boucle) { this.dernier = performance.now(); this.boucle = requestAnimationFrame(t => this.pas(t)); }
     });
   }
@@ -533,6 +666,18 @@ export class Effets {
     setTimeout(() => { this.carte(a, cible); this.carte(b, cible); }, 1100);
   }
 
+  /** Le coup d'une apparition : il file de l'attaquant à sa cible, dans son élément. Résout à l'arrivée. */
+  attaque(de, vers, element) {
+    const a = this.rect(de), b = this.rect(vers);
+    return this.jouer("projectile", null, { element, de: [a.x + a.w / 2, a.y + a.h * 0.35], vers: [b.x + b.w / 2, b.y + b.h / 2] });
+  }
+
+  /** L'impact d'un coup sur sa cible (`fort` : un coup puissant). */
+  impact(cible, element, fort = false) { return this.jouer("impact", cible, { element, fort }); }
+
+  /** Une apparition détruite vole en éclats, de la couleur de son élément. */
+  eclatsCarte(cible, element) { return this.jouer("eclatsCarte", cible, { element }); }
+
   /** Un lien lumineux entre deux éléments. */
   lien(el1, el2, favorable) {
     const r1 = this.rect(el1), r2 = this.rect(el2);
@@ -540,14 +685,15 @@ export class Effets {
   }
 
   pas(t) {
-    const dt = Math.min(0.05, (t - this.dernier) / 1000); this.dernier = t;
+    // l'horodatage du premier dessin peut précéder le départ : jamais de temps négatif
+    const dt = Math.max(0, Math.min(0.05, (t - this.dernier) / 1000)); this.dernier = Math.max(t, this.dernier);
     this.c.clearRect(0, 0, this.l, this.h);
     for (const a of this.actifs) {
       a.t += dt;
       const p = Math.min(1, a.t / a.def.duree);
       this.c.save();
       // un effet qui échoue s'arrête seul, sans bloquer les autres
-      try { a.def.dessiner(this.c, a.r, p, a.etat, dt, a.options); } catch { a.t = a.def.duree; }
+      try { a.def.dessiner(this.c, a.r, p, a.etat, dt, a.options); } catch (err) { a.t = a.def.duree; console.warn("Effet visuel interrompu :", err); }
       this.c.restore();
       if (p >= 1) { a.fini = true; a.resolve(); }
     }

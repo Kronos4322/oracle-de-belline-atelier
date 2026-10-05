@@ -19,9 +19,10 @@ import { ETATS } from "./data/sorts.js";
 import { reconcilier, basculer, itemPanneau } from "./ui/duelOutils.js";
 import { noterVue, noterRegle, noterDuel, vaincreGardien } from "./engine/carnet.js";
 import { peindreCarteDuel, peindreHologramme } from "./render/carteDuel.js";
-import { Effets } from "./render/effetsVisuels.js";
+import { Effets, elementDe, TEINTES } from "./render/effetsVisuels.js";
+import { Ambiance } from "./render/ambiance.js";
 import { chargerCarnet, sauverCarnet } from "./ui/stockage.js";
-import { jouerSon, basculerSon, sonActif } from "./ui/son.js";
+import { jouerSon, basculerSon, sonActif, jouerElement } from "./ui/son.js";
 import { installerPleinEcran } from "./ui/pleinEcran.js";
 
 const $ = id => document.getElementById(id);
@@ -105,6 +106,12 @@ function loupable(el, quoi) {
 
 // ---------- Effets visuels propres à chaque carte ----------
 const effets = new Effets($("plateau"));
+// l'ambiance du tapis (particules lentes du ciel et des terrains)
+const ambiance = new Ambiance($("tapis"));
+/** L'élément d'une carte (sa planète) ; les figures d'accord ont le leur. */
+const elementCarte = id => elementDe(id >= 100 ? null : familleDe(id));
+// la barre de vie laisse une traînée claire quand elle baisse, comme dans les jeux de combat
+for (const j of [0, 1]) { const s = document.createElement("span"); s.className = "lp-trainee"; s.id = `lp-trainee-${j}`; $(`lp-jauge-${j}`).before(s); }
 /** Joue l'effet d'une carte : sur tout le tapis, ou autour d'un élément (agrandi). */
 function effetCarte(id, cible = null, agrandir = 1, avecEmbleme = false) {
   if (!cible) return effets.carte(id, effets.rect($("tapis")), avecEmbleme);
@@ -185,6 +192,7 @@ function rendre() {
   $("terrain-nom").textContent = t ? `Ciel du duel : ${t.glyphe} ${t.nom}` : "";
   for (const j of [0, 1]) majLieu(j);
   $("tapis").dataset.terrain = d.terrain || "";
+  ambiance.regler(d.terrain, [d.joueurs[0].terrainCarte, d.joueurs[1].terrainCarte]);
   majCommandes();
   $("indication").textContent = indication();
 }
@@ -949,6 +957,8 @@ function allerLP(j, cible) {
   const el = $(`lp-val-${j}`), jauge = $(`lp-jauge-${j}`);
   const depart = lpAffiche[j];
   jauge.style.width = `${Math.max(0, Math.min(100, cible / LP * 100))}%`;
+  const trainee = $(`lp-trainee-${j}`);
+  if (trainee) trainee.style.width = `${Math.max(0, Math.min(100, cible / LP * 100))}%`;
   jauge.parentElement.classList.toggle("critique", cible <= 2000);
   jauge.parentElement.classList.toggle("deborde", cible > LP);
   if (depart === cible) { el.textContent = cible; return; }
@@ -993,10 +1003,10 @@ function eclair(couleur) {
   e.classList.remove("visible"); void e.offsetWidth; e.classList.add("visible");
 }
 
-function secousse() {
+function secousse(fort = false) {
   if (reduit) return;
   const p = $("plateau");
-  p.classList.remove("secoue"); void p.offsetWidth; p.classList.add("secoue");
+  p.classList.remove("secoue", "secoue-fort"); void p.offsetWidth; p.classList.add(fort ? "secoue-fort" : "secoue");
 }
 
 function banniere(titre, texte, classe = "") {
@@ -1055,7 +1065,8 @@ async function animer(ev, garderOccupe = false) {
       case "invocation": {
         journal(`${nom(e.j)} ${accorde(e.j, "invoquez", "invoque")} ${c}${e.speciale && !e.figure ? " (invocation spéciale)" : ""}.`);
         rendre();
-        const z = zoneEl(e.j, e.place); z?.classList.add(e.figure || def(e.id).forte ? "arrivee-majeure" : "arrivee");
+        const z = zoneEl(e.j, e.place);
+        if (z) { z.style.setProperty("--teinte", (TEINTES[elementCarte(e.id)] || TEINTES.accord).join(",")); z.classList.add(e.figure || def(e.id).forte ? "arrivee-majeure" : "arrivee"); }
         if (z) effetCarte(e.id, z, e.figure || def(e.id).forte ? 3.2 : 2.4);
         jouerSon("invocation", familleDe(e.id)); eclair(e.figure ? "rgba(167,122,216,.3)" : "rgba(243,213,138,.25)");
         if (e.j === 1) apercu(e.id, true, `Invoquée par ${d.joueurs[1].nom}.`);
@@ -1096,34 +1107,35 @@ async function animer(ev, garderOccupe = false) {
         const cible = e.cible === "direct" ? $(`lp-${1 - e.j}`) : zoneEl(1 - e.j, e.cible);
         journal(`${c} attaque ${e.cible === "direct" ? (e.j === 0 ? `les points de vie de ${d.joueurs[1].nom}` : "vos points de vie") : nomDe(e.idCible)}.`);
         montrerFleche(a, cible); montrerCalcul(e.calcul);
-        await attendre(650);
-        if (a && cible) {
-          const ra = a.getBoundingClientRect(), rc = cible.getBoundingClientRect();
-          a.style.setProperty("--dx", `${(rc.left + rc.width / 2) - (ra.left + ra.width / 2)}px`);
-          a.style.setProperty("--dy", `${(rc.top + rc.height / 2) - (ra.top + ra.height / 2)}px`);
-          a.classList.add("assaut");
-        }
-        jouerSon("saut");
-        await attendre(380);
+        await attendre(600);
+        // le coup part dans l'élément de l'apparition (feu, eau, terre, air, foudre, lumière, fleurs)
+        const elem = elementCarte(e.id), c0 = e.calcul || {};
+        const fort = c0.avantage || (c0.atk || 0) >= 2400 || (c0.valeur != null && Math.abs((c0.atk || 0) - c0.valeur) >= 1000);
+        if (a) a.classList.add("elan");
         cacherFleche();
-        cible?.classList.remove("impact"); void cible?.offsetWidth; cible?.classList.add("impact"); jouerSon("frappe"); secousse();
-        if (cible) effets.jouer("entaille", cible);
-        await attendre(260);
-        a?.classList.remove("assaut");
+        jouerElement(elem, "lancer");
+        if (a && cible) await effets.attaque(a, cible, elem); else await attendre(300);
+        a?.classList.remove("elan");
+        cible?.classList.remove("impact"); void cible?.offsetWidth; cible?.classList.add("impact");
+        if (cible) effets.impact(cible, elem, fort);
+        jouerElement(elem, "impact"); jouerSon("frappe"); secousse(fort);
+        if (c0.avantage) flotter(cible, "▲ domination", "neutre");
+        await attendre(fort ? 420 : 300);
         break;
       }
       case "detruite": case "sacrifiee": case "epuisee": {
         const z = zoneEl(e.j, e.place, e.zone === "presages" ? "presages" : "monstres");
         if (e.type === "detruite") journal(`${c} est détruite.`);
         if (e.type === "epuisee") journal(`${c} a fini d’agir.`);
-        z?.classList.add("eclate"); eclats(z, e.j === 0 ? "#ff8a5c" : "#b9a0ff", e.id >= 100 ? 30 : 18);
+        z?.classList.add("eclate");
+        if (z) effets.eclatsCarte(z, elementCarte(e.id));
         await attendre(500); break;
       }
       case "protegee": flotter(zoneEl(e.j, e.place), "protégée", "neutre"); journal(`${c} n’est pas détruite (protégée une fois).`); await attendre(450); break;
       case "lp": {
         flotter($(`lp-${e.j}`), `${e.v > 0 ? "+" : "−"}${Math.abs(e.v)}`, e.v > 0 ? "bien" : "mal");
         allerLP(e.j, e.lp);
-        if (e.v < 0) { const p = $(`lp-${e.j}`); p.classList.remove("touche"); void p.offsetWidth; p.classList.add("touche"); if (-e.v >= 1500) eclair("rgba(255,60,40,.3)"); }
+        if (e.v < 0) { const p = $(`lp-${e.j}`); p.classList.remove("touche"); void p.offsetWidth; p.classList.add("touche"); if (-e.v >= 1500) { eclair("rgba(255,60,40,.3)"); secousse(true); } }
         journal(`${nom(e.j)} ${e.v > 0 ? accorde(e.j, "gagnez", "gagne") : accorde(e.j, "perdez", "perd")} ${Math.abs(e.v)} points de vie${e.pourquoi ? ` (${e.pourquoi})` : ""}.`);
         jouerSon(e.v > 0 ? "gain" : "perte");
         await attendre(e.v < 0 ? 520 : 380); break;
@@ -1323,6 +1335,10 @@ function terminer() {
   sauverCarnet(carnet);
   jouerSon(gagne ? "victoire" : "defaite");
   banniere(gagne ? "Victoire" : "Défaite", "", gagne ? "accord" : "sombre");
+  // la fin du duel : une pluie d'étoiles à la victoire, des cendres à la défaite
+  const tout = effets.rect($("plateau"));
+  if (gagne) { effets.jouer("etincelles", tout); effets.jouer("etoiles", tout); setTimeout(() => effets.jouer("etincelles", tout), 500); }
+  else effets.jouer("cendres", tout);
   setTimeout(() => {
     $("fin-duel-titre").textContent = d.gagnant == null ? "Égalité" : gagne ? "Les apparitions vous obéissent" : `${d.joueurs[1].nom} l’emporte`;
     $("fin-duel-texte").textContent = `Duel n° ${partie.graine} en ${Math.ceil(d.tour / 2)} tours · points de vie : vous ${d.joueurs[0].lp}, ${d.joueurs[1].nom} ${d.joueurs[1].lp} · duels gagnés ${carnet.duels.gagnes} sur ${carnet.duels.joues}.`;
@@ -1417,7 +1433,7 @@ $("bouton-journal")?.addEventListener("click", () => {
 });
 
 // Outil de vérification (?test) : lire l'état depuis la console ou un script.
-if (new URLSearchParams(location.search).has("test")) window.__duel = { etat: () => d, occupe: () => occupe, demarrer, effet: id => effetCarte(id) };
+if (new URLSearchParams(location.search).has("test")) window.__duel = { etat: () => d, occupe: () => occupe, demarrer, effet: id => effetCarte(id), effets, zone: zoneEl };
 
 // Accueil : un duel de démonstration derrière le voile
 majAccueil();

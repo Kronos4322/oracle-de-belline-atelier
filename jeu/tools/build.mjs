@@ -54,6 +54,7 @@ export const SCRIPTS = {
     "js/render/carte.js",
     "js/render/carteDuel.js",
     "js/render/effetsVisuels.js",
+    "js/render/ambiance.js",
     "js/ui/stockage.js",
     "js/ui/son.js",
     "js/ui/pleinEcran.js",

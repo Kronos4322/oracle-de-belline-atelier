@@ -24,7 +24,7 @@ import { carnetVide, normaliserCarnet, noterVecue, noterRegle, noterPartie, avan
 import { Mage } from "../js/game/player.js";
 import { jouerPartie } from "./simulateur.mjs";
 import { assembler } from "../tools/build.mjs";
-import { EFFET_DE_CARTE, NOMS_EFFETS } from "../js/render/effetsVisuels.js";
+import { EFFET_DE_CARTE, NOMS_EFFETS, ELEMENTS, TEINTES, elementDe } from "../js/render/effetsVisuels.js";
 import { ECHOS, LECTURES, accordDeLecture, FAVORABLES, NEFASTES, MEILLEURES, definirDictionnaire, lectureDuDictionnaire } from "../js/data/lectures.js";
 import { existsSync } from "node:fs";
 import vm from "node:vm";
@@ -978,6 +978,12 @@ test("Chaque carte et chaque figure a son effet visuel, et l'Eau déferle en vag
     assert.ok(NOMS_EFFETS.includes(EFFET_DE_CARTE[id][0]), `effet inconnu pour ${id}`);
   }
   assert.equal(EFFET_DE_CARTE[CARTES.find(c => c.nom === "Eau").id][0], "vague");
+});
+
+test("Chaque planète a son élément de combat, et chaque élément sa couleur", () => {
+  for (const f of ["soleil", "lune", "mercure", "venus", "mars", "jupiter", "saturne"]) assert.ok(TEINTES[ELEMENTS[f]], f);
+  assert.equal(elementDe("lune"), "eau"); assert.equal(elementDe("mars"), "feu"); assert.equal(elementDe("saturne"), "terre");
+  assert.equal(elementDe(null), "accord"); assert.ok(TEINTES.accord);
 });
 
 console.log("Scripts du navigateur");

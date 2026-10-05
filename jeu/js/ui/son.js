@@ -66,3 +66,32 @@ export function basculerSon() {
   try { localStorage.setItem(CLE, actif ? "oui" : "non"); } catch { /* rien */ }
   return actif;
 }
+
+// ---------- Les sons des éléments (bruit filtré : l'eau, le feu, la roche, le vent…) ----------
+let bruit = null;
+function souffle(duree, filtre, f0, f1, volume = 0.18, delai = 0) {
+  const a = audio(); if (!a) return;
+  if (!bruit) {
+    bruit = a.createBuffer(1, a.sampleRate * 1.5, a.sampleRate);
+    const d = bruit.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  }
+  const t = a.currentTime + delai, src = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
+  src.buffer = bruit; f.type = filtre; f.frequency.setValueAtTime(f0, t); f.frequency.exponentialRampToValueAtTime(f1, t + duree);
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(volume, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + duree);
+  src.connect(f).connect(g).connect(a.destination); src.start(t); src.stop(t + duree + 0.05);
+}
+
+/** Le son d'un élément : `phase` 'lancer' (le coup part) ou 'impact' (il frappe). */
+export function jouerElement(element, phase = "impact") {
+  const lancer = phase === "lancer";
+  switch (element) {
+    case "eau": lancer ? souffle(0.45, "bandpass", 600, 1800, 0.12) : (souffle(0.6, "lowpass", 2400, 300, 0.22), note(180, 0.25, "sine", 0.08)); break;
+    case "feu": lancer ? souffle(0.4, "bandpass", 900, 2400, 0.12) : (souffle(0.7, "lowpass", 3000, 200, 0.25), note(90, 0.4, "triangle", 0.1)); break;
+    case "terre": lancer ? souffle(0.3, "lowpass", 400, 200, 0.14) : (souffle(0.5, "lowpass", 300, 60, 0.3), note(55, 0.5, "sine", 0.2)); break;
+    case "air": souffle(lancer ? 0.4 : 0.6, "highpass", lancer ? 1500 : 3000, lancer ? 4000 : 800, 0.12); break;
+    case "foudre": lancer ? souffle(0.15, "highpass", 3000, 6000, 0.1) : (souffle(0.35, "highpass", 6000, 600, 0.28), note(70, 0.45, "sawtooth", 0.06)); break;
+    case "fleurs": [1047, 1319, 1568].forEach((f, k) => note(f, 0.3, "sine", 0.05, k * 0.05)); break;
+    default: lancer ? note(880, 0.2, "sine", 0.06) : [784, 1047, 1319].forEach((f, k) => note(f, 0.4, "sine", 0.07, k * 0.04));
+  }
+}

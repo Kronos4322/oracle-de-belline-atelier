@@ -1,0 +1,12 @@
+{
+  "name": "le-chemin-du-mage",
+  "version": "0.1.0",
+  "description": "Jeu de course en 2D pour apprendre l'Oracle de Belline",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "node tools/build.mjs",
+    "start": "python -m http.server 8000",
+    "test": "node tests/test-moteur.mjs"
+  }
+}

@@ -34,10 +34,16 @@ var jsFiles = walk(path.join(ROOT, 'js'), ['.js']).map(rel);
 var cardImages = walk(path.join(ROOT, 'assets', 'cartes'), ['.jpg', '.jpeg', '.png', '.webp']).map(rel);
 var icons = walk(path.join(ROOT, 'assets', 'icons'), ['.png']).map(rel);
 
+// Les jeux (jeu/) : leurs pages et leurs scripts compilés.
+var jeu = ['jeu/index.html', 'jeu/chemin.html', 'jeu/duel.html', 'jeu/css/style.css', 'jeu/css/duel.css', 'jeu/js/jeu.js', 'jeu/js/jeu-duel.js']
+  .filter(function (f) { return fs.existsSync(path.join(ROOT, f)); });
+jsFiles = jsFiles.filter(function (f) { return f.indexOf('jeu/') !== 0; });
+
 var precache = ['./', 'index.html', 'manifest.webmanifest', 'css/styles.css?v=' + V]
   .concat(jsFiles.map(function (f) { return f + '?v=' + V; }))
   .concat(icons)
-  .concat(cardImages.map(function (f) { return encodeURI(f); }));
+  .concat(cardImages.map(function (f) { return encodeURI(f); }))
+  .concat(jeu);
 
 var sw =
 "/* Généré par tools/gen-sw.js — ne pas éditer à la main.\n" +
@@ -68,6 +74,14 @@ var sw =
 "  if (req.method !== 'GET') return;\n" +
 "  var url = new URL(req.url);\n" +
 "  if (url.origin !== location.origin) return; // polices Google : laissées au réseau/cache du navigateur\n" +
+"  // les jeux (jeu/) ne portent pas de numéro de version : réseau d'abord, le cache sert hors-ligne\n" +
+"  if (url.pathname.indexOf('/jeu/') !== -1) {\n" +
+"    event.respondWith(fetch(req).then(function (res) {\n" +
+"      if (res && res.ok) { var copie = res.clone(); caches.open(CACHE).then(function (c) { c.put(req, copie); }); }\n" +
+"      return res;\n" +
+"    }).catch(function () { return caches.match(req); }));\n" +
+"    return;\n" +
+"  }\n" +
 "  event.respondWith(\n" +
 "    caches.match(req, { ignoreSearch: false }).then(function (cached) {\n" +
 "      var network = fetch(req).then(function (res) {\n" +

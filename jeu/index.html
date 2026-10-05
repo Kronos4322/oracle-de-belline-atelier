@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Le Chemin du Mage</title>
+  <meta name="description" content="Deux jeux pour apprendre l’Oracle de Belline : le Chemin du Mage, et le Duel des Apparitions.">
+  <meta name="theme-color" content="#120c22">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <link rel="apple-touch-icon" href="../assets/icons/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="page-accueil">
+  <a class="retour-atelier" href="../index.html#/jeux">‹ Retour à l’Atelier</a>
+  <header class="entete">
+    <p class="surtitre">Oracle de Belline</p>
+    <h1>Le Chemin du Mage</h1>
+    <p class="ornement" aria-hidden="true">✦ ❧ ✦</p>
+    <p class="sous-titre">Deux manières d’apprendre les cinquante-trois cartes</p>
+  </header>
+
+  <main class="choix-jeux">
+    <a class="jeu-carte" href="chemin.html">
+      <span class="jeu-glyphe" aria-hidden="true">☉ ☽ ☿ ♀ ♂ ♃ ♄</span>
+      <h2>Le Chemin</h2>
+      <p>Guidez le mage de bas en haut à travers les sept planètes. Aux fourches, lisez les cartes et choisissez votre route ; sautez celles que vous refusez. À chaque porte, retenez une carte : à la fin, votre tirage est lu.</p>
+      <span class="jeu-action">Prendre le chemin</span>
+    </a>
+    <a class="jeu-carte duel" href="duel.html">
+      <span class="jeu-glyphe" aria-hidden="true">⚔ ✶ ⚔</span>
+      <h2>Le Duel des Apparitions</h2>
+      <p>8000 points de vie, six cartes en main, et l’Ombre en face. Invoquez les figures du jeu en apparitions (niveau, ATK, DEF), jouez les événements en influences, posez vos présages face cachée. Les apparitions se dressent sur le tapis et s’affrontent ; deux cartes que la notice associe accomplissent un accord de Belline.</p>
+      <span class="jeu-action">Entrer en duel</span>
+    </a>
+  </main>
+
+  <section class="carnet-resume" aria-label="Votre carnet">
+    <h3>Votre carnet</h3>
+    <p id="resume-carnet">Aucune partie encore : le carnet se remplira de vos découvertes.</p>
+  </section>
+
+  <footer class="pied">
+    <p>D’après la notice de Belline (La Ducale 1960, Grimaud 1961). Les cartes sont dessinées d’après les images que nomme la notice.</p>
+  </footer>
+
+  <script>
+    // Résumé du carnet (même stockage que les jeux)
+    try {
+      const c = JSON.parse(localStorage.getItem("chemin-du-mage.carnet") || "null");
+      if (c && c.version === 1) {
+        const vecues = Object.values(c.cartes || {}).filter(f => f.vecue > 0).length;
+        const vues = Object.values(c.cartes || {}).filter(f => f.vue > 0 || f.vecue > 0).length;
+        const regles = Object.keys(c.regles || {}).length;
+        const aRevoir = Object.keys(c.aRevoir || {}).length;
+        const duels = c.duels || { joues: 0, gagnes: 0 };
+        document.getElementById("resume-carnet").textContent =
+          `${vues} cartes rencontrées sur 53 (${vecues} vécues) · ${regles} règles de Belline sur 26 · ${aRevoir} à revoir · ` +
+          `${c.parties || 0} chemin${(c.parties || 0) > 1 ? "s" : ""}, meilleur score ${c.meilleurScore || 0} · duels gagnés ${duels.gagnes} sur ${duels.joues}`;
+      }
+    } catch (e) { /* stockage indisponible */ }
+  </script>
+  <script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("../sw.js").catch(() => {});</script>
+</body>
+</html>

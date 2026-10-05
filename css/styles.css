@@ -1558,3 +1558,20 @@ button.planet-sym:hover { color: var(--gold-soft); text-shadow: 0 0 10px current
   .grim-list { overflow: visible; padding-right: 0; }
 }
 
+
+/* ---------------------------------------------------------------------------
+ * Jeux (le Chemin du Mage, le Duel des Apparitions)
+ * ------------------------------------------------------------------------- */
+.jeux-grille { display: grid; gap: 14px; grid-template-columns: 1fr; margin-bottom: 26px; }
+@media (min-width: 720px) { .jeux-grille { grid-template-columns: 1fr 1fr; } }
+.jeu-tuile { display: flex; flex-direction: column; gap: 8px; padding: 20px 18px; border-radius: 18px; text-decoration: none; color: inherit;
+  background: radial-gradient(ellipse at 50% 0%, rgba(217,178,107,.18), transparent 70%), var(--surface, rgba(255,255,255,.04));
+  border: 1px solid rgba(217,178,107,.35); box-shadow: 0 10px 30px rgba(0,0,0,.25); transition: transform .15s, border-color .15s; }
+.jeu-tuile:hover, .jeu-tuile:focus-visible { transform: translateY(-2px); border-color: rgba(217,178,107,.7); }
+.jeu-glyphe { font-size: 2.2rem; color: var(--gold-soft, #d9b26b); line-height: 1; }
+.jeu-tuile b { font-family: var(--serif); font-size: 1.35rem; }
+.jeu-tuile span:not(.jeu-glyphe) { color: var(--muted); line-height: 1.45; }
+.jeu-tuile em { font-style: normal; align-self: flex-start; margin-top: 4px; padding: 7px 16px; border-radius: 999px; font-weight: 600;
+  background: linear-gradient(180deg, #ecc983, #c99b4c); color: #1d1408; }
+@media (min-width: 560px) { .jeux-stats { grid-template-columns: 1fr 1fr; } }
+.jeux-vecues { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }

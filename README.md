@@ -14,6 +14,7 @@ dans ses lectures.
 | **Journal** | fonctionnel — le carnet (format du manuel : avant / après) |
 | **Progression** | fonctionnel — test de concordance, relevé des cartes fortes |
 | **Méthode** | mémo de lecture d'après les deux manuels |
+| **Jeux** | le Chemin du Mage et le Duel des Apparitions (dossier `jeu/`), reliés à l'Atelier |
 
 Basé sur *Lire le Belline*, *L'Oracle et la grille* et le *Dossier encyclopédique
 des 53 cartes* :
@@ -42,9 +43,35 @@ Le compteur du Grimoire indique le nombre de fiches que **tu** as retravaillées
 
 Un **clic sur l'image** d'une carte (ou sur le symbole planétaire) l'affiche en grand.
 
+## Les jeux (`jeu/`)
+
+Deux jeux pour apprendre le Belline, ouverts depuis l'onglet **Jeux** :
+
+- **Le Chemin du Mage** : le mage monte le chemin des sept planètes ; chaque carte vécue agit selon la notice.
+- **Le Duel des Apparitions** : un jeu de cartes à duel (apparitions, influences, présages, figures d'accord,
+  évolution, états, terrains, les Sept Gardiens). Les accords y suivent les règles de la notice, et les lectures
+  du **dictionnaire des 2652 associations** de l'Atelier (chargé après le démarrage).
+
+Même origine que l'Atelier : les jeux partagent le stockage du navigateur. L'onglet Jeux montre le carnet de jeu
+(cartes vécues, règles découvertes, duels, Gardiens) ; une carte du Duel ouvre sa fiche dans le Grimoire.
+
+Les jeux ont leur propre code (modules ES assemblés en un script par page) et leurs tests :
+
+```bash
+cd jeu
+npm run build   # après toute modification de jeu/js/ : régénère jeu/js/jeu.js et jeu/js/jeu-duel.js
+npm test        # 143 tests (moteur, données, équilibre, dictionnaire de l'Atelier, pages)
+```
+
+Voir `jeu/CLAUDE.md` pour les règles de contenu (fidélité à la notice) et l'architecture des jeux.
+Après une modification des jeux : `node tools/gen-sw.js` à la racine (le cache hors-ligne les inclut ; les pages
+`jeu/` sont servies réseau d'abord, donc toujours à jour en ligne).
+
 ## Technique
 
 - HTML / CSS / JavaScript, **sans build ni dépendance**.
+- Le dictionnaire des 2652 associations (4 Mo) n'est chargé qu'à l'ouverture de l'onglet Associations
+  (`BELLINE.chargerDictionnaire`, `js/app.js`) : l'ouverture de l'appli sur téléphone passe de 4,9 Mo à 0,7 Mo.
 - Données stockées dans le **navigateur** (`localStorage`), isolées derrière
   `js/storage.js` pour pouvoir migrer plus tard vers une vraie base (Supabase…).
 - Bouton **⬇** de la barre du haut : télécharge une sauvegarde `.json` de toutes les

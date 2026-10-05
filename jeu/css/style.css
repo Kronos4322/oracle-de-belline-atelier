@@ -1,0 +1,290 @@
+/* Le Chemin du Mage : palette de l'encyclopédie (crème, bordeaux, bleu, or) sur un fond de nuit étoilée */
+:root {
+  --creme: #F7F1E3;
+  --parchemin: #fbf5e6;
+  --parchemin-fonce: #efe3c6;
+  --bordeaux: #7A1F2B;
+  --bordeaux-fonce: #4d1019;
+  --bleu: #1F3A5F;
+  --or: #B08D3C;
+  --or-clair: #e4c675;
+  --or-pale: #f3d58a;
+  --encre: #2A2420;
+  --gris: #6E6A64;
+  --nuit: #17122a;
+  --nuit-2: #2a2145;
+  --bleu-carte: #2b5fae;
+  --vert: #3f7a3a;
+  --rouge: #a3262f;
+  --rayon: 12px;
+  --ombre: 0 10px 30px rgba(8, 4, 20, .45);
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+html { background: var(--nuit); }
+body {
+  margin: 0;
+  overflow-x: hidden;
+  min-height: 100vh;
+  color: var(--encre);
+  font-family: "EB Garamond", Georgia, serif;
+  font-size: 17px;
+  line-height: 1.45;
+  background:
+    radial-gradient(1px 1px at 12% 18%, rgba(255,255,255,.7), transparent 60%),
+    radial-gradient(1px 1px at 72% 12%, rgba(255,255,255,.6), transparent 60%),
+    radial-gradient(1.5px 1.5px at 42% 64%, rgba(243,213,138,.6), transparent 60%),
+    radial-gradient(1px 1px at 88% 72%, rgba(255,255,255,.5), transparent 60%),
+    radial-gradient(1px 1px at 22% 86%, rgba(255,255,255,.5), transparent 60%),
+    radial-gradient(1.2px 1.2px at 58% 34%, rgba(255,255,255,.55), transparent 60%),
+    radial-gradient(ellipse at 50% -10%, #4a3a72 0%, transparent 60%),
+    radial-gradient(ellipse at 100% 100%, #3a1626 0%, transparent 55%),
+    linear-gradient(180deg, var(--nuit-2), var(--nuit));
+  background-size: 340px 340px, 280px 280px, 410px 410px, 300px 300px, 360px 360px, 250px 250px, 100% 100%, 100% 100%, 100% 100%;
+  background-attachment: fixed;
+}
+
+/* ---------- Titres et ornements ---------- */
+h1, h2, h3 { font-family: "Cinzel", serif; }
+.surtitre { font-family: "Cinzel", serif; letter-spacing: .3em; text-transform: uppercase; font-size: 12px; color: var(--or-clair); margin: 0; }
+.ornement { color: var(--or); letter-spacing: .5em; margin: 2px 0 6px; font-size: 15px; }
+.titre-dore, .entete h1 {
+  background: linear-gradient(180deg, #fff1c4 0%, var(--or-pale) 40%, var(--or) 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  text-shadow: 0 2px 18px rgba(243,213,138,.25);
+}
+
+/* Barre du haut des jeux */
+.barre { display: flex; align-items: center; gap: 14px; max-width: 1240px; margin: 0 auto; padding: 8px 16px; color: var(--creme); }
+.barre h1 { margin: 0; font-size: 22px; letter-spacing: .06em; color: var(--or-pale); flex: 1; }
+.retour { color: var(--or-clair); text-decoration: none; font-family: "Cinzel", serif; font-size: 14px; }
+.retour:hover { color: var(--or-pale); text-decoration: underline; }
+.numero-partie { font-style: italic; color: #cfc4e8; font-size: 16px; }
+
+/* ---------- Boutons ---------- */
+button, .bouton {
+  font-family: "Cinzel", serif; font-size: 15px; letter-spacing: .02em; color: var(--creme);
+  background: linear-gradient(180deg, #8f2735, var(--bordeaux) 55%, var(--bordeaux-fonce));
+  border: 1px solid var(--or-clair); border-radius: 9px; padding: 9px 16px; cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 2px 6px rgba(0,0,0,.25);
+  text-decoration: none; display: inline-block; transition: transform .12s, box-shadow .12s, background .12s;
+}
+button:hover:not([disabled]), .bouton:hover { background: linear-gradient(180deg, #2c4f7c, var(--bleu)); box-shadow: 0 0 0 2px rgba(243,213,138,.35), 0 4px 12px rgba(0,0,0,.3); }
+button:active:not([disabled]) { transform: translateY(1px); }
+button[disabled] { opacity: .45; cursor: not-allowed; }
+button:focus-visible, canvas:focus-visible, input:focus-visible, a:focus-visible, summary:focus-visible { outline: 3px solid var(--or-pale); outline-offset: 2px; }
+button.lien { background: none; border: none; box-shadow: none; color: var(--bleu); text-decoration: underline; padding: 0; font-family: inherit; font-size: inherit; }
+button.lien:hover { background: none; box-shadow: none; color: var(--bordeaux); }
+button.discret { background: rgba(255,255,255,.06); color: var(--or-clair); border-color: rgba(228,198,117,.5); box-shadow: none; font-size: 13px; padding: 5px 10px; }
+.petit-bouton { padding: 4px 12px; font-size: 13px; }
+input[type=number] { font: inherit; width: 7em; padding: 2px 6px; border: 1px solid var(--or); border-radius: 6px; background: #fff; }
+
+/* ---------- Parchemin ---------- */
+.parchemin {
+  background: linear-gradient(180deg, var(--parchemin), var(--parchemin-fonce));
+  border: 1px solid var(--or); border-radius: var(--rayon);
+  box-shadow: inset 0 0 0 3px var(--parchemin), inset 0 0 0 4px rgba(176,141,60,.55), var(--ombre);
+}
+
+/* ---------- Accueil (index.html) ---------- */
+.page-accueil { color: var(--creme); }
+.entete { text-align: center; padding: 48px 16px 18px; }
+.entete h1 { font-family: "Cinzel", serif; font-weight: 700; font-size: clamp(34px, 7vw, 64px); margin: 6px 0 0; letter-spacing: .03em; }
+.entete .sous-titre { font-style: italic; color: #d9cfee; font-size: 21px; margin: 0; }
+.choix-jeux { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 22px; max-width: 980px; margin: 18px auto; padding: 0 16px; }
+.jeu-carte {
+  display: flex; flex-direction: column; gap: 8px; padding: 26px 26px 22px; text-decoration: none; color: var(--encre);
+  background: linear-gradient(180deg, var(--parchemin), var(--parchemin-fonce));
+  border: 1px solid var(--or); border-radius: 16px;
+  box-shadow: inset 0 0 0 4px var(--parchemin), inset 0 0 0 5px rgba(176,141,60,.6), var(--ombre);
+  transition: transform .2s, box-shadow .2s;
+}
+.jeu-carte:hover { transform: translateY(-4px); box-shadow: inset 0 0 0 4px var(--parchemin), inset 0 0 0 5px var(--or), 0 16px 40px rgba(243,213,138,.18), var(--ombre); }
+.jeu-carte h2 { color: var(--bordeaux); margin: 0; font-size: 26px; }
+.jeu-carte p { margin: 0; }
+.jeu-glyphe { font-size: 24px; color: var(--or); letter-spacing: .25em; }
+.jeu-carte.duel .jeu-glyphe { color: var(--bordeaux); }
+.jeu-action { margin-top: auto; align-self: flex-start; font-family: "Cinzel", serif; color: var(--creme); background: linear-gradient(180deg, #8f2735, var(--bordeaux-fonce)); border: 1px solid var(--or-clair); border-radius: 9px; padding: 8px 16px; }
+.carnet-resume { max-width: 980px; margin: 8px auto; padding: 0 16px; text-align: center; color: #d9cfee; }
+.carnet-resume h3 { color: var(--or-pale); margin: 10px 0 2px; font-size: 16px; }
+.pied { text-align: center; color: #9d93b8; font-size: 16px; padding: 18px 16px 30px; font-style: italic; }
+
+/* ---------- Le Chemin : mise en page ---------- */
+.jeu { display: grid; grid-template-columns: minmax(300px, 580px) minmax(300px, 1fr); gap: 18px; max-width: 1240px; margin: 0 auto; padding: 4px 16px 24px; align-items: start; }
+.scene { position: relative; height: calc(100vh - 66px); min-height: 520px; max-height: 1000px; border-radius: 16px; overflow: hidden; background: #1d1830;
+  border: 1px solid var(--or); box-shadow: 0 0 0 4px rgba(23,18,42,.9), 0 0 0 5px rgba(176,141,60,.6), var(--ombre); }
+.scene canvas#jeu { display: block; width: 100%; height: 100%; touch-action: none; cursor: pointer; }
+.cote { display: flex; flex-direction: column; gap: 12px; max-height: calc(100vh - 66px); overflow: auto; padding: 4px 6px 4px 2px; }
+
+.bouton-saut { display: none; position: absolute; right: 14px; bottom: 14px; width: 84px; height: 84px; border-radius: 50%; z-index: 2; font-size: 14px; opacity: .9; }
+@media (pointer: coarse) { .bouton-saut { display: block; } }
+
+/* Tableau de bord */
+.tableau { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; padding: 12px 14px; }
+.bloc { display: flex; align-items: center; gap: 8px; }
+.bloc.large { flex-basis: 100%; }
+.etiquette { font-family: "Cinzel", serif; font-size: 12px; color: var(--bordeaux); letter-spacing: .06em; }
+.valeur { font-weight: 600; min-width: 2ch; }
+.jauge { position: relative; flex: 1; max-width: 280px; height: 13px; background: #e2d6bb; border-radius: 7px; overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,.25); }
+#jauge-energie { height: 100%; width: 66%; background: linear-gradient(90deg, var(--bordeaux), #c0573a 50%, var(--or-clair)); transition: width .2s; }
+#jauge-borne { position: absolute; right: 0; top: 0; height: 100%; width: 0; background: repeating-linear-gradient(45deg, #6e6a64 0 4px, #8e8a84 4px 8px); }
+.besoin { position: absolute; top: -2px; bottom: -2px; width: 3px; background: var(--bleu); box-shadow: 0 0 0 1px #fff; transition: left .3s; }
+.besoin.alerte { background: var(--rouge); animation: battre 1s infinite; }
+.besoin-texte { font-size: 16px; color: var(--bleu); font-style: italic; min-height: 1.2em; }
+.besoin-texte.alerte { color: var(--rouge); font-weight: 600; }
+@keyframes battre { 50% { opacity: .35; } }
+.bleue-reserve { background: linear-gradient(180deg, #3a72c4, #1f4d8f); font-size: 13px; padding: 5px 10px; }
+
+.effets-actifs { display: flex; flex-wrap: wrap; gap: 6px; min-height: 1.6em; }
+.puce { font-size: 14px; background: rgba(251,245,230,.95); border: 1px solid var(--or); color: var(--bleu); border-radius: 999px; padding: 1px 10px; }
+.puce.bien { border-color: var(--vert); color: var(--vert); }
+.puce.mal { border-color: var(--rouge); color: var(--rouge); }
+
+/* Tirage en cours */
+.retenues-bloc { padding: 8px 12px; }
+.retenues-bloc h3, .devant-bloc h3, .journal-bloc h3 { font-size: 13px; letter-spacing: .08em; color: var(--bleu); margin: 0 0 6px; text-transform: uppercase; }
+.devant-bloc h3 { color: var(--or-pale); }
+.retenues { display: flex; flex-wrap: wrap; gap: 6px; }
+.retenue { font-size: 14px; background: #fff; border: 1px solid var(--or); border-radius: 6px; padding: 1px 8px; }
+.retenues .vide { color: var(--gris); font-style: italic; font-size: 16px; }
+
+/* Fiche de carte */
+.fiche { padding: 12px 14px; }
+.fiche.bleue { border-color: var(--bleu-carte); }
+.fiche.vide { display: none; }
+.fiche-tete { display: flex; justify-content: space-between; align-items: center; }
+.fiche-titre { font-family: "Cinzel", serif; font-size: 12px; color: var(--or); letter-spacing: .08em; text-transform: uppercase; }
+.fermer { background: none; border: none; box-shadow: none; color: var(--gris); padding: 2px 6px; font-size: 16px; display: none; }
+.fermer:hover { background: none !important; box-shadow: none !important; color: var(--bordeaux); }
+.fiche-corps { display: flex; gap: 14px; align-items: flex-start; margin-top: 4px; }
+.petite-carte { width: 84px; height: 119px; flex: none; filter: drop-shadow(0 4px 8px rgba(0,0,0,.3)); }
+.numero { font-family: "Cinzel", serif; font-size: 12px; color: var(--gris); }
+.nom { font-family: "Cinzel", serif; font-weight: 700; color: var(--bordeaux); font-size: 20px; line-height: 1.15; }
+.image { font-style: italic; color: var(--bleu); font-size: 17px; }
+.message { margin: 6px 0 2px; font-weight: 600; }
+.pastilles { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 4px; }
+.pastille { font-family: "Cinzel", serif; font-weight: 700; font-size: 14px; border-radius: 999px; padding: 1px 10px; border: 1px solid; }
+.pastille i { font-style: normal; }
+.pastille.bon { color: var(--vert); border-color: var(--vert); background: #eef6ea; }
+.pastille.mauvais { color: var(--rouge); border-color: var(--rouge); background: #fbecec; }
+.pastille.neutre { color: var(--bleu); border-color: var(--or); background: #fff8e4; font-family: "EB Garamond", serif; font-weight: 600; }
+.effets { margin: 4px 0 6px; padding-left: 18px; font-size: 15px; }
+.notice { margin: 8px 0 0; font-style: italic; font-size: 17.5px; line-height: 1.4; color: #5d574f; }
+.lecon { margin: 4px 0 0; font-size: 15px; color: var(--bleu); }
+.lecon:empty, .notice:empty, .message:empty { display: none; }
+details > summary { cursor: pointer; font-family: "Cinzel", serif; font-size: 12.5px; color: var(--bordeaux); letter-spacing: .05em; margin-top: 6px; }
+.boutons { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; justify-content: center; }
+.fiche .boutons { justify-content: flex-start; }
+.fiche .boutons:empty, .dialogue .boutons:empty { display: none; }
+
+/* Devant vous */
+.devant { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+.devant .vide { color: #b8aed1; font-style: italic; }
+.ligne-carte { width: 100%; display: flex; align-items: center; gap: 10px; text-align: left; color: var(--encre);
+  background: linear-gradient(180deg, #fffaf0, #f3e8cd); border: 1px solid var(--or); box-shadow: none; font-family: "EB Garamond", serif; font-size: 16px; padding: 6px 10px; }
+.ligne-carte:hover:not([disabled]) { background: #fff3d6; color: var(--encre); box-shadow: 0 0 0 2px rgba(243,213,138,.5); }
+.ligne-carte .sym { width: 24px; color: var(--bordeaux); text-align: center; font-size: 18px; }
+.ligne-carte .txt { flex: 1; display: flex; flex-direction: column; line-height: 1.2; }
+.ligne-carte small { color: var(--bleu); font-style: italic; font-size: 15px; }
+.ligne-carte .cote { color: var(--gris); font-size: 14px; white-space: nowrap; }
+
+/* Dialogue (choix, carte retenue, énigme) */
+.dialogue { display: none; position: absolute; inset: 0; z-index: 4; align-items: center; justify-content: center; background: rgba(15,10,28,.62); padding: 16px; backdrop-filter: blur(2px); }
+.dialogue.visible { display: flex; animation: apparaitre .25s ease-out; }
+.dialogue-corps { width: 100%; max-width: 480px; padding: 20px; max-height: 100%; overflow: auto; text-align: center; }
+.dialogue h2 { color: var(--bordeaux); margin: 0 0 4px; font-size: 21px; }
+.dlg-cartes { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin: 10px 0; }
+.dlg-carte { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 4px; background: none; border: 1px solid transparent; box-shadow: none; color: var(--encre); font-family: "EB Garamond", serif; font-size: 14px; }
+button.dlg-carte:hover { background: rgba(243,213,138,.25) !important; border-color: var(--or); box-shadow: none !important; transform: translateY(-3px); }
+.dlg-carte canvas { width: 96px; height: 136px; filter: drop-shadow(0 6px 10px rgba(0,0,0,.3)); }
+@keyframes apparaitre { from { opacity: 0; transform: scale(.97); } }
+
+/* Écrans d'accueil, de fin, carnet */
+.ecran { display: none; position: absolute; inset: 0; z-index: 5; overflow: auto; padding: 18px;
+  background: radial-gradient(ellipse at 50% 0%, rgba(74,58,114,.85), rgba(23,18,42,.94) 70%); }
+.ecran.visible { display: block; animation: apparaitre .3s ease-out; }
+.ecran-corps { max-width: 540px; margin: 0 auto; text-align: center; padding: 22px 22px 18px;
+  background: linear-gradient(180deg, var(--parchemin), var(--parchemin-fonce)); border: 1px solid var(--or); border-radius: 16px;
+  box-shadow: inset 0 0 0 4px var(--parchemin), inset 0 0 0 5px rgba(176,141,60,.6), var(--ombre); }
+.ecran h2 { color: var(--bordeaux); margin: 4px 0 0; font-size: 28px; }
+.ecran h3 { color: var(--bleu); margin: 16px 0 8px; font-size: 16px; }
+.ecran p { margin: 6px 0; }
+.ecran .surtitre { color: var(--or); }
+.touches { color: var(--gris); font-size: 15px; }
+.petit { font-size: 15px; color: var(--gris); }
+.longueurs { border: 1px solid rgba(176,141,60,.6); border-radius: 10px; margin: 12px 0; padding: 6px 12px 10px; display: flex; flex-wrap: wrap; gap: 6px 16px; justify-content: center; }
+.longueurs legend { font-family: "Cinzel", serif; font-size: 13px; color: var(--bordeaux); padding: 0 6px; }
+.longueurs small { color: var(--gris); }
+
+.tirage { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin: 4px 0 10px; }
+.carte-tirage { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; animation: poser .5s ease-out both; animation-delay: calc(var(--i) * .12s); }
+.carte-tirage canvas { width: 76px; height: 108px; filter: drop-shadow(0 6px 10px rgba(0,0,0,.3)); }
+.carte-tirage figcaption { font-family: "Cinzel", serif; font-size: 11px; color: var(--bordeaux); }
+@keyframes poser { from { opacity: 0; transform: translateY(-16px) rotate(-4deg); } }
+.lecture { text-align: left; }
+.lecture p { margin: 8px 0; }
+.lecture hr { border: none; border-top: 1px solid rgba(176,141,60,.5); margin: 12px 0; }
+.lecture .accord { color: var(--bordeaux); font-weight: 600; }
+.lecture ul { margin: 2px 0 6px; padding-left: 20px; }
+.sequence-bloc { text-align: left; margin-top: 10px; }
+.sequence { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+.region-tirage h4 { font-family: "Cinzel", serif; font-size: 13px; color: var(--bordeaux); margin: 4px 0 0; }
+.region-tirage ol { margin: 0; padding-left: 22px; font-size: 15px; columns: 2; }
+.region-tirage .sym { display: inline-block; width: 22px; color: var(--bordeaux); }
+
+.grille-carnet { display: grid; grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); gap: 6px; }
+.case-carnet { padding: 0; aspect-ratio: 96 / 136; background: linear-gradient(180deg, #e2d6bb, #d3c39f); border: 1px solid var(--or); border-radius: 7px; box-shadow: none;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--gris); overflow: hidden; font-family: "Cinzel", serif; }
+.case-carnet:hover:not([disabled]) { background: #d9cba9; transform: translateY(-2px); }
+.case-carnet canvas { width: 100%; height: 100%; }
+.case-carnet.vue canvas { opacity: .55; }
+.case-carnet.a-revoir { box-shadow: 0 0 0 2px var(--rouge); }
+.case-carnet .num { font-size: 12px; }
+.detail-carnet { text-align: left; min-height: 3em; }
+.regles-carnet { text-align: left; font-size: 15px; color: var(--gris); padding-left: 20px; }
+.regles-carnet .connue { color: var(--encre); }
+
+.lecteur { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ---------- Téléphone et tablette en portrait ---------- */
+@media (max-width: 860px) {
+  .barre { gap: 10px; padding: 6px 10px; }
+  .barre h1 { font-size: 16px; white-space: nowrap; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .retour { white-space: nowrap; }
+  .numero-partie { display: none; }
+  .jeu { grid-template-columns: 1fr; padding: 4px 8px 16px; gap: 10px; }
+  .scene { height: 70vh; min-height: 380px; }
+  .cote { max-height: none; overflow: visible; }
+  .devant-bloc { display: none; }
+  .fiche { position: fixed; left: 8px; right: 8px; bottom: 8px; z-index: 10; max-height: 46vh; overflow: auto; display: none; }
+  .fiche.ouverte { display: block; animation: monter .25s ease-out; }
+  .fermer { display: inline-block; }
+  .region-tirage ol { columns: 1; }
+  .entete { padding-top: 28px; }
+}
+@keyframes monter { from { transform: translateY(30px); opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+
+/* Calque des effets visuels des cartes (vague de l'Eau, flammes du Feu...) */
+.calque-effets { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; }
+
+body.plein-ecran { overflow: auto; }
+
+/* Retour vers l'Atelier (les jeux vivent dans l'Atelier, dossier jeu/) */
+.retour-atelier { position: absolute; top: max(10px, env(safe-area-inset-top)); left: 14px; color: var(--or-clair); text-decoration: none; font-family: "Cinzel", serif; font-size: 14px; z-index: 5; }
+.retour-atelier:hover { color: #fff3cf; }
+
+/* Téléphone : accueil compact, barre du haut allégée (l'appli installée n'a pas besoin du plein écran) */
+@media (max-width: 640px) {
+  .ecran { padding: 8px; }
+  .ecran-corps { padding: 14px 12px 12px; }
+  .ecran h2 { font-size: 22px; }
+  .ecran p { font-size: 15px; }
+  #bouton-plein-ecran { display: none; }
+  .barre h1 { font-size: 17px; }
+}

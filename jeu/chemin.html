@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Le Chemin du Mage : le Chemin</title>
+  <meta name="description" content="Le mage monte le chemin des sept planètes ; chaque carte vécue agit selon la notice de Belline.">
+  <meta name="theme-color" content="#120c22">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <link rel="apple-touch-icon" href="../assets/icons/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="barre">
+    <a class="retour" href="../index.html#/jeux" aria-label="Retour à l’Atelier">‹ Atelier</a>
+    <h1>Le Chemin</h1>
+    <span id="numero-chemin" class="numero-partie"></span>
+    <button id="bouton-plein-ecran" class="discret" aria-pressed="false">⤢ Plein écran</button>
+    <button id="bouton-son" class="discret" aria-pressed="true">♪ Son</button>
+  </header>
+
+  <main class="jeu">
+    <div class="scene">
+      <canvas id="jeu" tabindex="0" aria-label="Le chemin du mage, vu de dessus. Flèches pour marcher, Espace pour sauter."></canvas>
+      <button class="bouton-saut" data-action="saut" aria-label="Sauter">Sauter</button>
+
+      <div id="dialogue" class="dialogue" role="dialog" aria-modal="true" aria-labelledby="dlg-titre">
+        <div class="dialogue-corps parchemin">
+          <h2 id="dlg-titre"></h2>
+          <p id="dlg-texte" class="message"></p>
+          <div id="dlg-cartes" class="dlg-cartes"></div>
+          <p id="dlg-notice" class="notice"></p>
+          <p id="dlg-lecon" class="lecon"></p>
+          <div id="dlg-boutons" class="boutons"></div>
+        </div>
+      </div>
+
+      <div id="accueil" class="ecran visible">
+        <div class="ecran-corps">
+          <p class="surtitre">Oracle de Belline</p>
+          <h2>Le Chemin</h2>
+          <p class="ornement" aria-hidden="true">✦ ❧ ✦</p>
+          <p>Le mage monte le jeu d’Edmond, du bas vers le haut : La Destinée, puis les planètes, du Soleil à Saturne.</p>
+          <p><b>Vous le guidez.</b> Aux fourches, lisez les cartes et choisissez votre branche. <b>Une carte sur votre route se vit</b> et agit selon la notice. <b>Sautez</b> pour la franchir sans la vivre. Le chemin use le mage : il lui faut de bonnes cartes pour arriver au bout.</p>
+          <p><b>À chaque porte</b>, retenez une carte pour votre tirage, et répondez à l’énigme de la porte.</p>
+          <p class="touches">↑ ← → ↓ ou Z Q S D : marcher · glisser sur la scène (tactile) · Espace : sauter · B : Carte Bleue · clic : lire une carte</p>
+          <fieldset class="longueurs">
+            <legend>Longueur du chemin</legend>
+            <label><input type="radio" name="longueur" value="2"> Court <small>(Soleil, Lune)</small></label>
+            <label><input type="radio" name="longueur" value="4"> Moyen <small>(jusqu’à Vénus)</small></label>
+            <label><input type="radio" name="longueur" value="7" checked> Grand <small>(les sept planètes)</small></label>
+          </fieldset>
+          <p>Choisissez votre Étoile. Elle vous représente ; l’autre sera une influence dans votre jeu.</p>
+          <div class="boutons">
+            <button data-consultant="homme">✡ Je suis le consultant</button>
+            <button data-consultant="femme">✶ Je suis la consultante</button>
+          </div>
+          <p class="petit"><label>Chemin n° <input id="graine" type="number" min="1" max="99999" placeholder="au hasard"></label> · <button class="lien" data-carnet>Ouvrir le carnet</button></p>
+        </div>
+      </div>
+
+      <div id="ecran-fin" class="ecran">
+        <div class="ecran-corps">
+          <h2 id="fin-titre"></h2>
+          <p id="fin-bilan" class="petit"></p>
+          <h3>Votre tirage</h3>
+          <div id="fin-tirage" class="tirage"></div>
+          <p id="fin-tirage-vide" class="petit">Aucune carte retenue : le mage n’a franchi aucune porte.</p>
+          <div id="fin-lecture" class="lecture"></div>
+          <details class="sequence-bloc">
+            <summary>Le chemin, région par région</summary>
+            <div id="fin-sequence" class="sequence"></div>
+          </details>
+          <div class="boutons">
+            <button id="bouton-meme">Reprendre ce chemin</button>
+            <button id="bouton-nouveau">Un nouveau chemin</button>
+            <button data-carnet>Carnet</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="ecran-carnet" class="ecran">
+        <div class="ecran-corps">
+          <h2>Le carnet</h2>
+          <p id="carnet-avancement" class="petit"></p>
+          <div id="carnet-grille" class="grille-carnet"></div>
+          <p id="carnet-detail" class="detail-carnet" aria-live="polite"></p>
+          <h3>Les règles de Belline</h3>
+          <ul id="carnet-regles" class="regles-carnet"></ul>
+          <div class="boutons"><button id="bouton-fermer-carnet">Fermer</button></div>
+        </div>
+      </div>
+    </div>
+
+    <aside class="cote">
+      <section class="tableau parchemin" aria-label="Tableau de bord">
+        <div class="bloc large">
+          <span class="etiquette">Énergie</span>
+          <div class="jauge"><div id="jauge-energie"></div><div id="jauge-borne"></div><div id="jauge-besoin" class="besoin"></div></div>
+          <span id="val-energie" class="valeur">100</span>
+        </div>
+        <div class="bloc large"><span id="val-besoin" class="besoin-texte"></span></div>
+        <div class="bloc"><span class="etiquette">Fortune</span><span id="val-fortune" class="valeur">0</span></div>
+        <div class="bloc"><span class="etiquette">Boucliers</span><span id="val-boucliers" class="valeur">0</span></div>
+        <div class="bloc"><span class="etiquette">Région</span><span id="nom-region" class="valeur">⚷ Les cartes maîtresses</span></div>
+        <button id="bouton-bleue" class="bleue-reserve" hidden>◆ Carte Bleue (B)</button>
+      </section>
+      <div id="effets-actifs" class="effets-actifs"></div>
+
+      <section class="retenues-bloc parchemin" aria-label="Votre tirage en cours">
+        <h3>Votre tirage</h3>
+        <div id="retenues" class="retenues"></div>
+      </section>
+
+      <section id="fiche" class="fiche parchemin vide" aria-label="Carte">
+        <div class="fiche-tete">
+          <span id="fiche-titre" class="fiche-titre">Carte</span>
+          <button id="bouton-fermer-fiche" class="fermer" aria-label="Fermer la fiche">✕</button>
+        </div>
+        <div class="fiche-corps">
+          <canvas id="fiche-dessin" class="petite-carte"></canvas>
+          <div>
+            <div id="fiche-numero" class="numero"></div>
+            <div id="fiche-nom" class="nom"></div>
+            <div id="fiche-image" class="image"></div>
+            <p id="fiche-message" class="message"></p>
+            <div id="fiche-pastilles" class="pastilles"></div>
+          </div>
+        </div>
+        <p id="fiche-notice" class="notice"></p>
+        <details id="fiche-lecon-bloc" class="lecon-bloc">
+          <summary>Dans le jeu</summary>
+          <p id="fiche-lecon" class="lecon"></p>
+        </details>
+        <details class="detail-bloc">
+          <summary>Détail</summary>
+          <ul id="fiche-effets" class="effets"></ul>
+        </details>
+        <div id="fiche-actions" class="boutons"></div>
+      </section>
+
+      <section class="devant-bloc">
+        <h3>Devant vous</h3>
+        <ul id="devant" class="devant"></ul>
+      </section>
+    </aside>
+  </main>
+
+  <p id="annonce" class="lecteur" aria-live="polite"></p>
+  <script src="js/jeu.js"></script>
+  <script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("../sw.js").catch(() => {});</script>
+</body>
+</html>

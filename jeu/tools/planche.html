@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Planche des cartes</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=EB+Garamond:ital@0;1&display=swap" rel="stylesheet">
+  <style>
+    body { margin: 0; padding: 16px; background: #F7F1E3; color: #2A2420; font-family: "EB Garamond", Georgia, serif; }
+    h1 { font-family: "Cinzel", serif; color: #7A1F2B; font-size: 22px; margin: 0 0 4px; }
+    p { margin: 0 0 12px; }
+    canvas { display: block; max-width: 100%; background: #1d1830; border-radius: 8px; }
+  </style>
+</head>
+<body>
+  <h1>Planche des cartes</h1>
+  <p>Outil de travail : chaque carte telle que le jeu la dessine. À ouvrir par le serveur : http://localhost:8000/tools/planche.html</p>
+  <canvas id="planche"></canvas>
+  <script type="module">
+    import { CARTES } from "../js/data/cartes.js";
+    import { CONFIG } from "../js/config.js";
+    import { dessinerFace } from "../js/render/carte.js";
+    const COL = 9, PAS_X = CONFIG.carteL + 14, PAS_Y = CONFIG.carteH + 14;
+    const cv = document.getElementById("planche");
+    const ordre = [...CARTES].sort((a, b) => a.id - b.id);
+    const dpr = window.devicePixelRatio || 1;
+    const W = COL * PAS_X + 14, H = Math.ceil(ordre.length / COL) * PAS_Y + 14;
+    cv.width = W * dpr; cv.height = H * dpr; cv.style.width = W + "px";
+    await document.fonts.ready;
+    const c = cv.getContext("2d"); c.scale(dpr, dpr);
+    ordre.forEach((carte, i) => dessinerFace(c, carte, 14 + (i % COL) * PAS_X, 14 + Math.floor(i / COL) * PAS_Y));
+  </script>
+</body>
+</html>

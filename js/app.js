@@ -10,8 +10,9 @@ window.BELLINE = window.BELLINE || {};
     journalier:   { label: 'Jour',         icon: '☀' },
     grimoire:     { label: 'Grimoire',     icon: '📖' },
     tirages:      { label: 'Tirages',      icon: '🔮' },
+    jeux:         { label: 'Jeux',         icon: '⚔' },
     journal:      { label: 'Journal',      icon: '📓' },
-    entrainement: { label: 'Exercices',    icon: '🎴' },
+    entrainement: { label: 'Exercices',    icon: '🎴', overflow: true },
     associations: { label: 'Associations', icon: '🔗', overflow: true },
     astrologie:   { label: 'Astrologie',   icon: '☉', overflow: true },
     progression:  { label: 'Progression',  icon: '📈', overflow: true },
@@ -68,6 +69,12 @@ window.BELLINE = window.BELLINE || {};
     var view = document.getElementById('view');
     view.innerHTML = '';
     document.body.style.overflow = '';
+    // Le dictionnaire des 2652 associations pèse 4 Mo : il n'est chargé que pour l'écran qui s'en sert.
+    if (route === 'associations' && !BELLINE.PAIR_DICT) {
+      view.innerHTML = '<p class="muted pad">Ouverture du dictionnaire des associations…</p>';
+      BELLINE.chargerDictionnaire().then(function () { if (currentRoute() === 'associations') render(); });
+      return;
+    }
     var fn = BELLINE.Views && BELLINE.Views[route];
     if (typeof fn === 'function') {
       fn(view);
@@ -323,5 +330,22 @@ window.BELLINE = window.BELLINE || {};
   });
 
   BELLINE.go = function (route) { location.hash = '#/' + route; };
+
+  /* Charge le dictionnaire des associations une seule fois (même version que le reste du code). */
+  var promesseDict = null;
+  BELLINE.chargerDictionnaire = function () {
+    if (BELLINE.PAIR_DICT) return Promise.resolve(BELLINE.PAIR_DICT);
+    if (promesseDict) return promesseDict;
+    var app = document.querySelector('script[src*="js/app.js"]');
+    var v = app && /\?v=(\d+)/.exec(app.getAttribute('src'));
+    promesseDict = new Promise(function (ok, ko) {
+      var s = document.createElement('script');
+      s.src = 'js/data/pair-dictionary.js' + (v ? '?v=' + v[1] : '');
+      s.onload = function () { ok(BELLINE.PAIR_DICT); };
+      s.onerror = function () { promesseDict = null; ko(new Error('dictionnaire introuvable')); };
+      document.head.appendChild(s);
+    });
+    return promesseDict;
+  };
   BELLINE.lightbox = function () {}; // remplacé au chargement
 })();

@@ -1,0 +1,1343 @@
+// Le Duel des Apparitions : accueil (duel libre, Sept Gardiens), atelier du deck, tapis, main, invocations,
+// figures d'accord, présages et chaînes, combats (flèche, calcul), tour de l'adversaire, animations.
+import { CARTES, CARTE_PAR_ID } from "./data/cartes.js";
+import { DUEL, sacrificesRequis } from "./data/duel.js";
+import { FIGURES, figuresDebloquees } from "./data/accords.js";
+import { VOISINAGE, reglesDeclenchees } from "./data/voisinage.js";
+import { GARDIENS, PROFILS, deckGardien, reglesEnseignees } from "./data/gardiens.js";
+import { REGIONS } from "./config.js";
+import { creerHasard, nouvelleGraine } from "./engine/hasard.js";
+import {
+  creerDuel, def, nomDe, familleDe, peutInvoquer, invoquer, peutActiver, activer, peutPoser, poser, peutChanger, changerPosition,
+  fusionsPossibles, fusionner, passerAuCombat, passerPrincipale2, ciblesAttaque, calculCombat, attaquer,
+  presagesActivables, presageOmbre, reagirInvocation, finTour, actionOmbre, executerOmbre, atkEffectif, defEffectif, LP,
+  accordsTerrain, accomplirAccordTerrain, peutPoserInfluence, poserInfluence, evolutionsPossibles, evoluer, MECANIQUES, domine, peutRevelerInfluence, revelerInfluence, techniquesPossibles, utiliserTechnique, avancementAssociation
+} from "./engine/duel.js";
+import { ALIGNEMENTS, ASSOCIATIONS } from "./data/techniques.js";
+import { accordDeLecture, definirDictionnaire, dictionnaireCharge } from "./data/lectures.js";
+import { ETATS } from "./data/sorts.js";
+import { reconcilier, basculer, itemPanneau } from "./ui/duelOutils.js";
+import { noterVue, noterRegle, noterDuel, vaincreGardien } from "./engine/carnet.js";
+import { peindreCarteDuel, peindreHologramme } from "./render/carteDuel.js";
+import { Effets } from "./render/effetsVisuels.js";
+import { chargerCarnet, sauverCarnet } from "./ui/stockage.js";
+import { jouerSon, basculerSon, sonActif } from "./ui/son.js";
+import { installerPleinEcran } from "./ui/pleinEcran.js";
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
+const reduit = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+const survol = window.matchMedia?.("(hover: hover)").matches ?? false;
+const attendre = ms => new Promise(r => setTimeout(r, reduit ? Math.min(ms, 150) : ms));
+const carnet = chargerCarnet();
+const CLE_DECK = "chemin-du-mage.deck";
+const PLANETES = ["soleil", "lune", "mercure", "venus", "mars", "jupiter", "saturne"];
+
+let d = null, rng = null, partie = null, consultant = "homme";
+let selection = null;   // { type: 'main', index } | { type: 'terrain', place } | { type: 'sacrifice', index, pose, requis, choisis } | { type: 'attaque', place }
+let occupe = false;
+const lpAffiche = [LP, LP];
+
+// ---------- Deck, réserve, rares ----------
+function chargerDeck() {
+  try { const x = JSON.parse(localStorage.getItem(CLE_DECK) || "null"); if (Array.isArray(x) && x.length >= 30) return x.filter(id => DUEL[id]); } catch { /* rien */ }
+  return CARTES.map(c => c.id);
+}
+function sauverDeck(deck) { try { localStorage.setItem(CLE_DECK, JSON.stringify(deck)); } catch { /* rien */ } }
+let deck = chargerDeck();
+// La réserve : les figures dont vous connaissez la règle (Chemin, duels, Gardiens), plus quatre figures de départ.
+// Une règle accomplie en duel fait aussi entrer sa figure dans la réserve, sur-le-champ.
+const FIGURES_DEPART = [101, 102, 106, 111];
+const reserveJoueur = () => [...new Set([...FIGURES_DEPART, ...figuresDebloquees(carnet.regles)])];
+/** Les mécaniques que chaque Gardien dévoile (le premier n'enseigne que l'essentiel). */
+const MECA_GARDIENS = [[], ["poseInfluence", "evolution"], ["poseInfluence", "evolution", "techniques"], ["poseInfluence", "evolution", "techniques", "figures"],
+  ["poseInfluence", "evolution", "techniques", "figures", "accordsTerrain"], MECANIQUES, MECANIQUES];
+const NOMS_MECA = { poseInfluence: "les influences posées face cachée", evolution: "l’évolution des apparitions", techniques: "les techniques (alignements, associations)",
+  figures: "les figures d’accord", accordsTerrain: "les accords sur le terrain" };
+let accordsDuDuel = [];
+const estRare = id => id < 100 && (carnet.cartes[id]?.vecue || 0) > 0;
+
+// ---------- Dessin ----------
+function carteCanvas(id, face, largeur, classe = "", format = "complete") {
+  const cv = document.createElement("canvas");
+  cv.className = classe;
+  peindreCarteDuel(cv, id, face, largeur, format);
+  return cv;
+}
+
+
+// ---------- Loupe : la carte entière, en grand, au survol (ou en appui long sur écran tactile) ----------
+const loupe = document.createElement("div");
+loupe.className = "loupe";
+loupe.setAttribute("aria-hidden", "true");
+const loupeCanvas = document.createElement("canvas");
+loupe.appendChild(loupeCanvas);
+document.body.appendChild(loupe);
+let loupeId = null;
+function montrerLoupe(id, face, ancre) {
+  if (id == null) return;
+  const l = Math.min(320, window.innerWidth - 32, (window.innerHeight - 32) * 150 / 219);
+  if (loupeId !== `${id}|${face}|${l}`) { peindreCarteDuel(loupeCanvas, id, face, l); loupeId = `${id}|${face}|${l}`; }
+  loupeCanvas.style.width = `${l}px`;
+  const h = l * 219 / 150, r = ancre.getBoundingClientRect();
+  let x = r.right + 14;
+  if (x + l > window.innerWidth - 8) x = r.left - l - 14;
+  if (x < 8) x = (window.innerWidth - l) / 2;
+  const y = Math.max(8, Math.min(window.innerHeight - h - 8, r.top + r.height / 2 - h / 2));
+  loupe.style.left = `${x}px`; loupe.style.top = `${y}px`;
+  loupe.classList.add("visible");
+}
+function cacherLoupe() { loupe.classList.remove("visible"); }
+/** Branche la loupe (et l'aperçu passager du panneau) sur un élément. `quoi()` → [id, face, état] ou null. */
+function loupable(el, quoi) {
+  if (survol) {
+    el.addEventListener("mouseenter", () => { const q = quoi(); if (!q) return; montrerLoupe(q[0], q[1], el); apercu(q[0], q[1], q[2], true); });
+    el.addEventListener("mouseleave", () => { cacherLoupe(); retablirApercu(); });
+  } else {
+    let minuteur = null, longue = false;
+    el.addEventListener("pointerdown", () => { longue = false; minuteur = setTimeout(() => { const q = quoi(); if (q) { longue = true; montrerLoupe(q[0], q[1], el); } }, 420); });
+    const fin = () => { clearTimeout(minuteur); if (longue) setTimeout(cacherLoupe, 60); };
+    el.addEventListener("pointerup", fin); el.addEventListener("pointercancel", fin); el.addEventListener("pointerleave", fin);
+    el.addEventListener("contextmenu", e => e.preventDefault());
+    el.addEventListener("click", e => { if (longue) { e.stopImmediatePropagation(); e.preventDefault(); longue = false; } }, true);
+  }
+}
+
+// ---------- Effets visuels propres à chaque carte ----------
+const effets = new Effets($("plateau"));
+/** Joue l'effet d'une carte : sur tout le tapis, ou autour d'un élément (agrandi). */
+function effetCarte(id, cible = null, agrandir = 1, avecEmbleme = false) {
+  if (!cible) return effets.carte(id, effets.rect($("tapis")), avecEmbleme);
+  const r = effets.rect(cible), w = r.w * agrandir, h = r.h * agrandir;
+  return effets.carte(id, { x: r.x + r.w / 2 - w / 2, y: r.y + r.h / 2 - h / 2, w, h }, avecEmbleme);
+}
+function enveloppe(cv, id, face) {
+  const s = document.createElement("span");
+  s.className = `carte-env${face && estRare(id) ? " rare" : ""}${face && def(id).forte ? " forte" : ""}${face && id >= 100 ? " figure" : ""}`;
+  s.appendChild(cv);
+  return s;
+}
+
+let zone = 92, largeurMain = 150;
+const etroit = () => window.innerWidth <= 1040;
+function tailleZone() {
+  const parLargeur = $("monstres-0").clientWidth / 5 - 8;
+  const parHauteur = window.innerWidth <= 640 ? 999 : (window.innerHeight - 290) / 4.1;
+  return Math.max(52, Math.min(104, parLargeur, parHauteur));
+}
+/** Tout doit tenir dans l'écran, main comprise : on réduit les zones tant que la page déborde. */
+const image_suivante = () => new Promise(r => setTimeout(r, 60));
+let reglage = 0;
+/**
+ * Tout doit tenir dans l'écran, main comprise. On pose des tailles, on laisse le navigateur les afficher, on mesure
+ * le débordement, et on le répartit : d'abord sur le tapis (4,2 px de hauteur par px de zone), puis sur la main.
+ * (Mesurer juste après avoir changé une variable CSS donne parfois l'ancienne mise en page : d'où l'attente.)
+ */
+async function ajusterTaille() {
+  const moi = ++reglage, racine = document.documentElement.style;
+  const poser = () => { racine.setProperty("--zone", `${Math.round(zone)}px`); racine.setProperty("--main-l", `${Math.round(largeurMain)}px`); };
+  const zoneMax = () => Math.min(104, $("monstres-0").clientWidth / 5 - 8);
+  largeurMain = window.innerWidth <= 640 ? 88 : Math.max(96, Math.min(150, window.innerHeight * 0.18));
+  zone = tailleZone();
+  poser(); rendre();
+  if (window.innerWidth <= 640) return;
+  for (let k = 0; k < 3; k++) {
+    await image_suivante();
+    if (moi !== reglage) return;
+    let r = $("plateau").getBoundingClientRect().bottom + window.scrollY - (window.innerHeight - 6);
+    if (Math.abs(r) < 6) break;
+    if (r > 0) {
+      const dz = Math.min(r / 4.2, Math.max(0, zone - 62)); zone -= dz; r -= dz * 4.2;
+      if (r > 0) { const dl = Math.min(r / 1.46, Math.max(0, largeurMain - 92)); largeurMain -= dl; r -= dl * 1.46; }
+      if (r > 0) zone = Math.max(44, zone - r / 4.2);
+    } else {
+      r = -r;
+      const dz = Math.min(r / 4.2, Math.max(0, zoneMax() - zone)); zone += dz;
+    }
+    zone = Math.floor(zone); largeurMain = Math.floor(largeurMain);
+    poser(); rendre();
+  }
+}
+
+function rendre() {
+  if (!d) return;
+  for (const j of [0, 1]) {
+    const J = d.joueurs[j];
+    allerLP(j, J.lp);
+    $(`pioche-${j}`).textContent = J.pioche.length;
+    const cim = $(`cimetiere-${j}`);
+    cim.querySelector("b").textContent = J.cimetiere.length;
+    const haut = J.cimetiere[J.cimetiere.length - 1];
+    reconcilier(cim.querySelector(".pile-carte"), haut != null ? [[`${haut}|${zone}`, () => carteCanvas(haut, true, zone * 0.62, "", "jeton")]] : []);
+    $(`reserve-${j}`).querySelector("b").textContent = J.reserve.length;
+    reconcilier($(`monstres-${j}`), J.monstres.map((m, place) => [sigMonstre(j, m, place), () => zoneMonstre(j, m, place)]));
+    [...$(`monstres-${j}`).children].forEach((el, place) => { if (J.monstres[place]) majMonstre(el, j, J.monstres[place], place); });
+    reconcilier($(`presages-${j}`), J.presages.map((p, place) => [sigPresage(j, p, place), () => zonePresage(j, p, place)]));
+    [...$(`presages-${j}`).children].forEach((el, place) => basculer(el, ["prete"], j === 0 && J.presages[place]?.influence && peutRevelerInfluence(d, 0, place).ok ? ["prete"] : []));
+    $(`lp-${j}`).classList.toggle("actif", d.actif === j && !d.fini);
+  }
+  $("nom-1").textContent = d.joueurs[1].nom;
+  const voit = d.joueurs[0].voitMain;
+  reconcilier($("main-1"), d.joueurs[1].main.map(id => [`${voit ? id : "dos"}|${zone}`, () => carteCanvas(id, voit, zone * 0.5, "carte-ombre", "compacte")]));
+  reconcilierMain();
+  const direct = selection?.type === "attaque" && ciblesAttaque(d, 0, selection.place).includes("direct");
+  $("lp-1").classList.toggle("ciblable", direct);
+  const t = d.terrain ? REGIONS.find(r => r.famille === d.terrain) : null;
+  $("terrain-nom").textContent = t ? `Ciel du duel : ${t.glyphe} ${t.nom}` : "";
+  for (const j of [0, 1]) majLieu(j);
+  $("tapis").dataset.terrain = d.terrain || "";
+  majCommandes();
+  $("indication").textContent = indication();
+}
+
+/** Les marques de sélection d'une zone d'apparition (elles entrent dans sa signature). */
+const MARQUES = ["prete", "choisie", "ciblable", "sacrifiee-choisie"];
+
+function marquesMonstre(j, m, place) {
+  const k = [];
+  if (!m) return k;
+  if (j === 0 && ciblesAttaque(d, 0, place).length) k.push("prete");
+  if (selection?.type === "attaque" && j === 0 && selection.place === place) k.push("choisie");
+  if (selection?.type === "attaque" && j === 1 && ciblesAttaque(d, 0, selection.place).includes(place)) k.push("ciblable");
+  if (selection?.type === "sacrifice" && j === 0) k.push(selection.choisis.includes(place) ? "sacrifiee-choisie" : "ciblable");
+  if (selection?.type === "terrain" && j === 0 && selection.place === place) k.push("choisie");
+  return k;
+}
+function sigMonstre(j, m, place) {
+  if (!m) return `vide|${zone}`;
+  // seulement ce qui change le dessin : valeurs, états et surlignages se mettent à jour sur place
+  return [zone, m.uid, m.id, m.position, m.faceCachee, estRare(m.id)].join("|");
+}
+function sigPresage(j, p, place) {
+  if (!p) return `vide|${zone}`;
+  return [zone, p.uid, p.id, p.continue, p.tours, p.poseTour < d.tour, j, !!p.influence].join("|");
+}
+
+/** Le terrain posé par un joueur : sa moitié du tapis prend la couleur du lieu, un écriteau donne son nom. */
+function majLieu(j) {
+  const J = d.joueurs[j], moitie = document.querySelector(j === 0 ? ".moitie-vous" : ".moitie-ombre");
+  const id = J.terrainCarte;
+  moitie.dataset.lieu = id ?? "";
+  let e = moitie.querySelector(".lieu-nom");
+  if (!e) {
+    e = document.createElement("button"); e.className = "lieu-nom"; moitie.appendChild(e);
+    e.addEventListener("click", () => { const k = d.joueurs[j].terrainCarte; if (k != null) { apercu(k, true, etatLieu(j)); ouvrirDetail(); } });
+    loupable(e, () => { const k = d.joueurs[j].terrainCarte; return k != null ? [k, true, etatLieu(j)] : null; });
+  }
+  e.hidden = id == null;
+  const texte = id == null ? "" : `⌂ ${nomDe(id)} · ${J.terrainTours} tour${J.terrainTours > 1 ? "s" : ""}`;
+  if (e.textContent !== texte) e.textContent = texte;
+}
+const etatLieu = j => `Terrain de ${j === 0 ? "votre côté" : d.joueurs[1].nom} : encore ${d.joueurs[j].terrainTours} tour${d.joueurs[j].terrainTours > 1 ? "s" : ""}.`;
+
+function zoneMonstre(j, m, place) {
+  const el = document.createElement("button");
+  el.className = "zone zone-monstre";
+  el.dataset.j = j; el.dataset.place = place;
+  if (!m) {
+    el.classList.add("vide");
+    el.setAttribute("aria-label", "Zone d’apparition vide");
+    el.addEventListener("click", () => cliquerZone(j, place));
+    return el;
+  }
+  const carte = document.createElement("div");
+  carte.className = `carte-terrain ${m.position === "defense" ? "defense" : ""} ${m.faceCachee ? "cachee" : ""}`;
+  carte.appendChild(enveloppe(carteCanvas(m.id, !m.faceCachee, zone * 0.7, "", "jeton"), m.id, !m.faceCachee));
+  el.appendChild(carte);
+  if (!m.faceCachee) {
+    const holo = document.createElement("canvas");
+    const grand = m.id >= 100 || def(m.id).forte;
+    holo.className = `holo ${m.position === "defense" ? "holo-defense" : ""} ${m.id >= 100 ? "holo-figure" : ""} ${grand ? "holo-forte" : ""}`;
+    peindreHologramme(holo, m.id, Math.round(zone * (grand ? 1.3 : 1.1)));
+    el.appendChild(holo);
+  }
+  el.insertAdjacentHTML("beforeend", `<div class="stats-terrain"></div><div class="etats-terrain"></div>`);
+  const visible = !m.faceCachee || j === 0;
+  majMonstre(el, j, m, place);
+  el.addEventListener("click", () => cliquerZone(j, place));
+  if (visible) loupable(el, () => {
+    const mm = d.joueurs[j].monstres[place];
+    return mm ? [mm.id, !mm.faceCachee || j === 0, etatMonstre(j, mm)] : null;
+  });
+  return el;
+}
+
+/** Valeurs, états, surlignages et libellé d'une zone d'apparition, mis à jour sans la recréer. */
+function majMonstre(el, j, m, place) {
+  const x = def(m.id), a = atkEffectif(d, j, m), df = defEffectif(d, j, m);
+  const stats = !m.faceCachee || j === 0
+    ? `<small class="nom-terrain">${esc(nomDe(m.id))}</small><span class="v-atk ${m.position === "attaque" ? "actif" : ""} ${a > x.atk ? "plus" : a < x.atk ? "moins" : ""}">${a}</span><i>/</i><span class="v-def ${m.position === "defense" ? "actif" : ""} ${df > x.def ? "plus" : df < x.def ? "moins" : ""}">${df}</span>`
+    : "<span>?</span>";
+  const etats = [];
+  if (!m.faceCachee && x.garde) etats.push("<span title='garde'>⛨</span>");
+  if (!m.faceCachee && j === 1 && d.joueurs[0].monstres.some(n => n && !n.faceCachee && domine(n.id, m.id))) etats.push("<span title='une de vos apparitions domine sa planète : +500 ATK contre elle'>▲</span>");
+  if (!m.faceCachee && m.protege) etats.push("<span title='protégée une fois'>◈</span>");
+  if (m.equipements?.length) etats.push(`<span title="équipée">⚒${m.equipements.length > 1 ? m.equipements.length : ""}</span>`);
+  if (m.bloque > 0) etats.push(`<span title="ne peut pas attaquer">⛓${m.bloque}</span>`);
+  if (j === 0 && m.faceCachee) etats.push("<span title='posée face cachée'>◐</span>");
+  if (m.statut && !m.faceCachee) etats.push(`<span title="${ETATS[m.statut].texte}">${ETATS[m.statut].signe}</span>`);
+  const s = el.querySelector(".stats-terrain"), e = el.querySelector(".etats-terrain");
+  if (s && s.innerHTML !== stats) s.innerHTML = stats;
+  if (e && e.dataset.v !== etats.join("")) { e.innerHTML = etats.join(""); e.dataset.v = etats.join(""); }
+  const visible = !m.faceCachee || j === 0;
+  el.setAttribute("aria-label", visible ? `${nomDe(m.id)}, ${m.position === "attaque" ? "en attaque" : "en défense"}${m.faceCachee ? ", face cachée" : ""}, ATK ${a}, DEF ${df}` : "Apparition face cachée");
+  basculer(el, MARQUES, marquesMonstre(j, m, place));
+  const auras = [];
+  if (m.bloque > 0) auras.push("a-bloquee");
+  if (m.protege && !m.faceCachee) auras.push("a-protegee");
+  if (m.statut && !m.faceCachee) auras.push(`a-${m.statut}`);
+  if (j === 0 && evolutionsPossibles(d, 0).some(x => x.place === place)) auras.push("evolutive");
+  basculer(el, ["a-bloquee", "a-protegee", "a-poison", "a-brulure", "a-sommeil", "a-confusion", "evolutive"], auras);
+}
+
+function zonePresage(j, p, place) {
+  const el = document.createElement("button");
+  el.className = "zone zone-presage";
+  el.dataset.j = j; el.dataset.place = place;
+  if (!p) { el.classList.add("vide"); el.setAttribute("aria-label", "Zone de présage vide"); el.disabled = true; return el; }
+  const visible = !!p.continue;
+  const carte = document.createElement("div");
+  carte.className = `carte-terrain ${visible ? "" : "cachee"}`;
+  carte.appendChild(enveloppe(carteCanvas(p.id, visible, zone * 0.62, "", "jeton"), p.id, visible));
+  el.appendChild(carte);
+  if (p.influence) el.classList.add("influence-posee");
+  const pret = p.poseTour < d.tour;
+  if (p.continue) el.insertAdjacentHTML("beforeend", `<div class="etats-terrain presage-etat"><span>∞ ${p.tours}</span></div>`);
+  else if (j === 0) el.insertAdjacentHTML("beforeend", `<div class="etats-terrain presage-etat${p.influence ? " influence-etat" : ""}"><span>${p.influence ? (pret ? "✦ à révéler" : "✦ posée") : pret ? "prêt" : "posé"}</span></div>`);
+  if (j === 0 || visible) {
+    const etat = p.continue ? `Influence continue : encore ${p.tours} tour${p.tours > 1 ? "s" : ""}.`
+      : p.influence ? (pret ? "Influence posée face cachée : vous pouvez la révéler pendant votre phase principale." : "Influence posée ce tour : elle se révélera à partir de votre prochain tour.")
+      : pret ? "Présage posé, prêt à se déclencher pendant le tour adverse." : "Présage posé ce tour : il pourra se déclencher à partir du prochain tour adverse.";
+    el.setAttribute("aria-label", `${nomDe(p.id)} : ${etat}`);
+    el.addEventListener("click", () => {
+      if (occupe) return;
+      selection = null; apercu(p.id, true, etat); ouvrirDetail();
+      const P = d.joueurs[j].presages[place];
+      if (j === 0 && P?.influence) {
+        const v = peutRevelerInfluence(d, 0, place), x = def(P.id);
+        actions(x.choix ? x.choix.map((ch, c) => ({ label: `Révéler : ${ch.label}`, desactive: v.ok ? null : v.raison, action: () => revelerPosee(place, c) }))
+          : [{ label: x.sousType === "equipement" ? "Révéler et équiper" : "Révéler", desactive: v.ok ? null : v.raison, action: () => revelerPosee(place, null) }]);
+      } else actions([]);
+      rendre();
+    });
+    loupable(el, () => [p.id, true, etat]);
+  } else { el.setAttribute("aria-label", "Présage adverse, face cachée"); el.disabled = true; }
+  return el;
+}
+
+/** Les marques d'une carte en main : jouable, choisie, matériau d'accord. */
+function etatMain(id, index) {
+  const x = def(id), k = [];
+  if (d.actif === 0 && !d.fini && (x.type === "apparition" ? peutInvoquer(d, 0, index).ok || peutInvoquer(d, 0, index, true).ok
+    : x.type === "influence" ? peutActiver(d, 0, index).ok || peutPoserInfluence(d, 0, index).ok : peutPoser(d, 0, index).ok)) k.push("jouable");
+  if ((selection?.type === "main" || selection?.type === "sacrifice") && selection.index === index) k.push("choisie");
+  if (d.actif === 0 && fusionsPossibles(d, 0).some(f => f.materiaux.some(m => m.ou === "main" && m.index === index))) k.push("materiau");
+  if (estRare(id)) k.push("rare");
+  return k;
+}
+
+function carteMain(id) {
+  const b = document.createElement("button");
+  b.className = "carte-main";
+  const x = def(id);
+  b.setAttribute("aria-label", `${nomDe(id)}, ${x.type === "apparition" ? `apparition niveau ${x.niveau}, ATK ${x.atk}, DEF ${x.def}` : x.type}${estRare(id) ? ", rare" : ""}`);
+  b.appendChild(enveloppe(carteCanvas(id, true, largeurMain, "", "compacte"), id, true));
+  b.addEventListener("click", () => choisirMain(b._index));
+  b.addEventListener("animationend", () => b.classList.remove("piochee"));
+  loupable(b, () => [id, true, ""]);
+  return b;
+}
+
+/**
+ * La main : chaque carte garde son élément tant qu'elle reste en main (clé : numéro et rang du doublon) ;
+ * seules sa place dans l'éventail et ses marques changent. Rien n'est redessiné, rien ne clignote.
+ */
+function reconcilierMain() {
+  const box = $("main-0"), main = d.joueurs[0].main, n = main.length;
+  const dispo = new Map();
+  for (const el of box.children) { const c = el.dataset.cle; if (!dispo.has(c)) dispo.set(c, []); dispo.get(c).push(el); }
+  const vus = {}, voulus = main.map(id => {
+    vus[id] = (vus[id] || 0) + 1;
+    const cle = `${id}#${vus[id]}|${largeurMain}`;
+    let el = dispo.get(cle)?.shift();
+    if (!el) { el = carteMain(id); el.dataset.cle = cle; }
+    return el;
+  });
+  for (const reste of dispo.values()) for (const el of reste) el.remove();
+  // la main est étalée, cartes côte à côte : si elles ne tiennent pas toutes, elles rapetissent un peu
+  const l = Math.min(largeurMain, (box.clientWidth - 8 * (n + 1)) / Math.max(1, n));
+  box.style.setProperty("--main-l", `${Math.max(window.innerWidth <= 640 ? 58 : 60, Math.floor(l))}px`);
+  voulus.forEach((el, index) => {
+    if (box.children[index] !== el) box.insertBefore(el, box.children[index] || null);
+    el._index = index;
+    el.style.setProperty("--i", index - (n - 1) / 2);
+    basculer(el, ["jouable", "choisie", "materiau"], etatMain(main[index], index));
+    indicesMain(el, main[index], index);
+  });
+}
+
+/** Indices sur une carte de la main : avec combien de vos cartes elle s'associe (✦, doré si c'est une règle de Belline), si elle peut faire évoluer une apparition (⇧). */
+function indicesMain(el, id, index) {
+  const J = d.joueurs[0];
+  const autres = [...J.main.filter((_, k) => k !== index), ...J.monstres.filter(m => m && !m.faceCachee).map(m => m.id), ...J.presages.filter(p => p?.continue).map(p => p.id)].filter(x => x < 100);
+  let n = 0, belline = false;
+  for (const o of new Set(autres)) {
+    if (reglesDeclenchees({ id, choix: 0 }, { id: o, choix: 0 }).length || reglesDeclenchees({ id: o, choix: 0 }, { id, choix: 0 }).length) { n++; belline = true; }
+    else if (accordDeLecture(id, o, nomDe)?.sorte && accordDeLecture(id, o, nomDe).sorte !== "lecture") n++;
+  }
+  const evo = d.actif === 0 && evolutionsPossibles(d, 0).some(e => e.index === index);
+  const cle = `${n}|${belline}|${evo}`;
+  if (el.dataset.indices === cle) return;
+  el.dataset.indices = cle;
+  el.querySelectorAll(".indice-accord, .indice-evolution").forEach(x => x.remove());
+  if (n) { const s = document.createElement("span"); s.className = `indice-accord${belline ? " belline" : ""}`; s.textContent = `✦${n > 1 ? n : ""}`; s.title = `${n} association${n > 1 ? "s" : ""} avec vos cartes${belline ? ", dont une règle de Belline" : ""}`; el.appendChild(s); }
+  if (evo) { const s = document.createElement("span"); s.className = "indice-evolution"; s.textContent = "⇧"; s.title = "Peut faire évoluer une de vos apparitions"; el.appendChild(s); }
+}
+
+const ORDRE_PHASES = ["pioche", "principale1", "combat", "principale2", "fin"];
+function majCommandes() {
+  const phase = d.fini ? "fin" : d.phase;
+  for (const li of $("phases").children) {
+    li.classList.toggle("courante", li.dataset.phase === phase);
+    li.classList.toggle("passee", ORDRE_PHASES.indexOf(li.dataset.phase) < ORDRE_PHASES.indexOf(phase));
+  }
+  $("phases").classList.toggle("ombre", d.actif === 1);
+  const monTour = d.actif === 0 && !d.fini && !occupe;
+  const bc = $("bouton-combat");
+  bc.disabled = !monTour || d.tour === 1 || d.phase === "principale2";
+  bc.textContent = d.phase === "combat" ? "Fin du combat" : "⚔ Combat (C)";
+  $("bouton-fin-tour").disabled = !monTour;
+  const f = monTour ? fusionsPossibles(d, 0).length + accordsTerrain(d, 0).length : 0;
+  const ba = $("bouton-accord");
+  ba.disabled = false; ba.textContent = f ? `✦ Accords (${f})` : "✦ Accords";
+  ba.classList.toggle("brille", f > 0);
+  const t = monTour ? techniquesPossibles(d, 0).length : 0;
+  const bt = $("bouton-technique");
+  bt.hidden = !d.mec.techniques;
+  bt.textContent = t ? `☉ Technique (${t})` : "☉ Techniques";
+  bt.classList.toggle("brille", t > 0);
+}
+
+function indication() {
+  if (d.fini) return d.gagnant === 0 ? "Victoire !" : "Défaite.";
+  if (d.actif !== 0) return `${d.joueurs[1].nom} joue…`;
+  if (selection?.type === "sacrifice") return `Choisissez ${selection.requis - selection.choisis.length} apparition${selection.requis - selection.choisis.length > 1 ? "s" : ""} à sacrifier.`;
+  if (selection?.type === "attaque") return "Choisissez la cible.";
+  if (d.phase === "combat") return d.tour === 1 ? "Pas d’attaque au premier tour." : "Touchez une apparition prête, puis sa cible.";
+  return "Invoquez, posez, jouez vos influences ; puis le combat.";
+}
+
+// ---------- Détail et actions ----------
+function etatMonstre(j, m) {
+  const x = def(m.id), a = atkEffectif(d, j, m), df = defEffectif(d, j, m);
+  const bonus = [];
+  if (a !== m.atk) bonus.push(`affinité et terrain : ${a - m.atk > 0 ? "+" : ""}${a - m.atk} ATK`);
+  if (m.atk !== x.atk || m.def !== x.def) bonus.push(`modifiée : ${m.atk - x.atk >= 0 ? "+" : ""}${m.atk - x.atk} ATK, ${m.def - x.def >= 0 ? "+" : ""}${m.def - x.def} DEF`);
+  return `${m.faceCachee ? "Face cachée. " : ""}En ${m.position === "attaque" ? "attaque" : "défense"} · ATK ${a} · DEF ${df}${bonus.length ? ` (${bonus.join(" ; ")})` : ""}${m.bloque ? ` · bloquée ${m.bloque}` : ""}`;
+}
+
+/** Le panneau suit la carte choisie ; un survol ne l'y montre qu'en passant (`temporaire`), puis on y revient. */
+let apercuFixe = null;
+function retablirApercu() {
+  if (apercuFixe) apercu(...apercuFixe);
+  else if (!$("actions").children.length) $("detail").classList.add("vide");
+}
+function fermerDetail() { apercuFixe = null; $("detail").classList.add("vide"); fermerFeuille(); }
+// Sur écran étroit, le panneau est une feuille qui monte du bas : elle s'ouvre quand le joueur touche une carte.
+function ouvrirDetail() { $("detail").classList.add("ouvert"); }
+function fermerFeuille() { $("detail").classList.remove("ouvert"); }
+$("detail-fermer").addEventListener("click", () => { if (selection) annuler(); else fermerFeuille(); });
+
+function apercu(id, face = true, etat = "", temporaire = false) {
+  if (id == null) return;
+  if (!temporaire) apercuFixe = [id, face, etat];
+  const box = $("detail");
+  box.classList.remove("vide");
+  box.classList.toggle("passager", temporaire);
+  const l = etroit() ? (window.innerWidth <= 640 ? 120 : 150) : Math.min(240, box.clientWidth - 24 || 240);
+  peindreCarteDuel($("detail-carte"), id, face, l);
+  $("detail-carte").style.width = `${l}px`;
+  $("detail-carte").classList.toggle("rare", face && estRare(id));
+  $("detail-etat").textContent = etat;
+  if (!face) { $("detail-notice").textContent = ""; $("detail-mot").textContent = ""; return; }
+  if (id >= 100) {
+    const F = FIGURES[id];
+    $("detail-notice").textContent = `« ${VOISINAGE.find(r => r.id === F.regles[0]).texte} »`;
+    $("detail-mot").textContent = `Figure d’accord (création de jeu) : ${F.materiaux.map(m => (Array.isArray(m) ? "une Étoile" : CARTE_PAR_ID[m].nom)).join(" et ")}.`;
+  } else {
+    $("detail-notice").textContent = `« ${CARTE_PAR_ID[id].notice} »`;
+    $("detail-mot").textContent = `Notice de Belline · force tirée du mot « ${DUEL[id].mot} »${estRare(id) ? " · carte rare : vécue dans le Chemin" : ""}.`;
+    const lien = document.createElement("a");
+    lien.href = "../index.html#/grimoire"; lien.className = "lien-grimoire"; lien.textContent = " Ouvrir sa fiche dans le Grimoire ›";
+    lien.addEventListener("click", () => { try { localStorage.setItem("belline.grimoire.open", JSON.stringify(id === 0 ? 53 : id)); } catch { /* rien */ } });
+    $("detail-mot").appendChild(lien);
+  }
+}
+
+function actions(boutons) {
+  const z = $("actions");
+  z.replaceChildren(...boutons.map(b => {
+    const el = document.createElement("button");
+    el.textContent = b.label;
+    if (b.desactive) { el.disabled = true; el.title = b.desactive; }
+    if (b.classe) el.className = b.classe;
+    el.addEventListener("click", b.action);
+    return el;
+  }));
+  z.querySelector("button:not([disabled])")?.focus({ preventScroll: true });
+}
+
+function annuler() { selection = null; actions([]); cacherFleche(); fermerDetail(); if (d) rendre(); }
+
+function choisirMain(index) {
+  if (occupe || !d || d.fini) return;
+  const id = d.joueurs[0].main[index];
+  if (id == null) return;
+  if (selection?.type === "main" && selection.index === index) return annuler();
+  const x = def(id);
+  selection = { type: "main", index };
+  apercu(id); ouvrirDetail();
+  if (d.actif !== 0) { actions([]); rendre(); return; }
+  if (x.type === "apparition") {
+    const v1 = peutInvoquer(d, 0, index), v2 = peutInvoquer(d, 0, index, true);
+    const s = v1.sacrifices ?? sacrificesRequis(id), off = v1.offrande || 0;
+    const cout = [s ? `${s} sacrifice${s > 1 ? "s" : ""}` : "", off ? `offrande ${off * 1500} points` : ""].filter(Boolean).join(" + ");
+    actions([
+      { label: `Invoquer en attaque${cout ? ` (${cout})` : ""}`, desactive: v1.ok ? null : v1.raison, action: () => preparerInvocation(index, false) },
+      { label: "Poser face cachée", desactive: v2.ok ? null : v2.raison, action: () => preparerInvocation(index, true) },
+      ...evolutionsPossibles(d, 0).filter(e => e.index === index).map(e => ({ label: `⇧ Faire évoluer ${nomDe(e.de)}`, action: () => executerEvolution(index, e.place), classe: "evolution-bouton" }))
+    ]);
+  } else if (x.type === "influence") {
+    const v = peutActiver(d, 0, index);
+    const vp = peutPoserInfluence(d, 0, index);
+    actions([...(x.choix ? x.choix.map((ch, c) => ({ label: `Activer : ${ch.label}`, desactive: v.ok ? null : v.raison, action: () => jouerInfluence(index, c) }))
+      : [{ label: x.sousType === "equipement" ? "Équiper" : x.sousType === "terrain" ? (d.joueurs[0].terrainCarte != null ? "Poser le terrain (casse l’actuel)" : "Poser le terrain") : "Activer", desactive: v.ok ? null : v.raison, action: () => jouerInfluence(index, null) }]),
+      { label: "Poser face cachée", desactive: vp.ok ? null : vp.raison, action: () => poserCachee(index), classe: "discret-fonce" }]);
+  } else {
+    const v = peutPoser(d, 0, index);
+    actions([{ label: "Poser le présage", desactive: v.ok ? null : v.raison, action: () => jouerPresage(index) }]);
+  }
+  rendre();
+}
+
+function preparerInvocation(index, pose) {
+  const s = peutInvoquer(d, 0, index, pose).sacrifices ?? sacrificesRequis(d.joueurs[0].main[index]);
+  if (!s) return executerInvocation(index, pose, []);
+  selection = { type: "sacrifice", index, pose, requis: s, choisis: [] };
+  actions([{ label: "Annuler", action: annuler, classe: "discret-fonce" }]);
+  rendre();
+}
+
+function cliquerZone(j, place) {
+  if (occupe || !d || d.fini) return;
+  const m = d.joueurs[j].monstres[place];
+  if (selection?.type === "sacrifice") {
+    if (j !== 0 || !m) return;
+    const s = selection;
+    s.choisis = s.choisis.includes(place) ? s.choisis.filter(p => p !== place) : [...s.choisis, place];
+    if (s.choisis.length >= s.requis) { const { index, pose, choisis } = s; return executerInvocation(index, pose, choisis); }
+    return rendre();
+  }
+  if (selection?.type === "attaque" && j === 1 && m && ciblesAttaque(d, 0, selection.place).includes(place)) return executerAttaque(selection.place, place);
+  if (!m) return;
+  ouvrirDetail();
+  if (j === 1) {
+    apercu(m.id, !m.faceCachee, m.faceCachee ? "Apparition face cachée, en défense." : etatMonstre(1, m));
+    if (selection?.type !== "attaque") { selection = null; actions([]); }
+    return rendre();
+  }
+  apercu(m.id, true, etatMonstre(0, m));
+  const liste = [];
+  if (d.actif === 0 && d.phase === "combat") {
+    const cibles = ciblesAttaque(d, 0, place);
+    if (cibles.length) {
+      selection = { type: "attaque", place };
+      if (cibles.includes("direct")) liste.push({ label: "⚔ Attaque directe", action: () => executerAttaque(place, "direct") });
+      liste.push({ label: "Annuler", action: annuler, classe: "discret-fonce" });
+      actions(liste);
+      return rendre();
+    }
+  }
+  selection = { type: "terrain", place };
+  const v = peutChanger(d, 0, place);
+  liste.push({ label: m.faceCachee ? "Retourner (en attaque)" : m.position === "attaque" ? "Passer en défense" : "Passer en attaque", desactive: v.ok ? null : v.raison, action: () => executerPosition(place) });
+  actions(liste);
+  rendre();
+}
+
+// ---------- Coups du joueur ----------
+async function apresInvocation(ev, k) {
+  // le défenseur k peut répondre par un présage à une invocation
+  const inv = ev.find(e => e.type === "invocation" && e.j !== k);
+  if (!inv || d.fini) return;
+  if (k === 1) {
+    const r = presageOmbre(d, 1, "invocation", { place: inv.place });
+    if (r != null) await animer(reagirInvocation(d, 1, r, inv.place), true);
+  } else {
+    const dispo = presagesActivables(d, 0, "invocation");
+    if (!dispo.length) return;
+    const m = d.joueurs[1].monstres[inv.place];
+    const r = await demanderReaction(dispo, `${d.joueurs[1].nom} invoque ${nomDe(inv.id)} (ATK ${atkEffectif(d, 1, m)}, DEF ${defEffectif(d, 1, m)}).`);
+    if (r != null) await animer(reagirInvocation(d, 0, r, inv.place), true);
+  }
+}
+
+async function executerInvocation(index, pose, sacrifices) {
+  const id = d.joueurs[0].main[index];
+  selection = null; actions([]);
+  const ev = invoquer(d, 0, index, { pose, sacrifices }, rng);
+  noterVue(carnet, id); sauverCarnet(carnet);
+  await animer(ev, true);
+  await apresInvocation(ev, 1);
+  finAction();
+}
+
+async function jouerInfluence(index, choix) {
+  const id = d.joueurs[0].main[index];
+  selection = null; actions([]);
+  noterVue(carnet, id); sauverCarnet(carnet);
+  const contre = presageOmbre(d, 1, "influence", { index, choix });
+  await animer(activer(d, 0, index, { choix, contre }, rng));
+  finAction();
+}
+
+async function poserCachee(index) { selection = null; actions([]); await animer(poserInfluence(d, 0, index)); finAction(); }
+async function revelerPosee(place, choix) {
+  const id = d.joueurs[0].presages[place]?.id;
+  if (id == null) return;
+  selection = null; actions([]);
+  noterVue(carnet, id); sauverCarnet(carnet);
+  const contre = presageOmbre(d, 1, "influence", { revelee: true, place, choix });
+  await animer(revelerInfluence(d, 0, place, { choix, contre }, rng));
+  finAction();
+}
+async function executerTechnique(cle) {
+  fermerGalerie();
+  await animer(utiliserTechnique(d, 0, cle, rng), true);
+  finAction();
+}
+
+/** Les techniques : celles qui sont prêtes, puis le codex des associations avec leur avancement. */
+function ouvrirTechniques() {
+  if (!d) return;
+  const pretes = d.actif === 0 && !occupe ? techniquesPossibles(d, 0) : [];
+  const J = d.joueurs[0];
+  $("galerie-titre").textContent = "Techniques";
+  $("galerie-texte").textContent = "Ajouts de jeu. Une technique par tour, en phase principale. Alignement : trois apparitions face recto d’une même planète. Association : des cartes révélées pendant le duel, comme les cartes d’un tirage qui se répondent ; chacune sert une fois.";
+  const item = itemPanneau;
+  const liste = [];
+  for (const t of pretes) liste.push(item(`${t.sorte === "alignement" ? t.glyphe : "✦"} ${t.nom}`, t.texte, "Prête : touchez pour l’utiliser", () => executerTechnique(t.cle), "prete"));
+  if (!pretes.length) liste.push(item("Aucune technique prête", d.actif === 0 && J.techniqueFaite ? "Vous avez déjà utilisé une technique ce tour." : "Alignez trois apparitions d’une même planète, ou révélez les cartes d’une association.", "", null, "vide"));
+  for (const [f, a] of Object.entries(ALIGNEMENTS)) {
+    const n = J.monstres.filter(m => m && !m.faceCachee && m.id < 100 && CARTE_PAR_ID[m.id].famille === f).length;
+    if (!pretes.some(t => t.cle === `alignement:${f}`)) liste.push(item(`${a.glyphe} ${a.nom}`, a.texte, `Alignement : ${n} sur 3 apparitions`, null, "codex"));
+  }
+  for (const a of ASSOCIATIONS) {
+    if (pretes.some(t => t.cle === `association:${a.id}`)) continue;
+    const [n, requis] = avancementAssociation(J, a);
+    const faite = J.techniques.includes(a.id);
+    const quoi = a.cartes ? a.cartes.map(id => `${J.reveles.includes(id) ? "✓ " : ""}${CARTE_PAR_ID[id].nom}`).join(", ") : "une carte de chaque planète";
+    liste.push(item(`✦ ${a.nom}`, a.texte, faite ? "Déjà utilisée dans ce duel" : `${n} sur ${requis} révélées (${quoi})`, null, faite ? "codex faite" : "codex"));
+  }
+  $("galerie-cartes").replaceChildren(...liste);
+  $("galerie").classList.add("visible");
+  $("galerie-fermer").focus();
+}
+$("bouton-technique").addEventListener("click", ouvrirTechniques);
+
+async function executerEvolution(index, place) {
+  selection = null; actions([]);
+  noterVue(carnet, d.joueurs[0].main[index]); sauverCarnet(carnet);
+  await animer(evoluer(d, 0, index, place, rng), true);
+  finAction();
+}
+
+async function jouerPresage(index) { selection = null; actions([]); await animer(poser(d, 0, index)); finAction(); }
+async function executerPosition(place) { selection = null; actions([]); await animer(changerPosition(d, 0, place, rng)); finAction(); }
+
+async function executerAttaque(place, cible) {
+  selection = null; actions([]);
+  const p = presageOmbre(d, 1, "attaque", { place, cible });
+  await animer(attaquer(d, 0, place, cible, rng, p));
+  finAction();
+}
+
+async function executerAccordTerrain(cle) {
+  fermerGalerie();
+  await animer(accomplirAccordTerrain(d, 0, cle), true);
+  finAction();
+}
+
+async function executerFusion(figure) {
+  fermerGalerie();
+  const ev = fusionner(d, 0, figure, rng);
+  await animer(ev, true);
+  await apresInvocation(ev, 1);
+  finAction();
+}
+
+function finAction() { occupe = false; cacherFleche(); rendre(); if (d.fini) terminer(); }
+
+/**
+ * Le panneau des accords : les figures invocables maintenant (touchez pour invoquer), puis toutes les figures de la
+ * réserve avec leurs deux cartes, cochées quand vous les avez en main ou sur le terrain.
+ */
+function ouvrirAccords() {
+  if (!d) return;
+  const J = d.joueurs[0];
+  const options = d.actif === 0 && !occupe ? fusionsPossibles(d, 0) : [];
+  const dispo = new Set([...J.main, ...J.monstres.filter(Boolean).map(m => m.id)]);
+  $("galerie-titre").textContent = "Accords de Belline";
+  $("galerie-texte").textContent = "Deux cartes associées (règle de Belline, écho de la notice, accompagnement ou lecture moderne) accomplissent un accord quand elles sont toutes deux face visible sur votre terrain (touchez-le ici, un par tour), ou quand vous les révélez l’une après l’autre. Les deux cartes d’une règle de Belline peuvent aussi former une figure d’accord : elles vont au cimetière et la figure apparaît (une par tour).";
+  const item = itemPanneau;
+  const surTerrain = d.actif === 0 && !occupe ? accordsTerrain(d, 0) : [];
+  const titreSorte = s => ({ belline: "Règle de Belline", echo: "Écho de la notice", accompagnement: "Accord d’accompagnement", lecture: "Lecture moderne" }[s]);
+  const liste = surTerrain.map(t => item(`${t.favorable ? "✦" : "☍"} Sur le terrain : ${titreSorte(t.sorte)}`, t.texte,
+    `${nomDe(t.a)} et ${nomDe(t.b)} sont en jeu : touchez pour accomplir l’accord (${t.valeur} points${t.favorable ? "" : " de dégâts à l’adversaire"}).`, () => executerAccordTerrain(t.cle), "prete"));
+  if (d.actif === 0 && J.accordTerrainFait) liste.push(item("Accord de terrain déjà accompli ce tour", "Un accord de terrain par tour ; chaque paire ne sert qu’une fois par duel.", "", null, "vide"));
+  liste.push(...options.map(o => item(`✦ ${FIGURES[o.figure].nom}`, FIGURES[o.figure].texte,
+    `Prête : ${o.materiaux.map(m => `${nomDe(m.id)} (${m.ou === "main" ? "main" : "terrain"})`).join(" + ")}. Touchez pour l’invoquer.`, () => executerFusion(o.figure), "prete")));
+  if (!options.length) liste.push(item("Aucune figure prête", d.actif !== 0 ? "Les figures s’invoquent pendant votre phase principale." : J.fusionFaite ? "Vous avez déjà invoqué une figure ce tour." : "Il vous manque une des deux cartes de chaque règle. Voici ce qu’il faut réunir.", "", null, "vide"));
+  // les accords à révéler avec les cartes que vous avez (main et terrain) : révélez l'une puis l'autre
+  const ids = [...new Set([...J.main, ...J.monstres.filter(Boolean).map(m => m.id), ...J.presages.filter(Boolean).map(p => p.id)])].filter(id => id < 100);
+  const aReveler = [];
+  for (let x = 0; x < ids.length; x++) for (let y = x + 1; y < ids.length; y++) {
+    const r = reglesDeclenchees({ id: ids[x], choix: 0 }, { id: ids[y], choix: 0 })[0] || reglesDeclenchees({ id: ids[y], choix: 0 }, { id: ids[x], choix: 0 })[0];
+    if (r) { aReveler.push(item(`☙ Règle de Belline`, r.texte, "Posez-les toutes deux en jeu (ou révélez l’une puis l’autre) : 800 points.", null, "proche")); continue; }
+    const a = accordDeLecture(ids[x], ids[y], nomDe);
+    if (a) aReveler.push(item(`${a.sens > 0 ? "✦" : "☍"} ${{ echo: "Écho de la notice", accompagnement: "Accord d’accompagnement", lecture: "Lecture moderne" }[a.sorte]}`, a.texte, `Posez-les toutes deux en jeu (ou révélez l’une puis l’autre) : ${a.valeur} points.`, null, a.sorte === "lecture" ? "codex" : "proche"));
+  }
+  liste.push(item("Accords à former avec vos cartes", aReveler.length ? `${aReveler.length} association${aReveler.length > 1 ? "s" : ""} possible${aReveler.length > 1 ? "s" : ""} entre vos cartes en main et en jeu.` : "Aucune de vos cartes ne s’associe pour l’instant.", "", null, "vide"), ...aReveler);
+  const nomMat = m => (Array.isArray(m) ? "une Étoile" : nomDe(m));
+  const aMat = m => (Array.isArray(m) ? m.some(x => dispo.has(x)) : dispo.has(m));
+  const reste = J.reserve.filter(f => !options.some(o => o.figure === f))
+    .sort((a, b) => FIGURES[b].materiaux.filter(aMat).length - FIGURES[a].materiaux.filter(aMat).length);
+  for (const f of reste) {
+    const F = FIGURES[f], n = F.materiaux.filter(aMat).length;
+    liste.push(item(`${F.favorable ? "✦" : "☍"} ${F.nom}`, F.texte, `${F.materiaux.map(m => `${aMat(m) ? "✓ " : ""}${nomMat(m)}`).join(" + ")} · ${n} sur 2`, null, n ? "codex proche" : "codex"));
+  }
+  $("galerie-cartes").replaceChildren(...liste);
+  $("galerie").classList.add("visible");
+  $("galerie-fermer").focus();
+}
+$("bouton-accord").addEventListener("click", ouvrirAccords);
+
+$("bouton-combat").addEventListener("click", async () => {
+  if (occupe || d.actif !== 0) return;
+  selection = null; actions([]);
+  await animer(d.phase === "combat" ? passerPrincipale2(d) : passerAuCombat(d));
+  finAction();
+});
+$("lp-1").addEventListener("click", () => { if (selection?.type === "attaque" && ciblesAttaque(d, 0, selection.place).includes("direct")) executerAttaque(selection.place, "direct"); });
+
+// ---------- Tour de l'adversaire ----------
+async function tourAdverse() {
+  occupe = true;
+  for (let pas = 0; pas < 40 && !d.fini && d.actif === 1; pas++) {
+    const a = actionOmbre(d, d.joueurs[1].profil, rng);
+    if (a.type === "fin" || a.type === "rien") break;
+    let reponse = null;
+    if (a.type === "attaquer") {
+      const dispo = presagesActivables(d, 0, "attaque");
+      if (dispo.length) { montrerFleche(zoneEl(1, a.place), a.cible === "direct" ? $("lp-0") : zoneEl(0, a.cible)); reponse = await demanderReaction(dispo, attaqueTexte(a)); }
+    }
+    if (a.type === "activer" || a.type === "revelerInfluence") {
+      const dispo = presagesActivables(d, 0, "influence");
+      const id = a.type === "activer" ? d.joueurs[1].main[a.index] : d.joueurs[1].presages[a.place]?.id;
+      if (dispo.length && id != null) reponse = await demanderReaction(dispo, `${d.joueurs[1].nom} ${a.type === "activer" ? "active" : "révèle"} ${nomDe(id)}. Répondre par une chaîne ?`);
+    }
+    if (partie?.apprenti) expliquer(a);
+    const ev = executerOmbre(d, a, rng, reponse);
+    if (ev.length === 1 && ev[0].type === "refus") break;
+    await animer(ev, true);
+    if (a.type === "invoquer" || a.type === "fusionner") await apresInvocation(ev, 0);
+    await attendre(320);
+  }
+  if (!d.fini) await animer(finTour(d, rng), true);
+}
+
+/** Mode apprenti : l'Ombre dit ce qu'elle fait, et pourquoi (sa valeur estimée du coup). */
+function expliquer(a) {
+  const O = d.joueurs[1], c = a.index != null ? O.main[a.index] : null;
+  const gain = a.v != null && Math.round(a.v) > 0 ? ` : j’estime ce coup à +${Math.round(a.v)}` : "";
+  const t = {
+    invoquer: c != null && `J’invoque ${nomDe(c)}${a.pose ? " face cachée, pour me défendre" : ""}${gain}.`,
+    activer: c != null && (def(c).sousType === "terrain" ? `Je pose le terrain ${nomDe(c)} de mon côté${gain}.` : `J’active ${nomDe(c)}${gain}.`),
+    poser: "Je pose un présage : il pourra répondre à votre prochain coup.",
+    poserInfluence: "Je pose une carte face cachée : vous ne saurez pas si c’est un présage.",
+    revelerInfluence: `Je révèle mon influence posée${gain}.`,
+    fusionner: `J’unis deux cartes que la notice associe : ${FIGURES[a.figure]?.nom}${gain}.`,
+    technique: `J’utilise une technique${gain}.`,
+    accordTerrain: `Deux de mes cartes en jeu s’associent : j’accomplis l’accord${gain}.`,
+    evoluer: c != null && `Je fais évoluer une apparition en ${nomDe(c)}${gain}.`,
+    attaquer: `J’attaque${a.cible === "direct" ? " directement vos points de vie" : ""}${gain}.`,
+    changer: "Je change la position d’une apparition.",
+    combat: "J’entre en combat.", principale2: "Je termine le combat."
+  }[a.type];
+  if (t) { journal(`L’Ombre : « ${t} »`); $("journal").firstChild?.classList.add("ombre-pense"); }
+}
+
+async function finDeTour() {
+  if (occupe || d.fini || d.actif !== 0) return;
+  selection = null; actions([]);
+  occupe = true;
+  await animer(finTour(d, rng), true);
+  if (!d.fini) await tourAdverse();
+  occupe = false;
+  rendre();
+  if (d.fini) terminer();
+}
+$("bouton-fin-tour").addEventListener("click", finDeTour);
+
+function attaqueTexte(a) {
+  const A = d.joueurs[1].monstres[a.place];
+  const T = a.cible === "direct" ? null : d.joueurs[0].monstres[a.cible];
+  const cible = !T ? "vos points de vie" : `votre ${T.faceCachee ? "apparition face cachée" : nomDe(T.id)}`;
+  return `${d.joueurs[1].nom} attaque ${cible} avec ${nomDe(A.id)} (ATK ${atkEffectif(d, 1, A)}).`;
+}
+
+/** Le joueur peut répondre par un présage. Résout l'emplacement choisi, ou null. */
+function demanderReaction(places, texte) {
+  return new Promise(resolve => {
+    $("reaction-texte").textContent = texte;
+    const zone = $("reaction-cartes");
+    zone.replaceChildren(...places.map(place => {
+      const id = d.joueurs[0].presages[place].id;
+      const b = document.createElement("button");
+      b.className = "reaction-carte";
+      b.appendChild(enveloppe(carteCanvas(id, true, 150), id, true));
+      const s = document.createElement("span"); s.textContent = `Activer ${nomDe(id)}`; b.appendChild(s);
+      b.addEventListener("click", () => { $("reaction").classList.remove("visible"); cacherFleche(); resolve(place); });
+      return b;
+    }));
+    $("reaction-non").onclick = () => { $("reaction").classList.remove("visible"); cacherFleche(); resolve(null); };
+    $("reaction").classList.add("visible");
+    jouerSon("choix");
+    zone.querySelector("button")?.focus();
+  });
+}
+
+// ---------- Galerie (cimetières, réserves, accords) ----------
+function galerie(titre, texte, cartes) {
+  $("galerie-titre").textContent = titre;
+  $("galerie-texte").textContent = texte;
+  $("galerie-cartes").replaceChildren(...(cartes.length ? cartes.map(c => {
+    const b = document.createElement(c.action ? "button" : "div");
+    b.className = "galerie-carte";
+    b.appendChild(enveloppe(carteCanvas(c.id, c.face !== false, 120), c.id, c.face !== false));
+    if (c.legende) { const s = document.createElement("span"); s.textContent = c.legende; b.appendChild(s); }
+    if (c.action) b.addEventListener("click", c.action);
+    else b.addEventListener("click", () => { apercu(c.id, c.face !== false); ouvrirDetail(); });
+    return b;
+  }) : [Object.assign(document.createElement("p"), { textContent: "Rien pour l’instant.", className: "petit" })]));
+  $("galerie").classList.add("visible");
+  $("galerie-fermer").focus();
+}
+function fermerGalerie() { $("galerie").classList.remove("visible"); }
+$("galerie-fermer").addEventListener("click", fermerGalerie);
+for (const j of [0, 1]) {
+  $(`cimetiere-${j}`).addEventListener("click", () => { if (d) galerie(j === 0 ? "Votre cimetière" : `Cimetière : ${d.joueurs[1].nom}`, `${d.joueurs[j].cimetiere.length} carte${d.joueurs[j].cimetiere.length > 1 ? "s" : ""}, de la plus ancienne à la plus récente.`, d.joueurs[j].cimetiere.map(id => ({ id }))); });
+  $(`reserve-${j}`).addEventListener("click", () => { if (d) galerie(j === 0 ? "Votre réserve" : `Réserve : ${d.joueurs[1].nom}`, "Les figures d’accord disponibles.", d.joueurs[j].reserve.map(id => ({ id, face: j === 0 }))); });
+}
+
+// ---------- Flèche d'attaque et calcul ----------
+function centre(el) {
+  const r = el.getBoundingClientRect(), b = $("plateau").getBoundingClientRect();
+  return { x: r.left - b.left + r.width / 2, y: r.top - b.top + r.height / 2 };
+}
+function tracer(de, vers) {
+  const mx = (de.x + vers.x) / 2, my = Math.min(de.y, vers.y) - 60;
+  $("fleche-trait").setAttribute("d", `M${de.x},${de.y} Q${mx},${my} ${vers.x},${vers.y}`);
+  $("fleche").classList.add("visible");
+}
+function montrerFleche(de, vers) { if (de && vers) tracer(centre(de), centre(vers)); }
+function cacherFleche() { $("fleche").classList.remove("visible"); $("calcul").classList.remove("visible"); }
+$("plateau").addEventListener("pointermove", e => {
+  if (selection?.type !== "attaque") return;
+  const de = zoneEl(0, selection.place);
+  if (!de) return;
+  const b = $("plateau").getBoundingClientRect();
+  const sur = e.target.closest?.(".zone.ciblable, .points-vie.ciblable");
+  const vers = sur ? centre(sur) : { x: e.clientX - b.left, y: e.clientY - b.top };
+  tracer(centre(de), vers);
+  if (sur) {
+    const cible = sur.classList.contains("points-vie") ? "direct" : +sur.dataset.place;
+    montrerCalcul(calculCombat(d, 0, selection.place, cible), false);
+  } else $("calcul").classList.remove("visible");
+});
+function montrerCalcul(c, fort = true) {
+  if (!c) return;
+  const el = $("calcul");
+  const bas = c.position === "direct" ? "<b>Attaque directe</b>" : c.valeur == null ? "<span>contre une carte cachée</span>" : `<span>${c.contre} ${c.valeur}</span>`;
+  const diff = c.position === "direct" ? `−${c.atk}` : c.valeur == null ? "?" : c.atk > c.valeur ? (c.position === "attaque" ? `−${c.atk - c.valeur}` : "détruite") : c.atk < c.valeur ? `${c.position === "attaque" ? "détruit" : "riposte"} −${c.valeur - c.atk}` : "égalité";
+  el.innerHTML = `<span class="calc-atk">ATK ${c.atk}</span><span class="calc-contre">⚔</span>${bas}<em>${diff}</em>${c.avantage ? "<span class='calc-avantage'>▲ planète dominée +500</span>" : c.desavantage ? "<span class='calc-avantage' style='color:#ff8a7a'>▼ planète qui vous domine</span>" : ""}`;
+  el.classList.toggle("fort", fort);
+  el.classList.add("visible");
+}
+
+// ---------- Animations ----------
+const zoneEl = (j, place, sorte = "monstres") => document.querySelector(`#${sorte}-${j} .zone[data-place="${place}"]`);
+
+function allerLP(j, cible) {
+  const el = $(`lp-val-${j}`), jauge = $(`lp-jauge-${j}`);
+  const depart = lpAffiche[j];
+  jauge.style.width = `${Math.max(0, Math.min(100, cible / LP * 100))}%`;
+  jauge.parentElement.classList.toggle("critique", cible <= 2000);
+  jauge.parentElement.classList.toggle("deborde", cible > LP);
+  if (depart === cible) { el.textContent = cible; return; }
+  lpAffiche[j] = cible;
+  const t0 = performance.now(), duree = reduit ? 1 : 700;
+  const pas = t => {
+    const k = Math.min(1, (t - t0) / duree);
+    el.textContent = Math.round(depart + (cible - depart) * (1 - Math.pow(1 - k, 3)));
+    if (k < 1) requestAnimationFrame(pas);
+  };
+  requestAnimationFrame(pas);
+}
+
+function flotter(el, texte, classe) {
+  if (!el) return;
+  const c = centre(el);
+  const f = document.createElement("span");
+  f.className = `flottant ${classe}`; f.textContent = texte;
+  f.style.left = `${c.x}px`; f.style.top = `${c.y - 20}px`;
+  $("plateau").appendChild(f);
+  setTimeout(() => f.remove(), 1500);
+}
+
+function eclats(el, couleur, n = 18) {
+  if (!el || reduit) return;
+  const c = centre(el);
+  for (let k = 0; k < n; k++) {
+    const p = document.createElement("span");
+    p.className = "eclat";
+    const a = Math.random() * Math.PI * 2, v = 40 + Math.random() * 90;
+    p.style.left = `${c.x}px`; p.style.top = `${c.y}px`;
+    p.style.setProperty("--x", `${Math.cos(a) * v}px`); p.style.setProperty("--y", `${Math.sin(a) * v}px`);
+    p.style.background = couleur; p.style.color = couleur;
+    $("plateau").appendChild(p);
+    setTimeout(() => p.remove(), 900);
+  }
+}
+
+function eclair(couleur) {
+  const e = $("eclair");
+  e.style.background = couleur;
+  e.classList.remove("visible"); void e.offsetWidth; e.classList.add("visible");
+}
+
+function secousse() {
+  if (reduit) return;
+  const p = $("plateau");
+  p.classList.remove("secoue"); void p.offsetWidth; p.classList.add("secoue");
+}
+
+function banniere(titre, texte, classe = "") {
+  const b = $("banniere");
+  b.className = `banniere ${classe}`;
+  b.innerHTML = `<b>${esc(titre)}</b>${texte ? `<span>${esc(texte)}</span>` : ""}`;
+  void b.offsetWidth; b.classList.add("visible");
+}
+
+async function carteAuCentre(ids, classe) {
+  const z = $("carte-centre");
+  z.className = `carte-centre ${classe}`;
+  z.replaceChildren(...[].concat(ids).map(id => enveloppe(carteCanvas(id, true, 180), id, true)));
+  void z.offsetWidth; z.classList.add("visible");
+  await attendre(1200);
+}
+
+const nom = j => (j === 0 ? "Vous" : d.joueurs[1].nom);
+const accorde = (j, vous, lui) => (j === 0 ? vous : lui);
+function journal(texte, important = false) {
+  const li = document.createElement("li");
+  li.textContent = texte; if (important) li.className = "important";
+  $("journal").prepend(li);
+  while ($("journal").children.length > 80) $("journal").lastChild.remove();
+  $("annonce").textContent = texte;
+}
+
+async function animer(ev, garderOccupe = false) {
+  occupe = true;
+  fermerFeuille(); cacherLoupe();
+  majCommandes();
+  for (const e of ev) {
+    const c = e.id != null ? nomDe(e.id) : "";
+    switch (e.type) {
+      case "refus": journal(e.raison); jouerSon("erreur"); break;
+      case "tour":
+        rendre();
+        banniere(e.j === 0 ? "Votre tour" : `Tour : ${d.joueurs[1].nom}`, `Tour ${d.tour}`, e.j === 0 ? "" : "sombre");
+        journal(e.j === 0 ? "· Votre tour ·" : `· Tour : ${d.joueurs[1].nom} ·`, true);
+        await attendre(850); break;
+      case "phase":
+        rendre(); banniere(e.phase === "combat" ? "Phase de combat" : "Phase principale 2", "", "petite"); jouerSon("choix");
+        await attendre(600); break;
+      case "pioche":
+        if (e.j === 0) { journal(`Vous piochez ${c}.`); noterVue(carnet, e.id); rendre(); document.querySelector("#main-0 .carte-main:last-child")?.classList.add("piochee"); }
+        else { rendre(); document.querySelector("#main-1 canvas:last-child")?.classList.add("piochee"); }
+        await attendre(280); break;
+      case "fusion":
+        journal(`Accord de Belline : ${e.texte} ${nom(e.j)} ${accorde(e.j, "invoquez", "invoque")} la figure ${c}.`, true);
+        if (e.j === 0) { noterRegle(carnet, e.regle); sauverCarnet(carnet); }
+        eclair("rgba(167,122,216,.4)"); jouerSon("regle");
+        banniere("Figure d’accord", e.texte, "accord");
+        effetCarte(e.id);
+        await carteAuCentre(e.materiaux, "fusion");
+        break;
+      case "invocation": {
+        journal(`${nom(e.j)} ${accorde(e.j, "invoquez", "invoque")} ${c}${e.speciale && !e.figure ? " (invocation spéciale)" : ""}.`);
+        rendre();
+        const z = zoneEl(e.j, e.place); z?.classList.add(e.figure || def(e.id).forte ? "arrivee-majeure" : "arrivee");
+        if (z) effetCarte(e.id, z, e.figure || def(e.id).forte ? 3.2 : 2.4);
+        jouerSon("invocation", familleDe(e.id)); eclair(e.figure ? "rgba(167,122,216,.3)" : "rgba(243,213,138,.25)");
+        if (e.j === 1) apercu(e.id, true, `Invoquée par ${d.joueurs[1].nom}.`);
+        await attendre(e.figure || def(e.id).forte ? 1200 : 850); break;
+      }
+      case "pose":
+        journal(`${nom(e.j)} ${accorde(e.j, "posez", "pose")} une apparition face cachée.`);
+        rendre(); zoneEl(e.j, e.place)?.classList.add("arrivee-cachee"); jouerSon("choix");
+        await attendre(450); break;
+      case "posePresage":
+        journal(e.j === 0 ? `Vous posez ${e.influence ? "une influence" : "un présage"} face cachée.` : `${d.joueurs[1].nom} pose une carte face cachée.`);
+        rendre(); zoneEl(e.j, e.place, "presages")?.classList.add("arrivee-cachee"); jouerSon("choix");
+        await attendre(420); break;
+      case "continue":
+        rendre(); zoneEl(e.j, e.place, "presages")?.classList.add("arrivee"); break;
+      case "influence":
+        journal(`${nom(e.j)} ${e.revelee ? accorde(e.j, "révélez", "révèle") : accorde(e.j, "activez", "active")} ${c}${e.revelee ? " (posée face cachée)" : ""}${e.choix != null && DUEL[e.id].choix ? ` (${DUEL[e.id].choix[e.choix].label})` : ""}.`);
+        if (e.j === 1) apercu(e.id, true, `Influence activée par ${d.joueurs[1].nom}.`);
+        jouerSon("invocation");
+        effetCarte(e.id, null, 1, true);
+        await carteAuCentre(e.id, "influence"); break;
+      case "presage":
+        journal(`Présage${e.maillon === 2 ? " (chaîne, maillon 2)" : ""} ! ${nom(e.j)} ${accorde(e.j, "activez", "active")} ${c}.`, true);
+        apercu(e.id, true, `Présage activé par ${e.j === 0 ? "vous" : d.joueurs[1].nom}.`);
+        eclair("rgba(201,89,159,.35)"); jouerSon("regle");
+        banniere(e.maillon === 2 ? "Chaîne : maillon 2" : "Présage", c, "presage");
+        effetCarte(e.id, null, 1, true);
+        await carteAuCentre(e.id, "presage"); break;
+      case "sacrifice":
+        journal(`${nom(e.j)} ${accorde(e.j, "sacrifiez", "sacrifie")} ${c}.`);
+        zoneEl(e.j, e.place)?.classList.add("sacrifie"); eclats(zoneEl(e.j, e.place), "#f3d58a");
+        await attendre(420); break;
+      case "materiau": zoneEl(e.j, e.place)?.classList.add("sacrifie"); eclats(zoneEl(e.j, e.place), "#c9a0ff"); await attendre(300); break;
+      case "retournee": journal(`${c} est retournée.`); rendre(); zoneEl(e.j, e.place)?.classList.add("retourne"); await attendre(480); break;
+      case "position": rendre(); zoneEl(e.j, e.place)?.classList.add("pivote"); jouerSon("choix"); await attendre(320); break;
+      case "attaque": {
+        const a = zoneEl(e.j, e.place);
+        const cible = e.cible === "direct" ? $(`lp-${1 - e.j}`) : zoneEl(1 - e.j, e.cible);
+        journal(`${c} attaque ${e.cible === "direct" ? (e.j === 0 ? `les points de vie de ${d.joueurs[1].nom}` : "vos points de vie") : nomDe(e.idCible)}.`);
+        montrerFleche(a, cible); montrerCalcul(e.calcul);
+        await attendre(650);
+        if (a && cible) {
+          const ra = a.getBoundingClientRect(), rc = cible.getBoundingClientRect();
+          a.style.setProperty("--dx", `${(rc.left + rc.width / 2) - (ra.left + ra.width / 2)}px`);
+          a.style.setProperty("--dy", `${(rc.top + rc.height / 2) - (ra.top + ra.height / 2)}px`);
+          a.classList.add("assaut");
+        }
+        jouerSon("saut");
+        await attendre(380);
+        cacherFleche();
+        cible?.classList.remove("impact"); void cible?.offsetWidth; cible?.classList.add("impact"); jouerSon("frappe"); secousse();
+        if (cible) effets.jouer("entaille", cible);
+        await attendre(260);
+        a?.classList.remove("assaut");
+        break;
+      }
+      case "detruite": case "sacrifiee": case "epuisee": {
+        const z = zoneEl(e.j, e.place, e.zone === "presages" ? "presages" : "monstres");
+        if (e.type === "detruite") journal(`${c} est détruite.`);
+        if (e.type === "epuisee") journal(`${c} a fini d’agir.`);
+        z?.classList.add("eclate"); eclats(z, e.j === 0 ? "#ff8a5c" : "#b9a0ff", e.id >= 100 ? 30 : 18);
+        await attendre(500); break;
+      }
+      case "protegee": flotter(zoneEl(e.j, e.place), "protégée", "neutre"); journal(`${c} n’est pas détruite (protégée une fois).`); await attendre(450); break;
+      case "lp": {
+        flotter($(`lp-${e.j}`), `${e.v > 0 ? "+" : "−"}${Math.abs(e.v)}`, e.v > 0 ? "bien" : "mal");
+        allerLP(e.j, e.lp);
+        if (e.v < 0) { const p = $(`lp-${e.j}`); p.classList.remove("touche"); void p.offsetWidth; p.classList.add("touche"); if (-e.v >= 1500) eclair("rgba(255,60,40,.3)"); }
+        journal(`${nom(e.j)} ${e.v > 0 ? accorde(e.j, "gagnez", "gagne") : accorde(e.j, "perdez", "perd")} ${Math.abs(e.v)} points de vie${e.pourquoi ? ` (${e.pourquoi})` : ""}.`);
+        jouerSon(e.v > 0 ? "gain" : "perte");
+        await attendre(e.v < 0 ? 520 : 380); break;
+      }
+      case "accord": {
+        const titre = { echo: "Écho de la notice", accompagnement: "Accord d’accompagnement", lecture: "Lecture moderne" }[e.sorte] || "Règle de Belline";
+        const combo = e.combo > 1 ? ` · combo ×${e.combo}` : "";
+        journal(`${titre}${e.terrain ? " (sur le terrain)" : ""}${combo} : ${e.texte} (${e.valeur} points)`, true);
+        if (e.j === 0) { accordsDuDuel.push({ titre, texte: e.texte, belline: e.sorte === "belline" }); if (e.regle) { noterRegle(carnet, e.regle); sauverCarnet(carnet); } }
+        if (e.sorte !== "lecture") { banniere(titre + combo, e.texte, e.sorte === "belline" ? "belline" : e.favorable ? "accord" : "sombre"); jouerSon("regle"); eclair(e.favorable ? "rgba(243,213,138,.35)" : "rgba(160,60,90,.3)"); }
+        else jouerSon(e.favorable ? "gain" : "perte");
+        if (e.ids) {
+          if (e.terrain) {
+            const zs = e.ids.map(id => [...document.querySelectorAll(`#monstres-${e.j} .zone, #presages-${e.j} .zone`)].find(z => { const P = +z.dataset.place, sorte = z.closest(".rang-presages") ? "presages" : "monstres"; return d.joueurs[e.j][sorte][P]?.id === id; }));
+            if (zs[0] && zs[1]) effets.lien(zs[0], zs[1], e.favorable);
+          }
+          effets.duo(e.ids[0], e.ids[1], effets.rect($("tapis")), e.favorable);
+        }
+        await attendre(e.sorte === "lecture" ? 700 : e.sorte === "belline" ? 2000 : 1400); break;
+      }
+      case "evolution": {
+        journal(`Évolution : ${nom(e.j) === "Vous" ? "votre" : "son"} ${nomDe(e.de)} devient ${c} (+300 ATK d’élan).`, true);
+        rendre();
+        const z = zoneEl(e.j, e.place); z?.classList.add("evolue");
+        if (z) effetCarte(e.id, z, 2.6, true);
+        banniere("Évolution", `${nomDe(e.de)} ⇧ ${c}`, "accord"); jouerSon("invocation", familleDe(e.id));
+        if (e.j === 1) apercu(e.id, true, `Évolution de ${d.joueurs[1].nom}.`, true);
+        await attendre(1200); break;
+      }
+      case "statut": {
+        const z = zoneEl(e.j, e.place), E = ETATS[e.etat];
+        journal(`${c} est ${E.nom}. ${E.texte}`);
+        flotter(z, `${E.signe} ${E.nom}`, "mal");
+        if (z) effets.jouer({ poison: "miasme", brulure: "flammes", sommeil: "lune", confusion: "vent" }[e.etat], effets.rect(z), {});
+        rendre(); await attendre(450); break;
+      }
+      case "gueri": journal(`${c} ${e.texte || "guérit de son état"}.`); flotter(zoneEl(e.j, e.place), "guérie", "bien"); rendre(); await attendre(300); break;
+      case "figureDebloquee":
+        journal(`${e.j === 0 ? "Nouvelle figure d’accord dans votre réserve" : `${d.joueurs[1].nom} gagne une figure`} : ${c}.`, true);
+        if (e.j === 0) { banniere("Nouvelle figure", c, "accord"); await attendre(900); }
+        break;
+      case "fatalite":
+        journal("La Fatalité : l’échéance inéluctable. Celui qui a le plus de points de vie l’emporte.", true);
+        banniere("La Fatalité", "l’échéance inéluctable", "sombre"); await attendre(1600); break;
+      case "renvoi": journal(`${c} quitte le terrain.`); zoneEl(e.j, e.place)?.classList.add("eclate"); await attendre(380); break;
+      case "vol": journal(`${nom(e.j)} ${accorde(e.j, "volez", "vole")} une carte${e.j === 0 ? ` : ${c}` : ""}.`); break;
+      case "retour": journal(`${c} revient du cimetière.`); break;
+      case "defausse": journal(`${e.j === 0 ? "Vous envoyez" : `${d.joueurs[1].nom} envoie`} ${c} au cimetière${e.limite ? " (main limitée à sept)" : e.materiau ? " (accord)" : ""}.`); break;
+      case "texte": journal(e.texte); break;
+      case "terrainPose": {
+        const moitie = document.querySelector(e.j === 0 ? ".moitie-vous" : ".moitie-ombre");
+        journal(`${nom(e.j)} ${accorde(e.j, "posez", "pose")} le terrain ${c}.`, true);
+        rendre(); moitie.classList.remove("lieu-arrive"); void moitie.offsetWidth; moitie.classList.add("lieu-arrive");
+        effetCarte(e.id, moitie, 1, true);
+        banniere(`Terrain : ${c}`, e.j === 0 ? "votre côté du tapis change" : `côté ${d.joueurs[1].nom}`, "petite");
+        await attendre(900); break;
+      }
+      case "terrainCasse": case "terrainRetour": {
+        const moitie = document.querySelector(e.j === 0 ? ".moitie-vous" : ".moitie-ombre");
+        journal(e.type === "terrainCasse" ? `Le terrain ${c} est cassé.` : `Le terrain ${c} retourne dans la main.`, true);
+        effets.jouer("eboulis", moitie);
+        moitie.classList.remove("lieu-casse"); void moitie.offsetWidth; moitie.classList.add("lieu-casse");
+        await attendre(500); rendre(); break;
+      }
+      case "technique": {
+        journal(`${e.sorte === "alignement" ? "Alignement" : "Association"} : ${e.j === 0 ? "vous utilisez" : `${d.joueurs[1].nom} utilise`} « ${e.nom} ». ${e.texte}`, true);
+        for (const p of e.places) zoneEl(e.j, p)?.classList.add("aligne");
+        banniere(e.nom, e.sorte === "alignement" ? "Alignement planétaire" : "Association", "accord");
+        jouerSon("regle"); eclair("rgba(243,213,138,.35)");
+        effets.jouer(EFFET_TECHNIQUE[e.cle.split(":")[1]] || "etoiles", effets.rect($("tapis")));
+        await attendre(1500); break;
+      }
+      case "terrain": {
+        const t = REGIONS.find(r => r.famille === e.famille);
+        journal(`Le terrain devient ${t.nom.replace(/^(Le|La|Les) /, m => m.toLowerCase())}.`);
+        rendre(); const tp = $("tapis"); tp.classList.remove("change-terrain"); void tp.offsetWidth; tp.classList.add("change-terrain");
+        await attendre(500); break;
+      }
+    }
+    if (d.fini) break;
+  }
+  rendre();
+  for (const e of ev) if (["renfort", "affaibli", "bloque"].includes(e.type)) {
+    const z = zoneEl(e.j, e.place);
+    if (z) { z.classList.remove(e.type); void z.offsetWidth; z.classList.add(e.type); }
+  }
+  if (!garderOccupe) occupe = false;
+  rendre();
+}
+
+/** L'effet visuel de chaque technique. */
+const EFFET_TECHNIQUE = {
+  soleil: "etoiles", lune: "lune", mercure: "vent", venus: "coeurs", mars: "flammes", jupiter: "dome", saturne: "sablier",
+  preambule: "cle", freins: "chaines", fortes: "eclair", messagers: "oiseaux", coeurs: "coeurs", fortune: "roue", ciel: "comete"
+};
+
+// ---------- Accueil, campagne, atelier ----------
+function gardienAccessible(i) { return i === 0 || carnet.gardiens.includes(GARDIENS[i - 1].famille); }
+function majAccueil() {
+  $("liste-gardiens").replaceChildren(...GARDIENS.map((g, i) => {
+    const li = document.createElement("li");
+    const r = REGIONS.find(x => x.famille === g.famille);
+    const battu = carnet.gardiens.includes(g.famille), ouvert = gardienAccessible(i);
+    const b = document.createElement("button");
+    b.className = `gardien ${battu ? "battu" : ""}`;
+    b.disabled = !ouvert;
+    b.innerHTML = `<span class="g-glyphe"></span><span class="g-texte"><b></b><small></small></span><span class="g-etat"></span>`;
+    b.querySelector(".g-glyphe").textContent = r.glyphe;
+    b.querySelector("b").textContent = g.nom;
+    b.querySelector("small").textContent = g.style;
+    b.querySelector(".g-etat").textContent = battu ? "✓ vaincu" : ouvert ? "défier" : "🔒";
+    b.addEventListener("click", () => demarrer({ mode: "gardien", index: i }));
+    li.appendChild(b);
+    return li;
+  }));
+}
+
+function demarrer(config, graine = null) {
+  consultant = document.querySelector("input[name=consultant]:checked")?.value || "homme";
+  partie = { ...config, graine: graine ?? nouvelleGraine(), apprenti: config.apprenti ?? !!$("apprenti")?.checked };
+  accordsDuDuel = [];
+  rng = creerHasard(partie.graine);
+  let options;
+  if (config.mode === "gardien") {
+    const g = GARDIENS[config.index];
+    options = {
+      decks: [deck, deckGardien(g, creerHasard(partie.graine + 3))],
+      reserves: [reserveJoueur(), figuresDebloquees(new Set(reglesEnseignees(g)))],
+      terrain: g.famille, profils: [null, g.profil], nomAdverse: g.nom, mecaniques: MECA_GARDIENS[config.index]
+    };
+  } else {
+    const profil = config.difficulte === "adaptatif" ? profilAdaptatif() : PROFILS[config.difficulte];
+    options = {
+      decks: [deck, CARTES.map(c => c.id)],
+      reserves: [reserveJoueur(), config.difficulte === "novice" ? [] : config.difficulte === "mage" ? Object.keys(FIGURES).map(Number) : FIGURES_DEPART],
+      terrain: PLANETES[Math.floor(rng() * 7)], profils: [null, profil], nomAdverse: `L’Ombre (${profil.nom})`
+    };
+  }
+  d = creerDuel(rng, consultant, options);
+  selection = null; occupe = false;
+  lpAffiche[0] = lpAffiche[1] = LP;
+  $("journal").replaceChildren();
+  $("numero-duel").textContent = `Duel n° ${partie.graine}`;
+  for (const id of d.joueurs[0].main) noterVue(carnet, id);
+  sauverCarnet(carnet);
+  for (const e of ["accueil-duel", "fin-duel", "atelier"]) $(e).classList.remove("visible");
+  $("detail").classList.add("vide"); actions([]);
+  journal(`Le duel commence contre ${d.joueurs[1].nom}. Terrain : ${REGIONS.find(r => r.famille === d.terrain).nom}.`, true);
+  if (config.mode === "gardien" && config.index < 5) {
+    const ouvertes = MECA_GARDIENS[config.index];
+    journal(ouvertes.length ? `Dans ce duel : ${ouvertes.map(k => NOMS_MECA[k]).join(", ")}.` : "Premier duel : invoquez, jouez vos influences et vos présages, combattez. Les accords de Belline s’accomplissent déjà.");
+  }
+  rendre(); ajusterTaille();
+  ouverture();
+}
+
+/** La difficulté qui s'ajuste : plus vous gagnez, moins l'Ombre joue au hasard. */
+function profilAdaptatif() {
+  const { joues, gagnes } = carnet.duels, taux = (gagnes + 1) / (joues + 2);
+  const hasard = Math.max(0, Math.min(0.65, 0.75 - taux * 0.9));
+  return { nom: `Adaptatif, force ${Math.round((1 - hasard / 0.65) * 100)} %`, hasard, agressif: 1 + (0.65 - hasard) * 0.15, soin: 1 };
+}
+
+async function ouverture() {
+  occupe = true;
+  const t = REGIONS.find(r => r.famille === d.terrain);
+  banniere("Duel !", `${d.joueurs[1].nom} · terrain ${t.glyphe} ${t.nom}`);
+  jouerSon("porte");
+  await attendre(1500);
+  banniere("Pile ou face", d.premier === 0 ? "Vous commencez" : `${d.joueurs[1].nom} commence`, d.premier === 0 ? "" : "sombre");
+  journal(d.premier === 0 ? "Pile ou face : vous commencez." : `Pile ou face : ${d.joueurs[1].nom} commence.`);
+  await attendre(1300);
+  if (d.premier === 1) await tourAdverse();
+  occupe = false;
+  rendre();
+  if (d.fini) terminer();
+}
+
+function terminer() {
+  const gagne = d.gagnant === 0;
+  noterDuel(carnet, gagne);
+  let lecons = [];
+  if (gagne && partie.mode === "gardien") {
+    const g = GARDIENS[partie.index];
+    lecons = vaincreGardien(carnet, g.famille, reglesEnseignees(g));
+  }
+  sauverCarnet(carnet);
+  jouerSon(gagne ? "victoire" : "defaite");
+  banniere(gagne ? "Victoire" : "Défaite", "", gagne ? "accord" : "sombre");
+  setTimeout(() => {
+    $("fin-duel-titre").textContent = d.gagnant == null ? "Égalité" : gagne ? "Les apparitions vous obéissent" : `${d.joueurs[1].nom} l’emporte`;
+    $("fin-duel-texte").textContent = `Duel n° ${partie.graine} en ${Math.ceil(d.tour / 2)} tours · points de vie : vous ${d.joueurs[0].lp}, ${d.joueurs[1].nom} ${d.joueurs[1].lp} · duels gagnés ${carnet.duels.gagnes} sur ${carnet.duels.joues}.`;
+    const regles = VOISINAGE.filter((r, i, t) => lecons.includes(r.id) && t.findIndex(x => x.texte === r.texte && lecons.includes(x.id)) === i);
+    $("fin-duel-lecons").innerHTML = partie.mode === "gardien" && gagne
+      ? `<p><b>${esc(GARDIENS[partie.index].nom)} vous enseigne :</b></p>${regles.length ? `<ul>${regles.map(r => `<li>${esc(r.texte)}</li>`).join("")}</ul>` : "<p class='petit'>Vous connaissiez déjà toutes ses règles.</p>"}${partie.index < 6 ? `<p>Le Gardien suivant vous attend : ${esc(GARDIENS[partie.index + 1].nom)}.</p>` : "<p><b>Les Sept Gardiens sont vaincus.</b></p>"}`
+      : "";
+    if (partie.mode === "gardien" && gagne && partie.index < 6) {
+      const neuves = MECA_GARDIENS[partie.index + 1].filter(k => !MECA_GARDIENS[partie.index].includes(k));
+      if (neuves.length) $("fin-duel-lecons").insertAdjacentHTML("beforeend", `<p><b>Nouvelle mécanique au prochain duel :</b> ${neuves.map(k => esc(NOMS_MECA[k])).join(", ")}.</p>`);
+    }
+    const vus = accordsDuDuel.filter((a, i, t) => t.findIndex(x => x.texte === a.texte) === i);
+    $("fin-duel-lecons").insertAdjacentHTML("beforeend", vus.length
+      ? `<p><b>Vos accords dans ce duel :</b></p><ul>${vus.map(a => `<li>${a.belline ? "<b>Règle de Belline</b>" : esc(a.titre)} : ${esc(a.texte)}</li>`).join("")}</ul>`
+      : "<p class='petit'>Aucun accord dans ce duel : les badges ✦ sur vos cartes montrent celles qui s’associent.</p>");
+    $("fin-duel").classList.add("visible");
+    $("bouton-revanche").focus();
+  }, 1300);
+}
+
+function montrerAtelier() {
+  const z = $("atelier-cartes");
+  const maj = () => {
+    $("atelier-compte").textContent = `${deck.length} cartes dans votre deck (30 au moins, 53 au plus). Les cartes rares (reflet) sont celles que vous avez vécues dans le Chemin.`;
+    $("atelier-fermer").disabled = deck.length < 30;
+    for (const b of z.children) b.classList.toggle("hors", !deck.includes(+b.dataset.id));
+  };
+  z.replaceChildren(...CARTES.map(c => c.id).sort((a, b) => a - b).map(id => {
+    const b = document.createElement("button");
+    b.className = "atelier-carte"; b.dataset.id = id;
+    b.appendChild(enveloppe(carteCanvas(id, true, 92), id, true));
+    b.setAttribute("aria-label", `${nomDe(id)} : dans le deck ou non`);
+    b.addEventListener("click", () => { deck = deck.includes(id) ? deck.filter(x => x !== id) : [...deck, id]; maj(); });
+    if (survol) b.addEventListener("mouseenter", () => apercu(id));
+    return b;
+  }));
+  const debloquees = new Set(reserveJoueur());
+  $("atelier-reserve").replaceChildren(...Object.keys(FIGURES).map(Number).map(f => {
+    const b = document.createElement("div");
+    b.className = `atelier-carte ${debloquees.has(f) ? "" : "verrou"}`;
+    b.appendChild(enveloppe(carteCanvas(f, debloquees.has(f), 92), f, debloquees.has(f)));
+    const s = document.createElement("small");
+    const F = FIGURES[f];
+    s.textContent = debloquees.has(f) ? F.nom : `N° ${F.materiaux.map(m => (Array.isArray(m) ? "Étoile" : m)).join(" avec n° ")}`;
+    b.appendChild(s);
+    if (debloquees.has(f) && survol) b.addEventListener("mouseenter", () => apercu(f));
+    return b;
+  }));
+  maj();
+  $("atelier").classList.add("visible");
+}
+$("bouton-deck").addEventListener("click", montrerAtelier);
+$("atelier-tout").addEventListener("click", () => { deck = CARTES.map(c => c.id); montrerAtelier(); });
+$("atelier-rien").addEventListener("click", () => { deck = []; montrerAtelier(); });
+$("atelier-fermer").addEventListener("click", () => { if (deck.length < 30) return; sauverDeck(deck); $("atelier").classList.remove("visible"); });
+$("bouton-regles").addEventListener("click", () => { $("regles-duel").hidden = !$("regles-duel").hidden; });
+for (const b of document.querySelectorAll("[data-libre]")) b.addEventListener("click", () => demarrer({ mode: "libre", difficulte: b.dataset.libre }));
+$("bouton-revanche").addEventListener("click", () => demarrer(partie, partie.graine));
+$("bouton-retour-accueil").addEventListener("click", () => { $("fin-duel").classList.remove("visible"); majAccueil(); $("accueil-duel").classList.add("visible"); });
+
+window.addEventListener("keydown", e => {
+  if (e.target instanceof HTMLElement && e.target.closest("input, textarea")) return;
+  if (e.code === "Escape") { if ($("galerie").classList.contains("visible")) fermerGalerie(); else annuler(); }
+  if (!d || $("accueil-duel").classList.contains("visible")) return;
+  if (e.code === "KeyE") finDeTour();
+  if (e.code === "KeyC") $("bouton-combat").click();
+  if (e.code === "KeyA") ouvrirAccords();
+  if (e.code === "KeyT") ouvrirTechniques();
+});
+window.addEventListener("resize", () => { if (d) ajusterTaille(); });
+installerPleinEcran($("bouton-plein-ecran"), () => { if (d) ajusterTaille(); });
+const boutonSon = $("bouton-son");
+const majSon = () => { boutonSon.textContent = sonActif() ? "♪ Son" : "♪ Muet"; boutonSon.setAttribute("aria-pressed", String(sonActif())); };
+boutonSon.addEventListener("click", () => { basculerSon(); majSon(); });
+majSon();
+
+// Votre dictionnaire des associations (Atelier, 4 Mo) : chargé après le démarrage, il remplace les lectures modernes.
+function chargerDictionnaire() {
+  if (dictionnaireCharge()) return;
+  if (window.BELLINE?.PAIR_DICT) { definirDictionnaire(window.BELLINE.PAIR_DICT); return; }
+  const s = document.createElement("script");
+  s.src = "../js/data/pair-dictionary.js";
+  s.onload = () => { if (window.BELLINE?.PAIR_DICT) { definirDictionnaire(window.BELLINE.PAIR_DICT); journal("Votre dictionnaire des associations est ouvert : ses lectures accompagnent le duel."); } };
+  document.head.appendChild(s);
+}
+setTimeout(chargerDictionnaire, 1500);
+
+// Outil de vérification (?test) : lire l'état depuis la console ou un script.
+if (new URLSearchParams(location.search).has("test")) window.__duel = { etat: () => d, occupe: () => occupe, demarrer, effet: id => effetCarte(id) };
+
+// Accueil : un duel de démonstration derrière le voile
+majAccueil();
+rng = creerHasard(1); d = creerDuel(rng, "homme", { premier: 0, terrain: "soleil" });
+document.fonts?.ready.then(() => ajusterTaille());
+ajusterTaille();

@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Le Chemin du Mage : le Duel des Apparitions</title>
+  <meta name="description" content="Duel de cartes de Belline : apparitions, influences, présages, figures d’accord, et les Sept Gardiens.">
+  <meta name="theme-color" content="#120c22">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <link rel="apple-touch-icon" href="../assets/icons/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/duel.css">
+</head>
+<body class="page-duel">
+  <header class="barre">
+    <a class="retour" href="../index.html#/jeux" aria-label="Retour à l’Atelier">‹ Atelier</a>
+    <h1>Le Duel des Apparitions</h1>
+    <span id="numero-duel" class="numero-partie"></span>
+    <button id="bouton-plein-ecran" class="discret" aria-pressed="false">⤢ Plein écran</button>
+    <button id="bouton-son" class="discret" aria-pressed="true">♪ Son</button>
+  </header>
+
+  <main class="arene">
+    <section id="plateau" class="plateau" aria-label="Plateau du duel">
+      <div class="bandeau-joueur ombre">
+        <div id="lp-1" class="points-vie" aria-label="Points de vie de l’adversaire">
+          <span id="nom-1" class="lp-nom">L’Ombre</span>
+          <span class="lp-valeur"><span class="lp-libelle">LP</span> <b id="lp-val-1">8000</b></span>
+          <span class="lp-jauge"><span id="lp-jauge-1"></span></span>
+        </div>
+        <div id="main-1" class="main-ombre" aria-label="Main de l’adversaire"></div>
+        <button id="reserve-1" class="pile reserve" title="Réserve de l’adversaire"><span>✦</span><b>0</b><small>réserve</small></button>
+      </div>
+
+      <div class="tapis-scene">
+        <div id="tapis" class="tapis">
+          <span id="terrain-nom" class="terrain-nom"></span>
+          <div class="moitie moitie-ombre">
+            <div class="piles">
+              <div class="pile" title="Pioche de l’adversaire"><span class="pile-dos"></span><b id="pioche-1">0</b><small>pioche</small></div>
+              <button id="cimetiere-1" class="pile cimetiere" title="Cimetière de l’adversaire"><span class="pile-carte"></span><b>0</b><small>cimetière</small></button>
+            </div>
+            <div class="rangs">
+              <div id="presages-1" class="rang rang-presages"></div>
+              <div id="monstres-1" class="rang rang-monstres"></div>
+            </div>
+          </div>
+          <div class="ligne-centre"><p id="indication" class="indication"></p></div>
+          <div class="moitie moitie-vous">
+            <div class="rangs">
+              <div id="monstres-0" class="rang rang-monstres"></div>
+              <div id="presages-0" class="rang rang-presages"></div>
+            </div>
+            <div class="piles">
+              <button id="cimetiere-0" class="pile cimetiere" title="Votre cimetière"><span class="pile-carte"></span><b>0</b><small>cimetière</small></button>
+              <div class="pile" title="Votre pioche"><span class="pile-dos"></span><b id="pioche-0">0</b><small>pioche</small></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="barre-phases">
+      <div class="commandes-duel">
+        <div id="lp-0" class="points-vie" aria-label="Vos points de vie">
+          <span class="lp-nom">Vous</span>
+          <span class="lp-valeur"><span class="lp-libelle">LP</span> <b id="lp-val-0">8000</b></span>
+          <span class="lp-jauge"><span id="lp-jauge-0"></span></span>
+        </div>
+      </div>
+        <ol id="phases" class="phases" aria-label="Phases du tour">
+          <li data-phase="pioche">Pioche</li><li data-phase="principale1">Principale</li><li data-phase="combat">Combat</li><li data-phase="principale2">Princ. 2</li><li data-phase="fin">Fin</li>
+        </ol>
+        <div class="boutons-phase">
+          <button id="bouton-technique" class="phase-bouton accord-bouton" title="Alignements et associations (T)">☉ Techniques</button>
+          <button id="bouton-accord" class="phase-bouton accord-bouton" title="Invoquer une figure d’accord (A)">✦ Accord</button>
+          <button id="bouton-combat" class="phase-bouton">⚔ Combat (C)</button>
+          <button id="bouton-fin-tour" class="phase-bouton">Fin (E)</button>
+        </div>
+        <button id="reserve-0" class="pile reserve" title="Votre réserve de figures d’accord"><span>✦</span><b>0</b><small>réserve</small></button>
+      </div>
+
+      <div class="bandeau-joueur vous">
+        <div id="main-0" class="main-vous" aria-label="Votre main"></div>
+      </div>
+
+      <svg id="fleche" class="fleche" aria-hidden="true"><defs><marker id="pointe" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#ffd27a"/></marker></defs><path id="fleche-trait" d="" marker-end="url(#pointe)"/></svg>
+      <div id="calcul" class="calcul" aria-hidden="true"></div>
+      <div id="carte-centre" class="carte-centre" aria-hidden="true"></div>
+      <div id="banniere" class="banniere" aria-hidden="true"></div>
+      <div id="eclair" class="eclair" aria-hidden="true"></div>
+
+      <div id="reaction" class="reaction" role="dialog" aria-modal="true" aria-labelledby="reaction-titre">
+        <div class="reaction-corps">
+          <h2 id="reaction-titre">Un présage ?</h2>
+          <p id="reaction-texte"></p>
+          <div id="reaction-cartes" class="reaction-cartes"></div>
+          <div class="boutons"><button id="reaction-non" class="discret-fonce">Laisser faire</button></div>
+        </div>
+      </div>
+
+      <div id="galerie" class="reaction galerie" role="dialog" aria-modal="true" aria-labelledby="galerie-titre">
+        <div class="reaction-corps">
+          <h2 id="galerie-titre"></h2>
+          <p id="galerie-texte" class="petit"></p>
+          <div id="galerie-cartes" class="galerie-cartes"></div>
+          <div class="boutons"><button id="galerie-fermer" class="discret-fonce">Fermer</button></div>
+        </div>
+      </div>
+
+      <div id="accueil-duel" class="ecran visible">
+        <div class="ecran-corps large">
+          <p class="surtitre">Oracle de Belline</p>
+          <h2>Le Duel des Apparitions</h2>
+          <p class="ornement" aria-hidden="true">✦ ⚔ ✦</p>
+          <div class="choix-consultant">
+            <span>Vous êtes :</span>
+            <label><input type="radio" name="consultant" value="homme" checked> ✡ le consultant</label>
+            <label><input type="radio" name="consultant" value="femme"> ✶ la consultante</label>
+          </div>
+          <div class="modes">
+            <section class="mode">
+              <h3>Duel libre</h3>
+              <p>Contre l’Ombre, sur le terrain d’une planète tirée au sort.</p>
+              <div class="boutons">
+                <button data-libre="novice">Novice</button>
+                <button data-libre="adepte">Adepte</button>
+                <button data-libre="mage">Mage</button>
+                <button data-libre="adaptatif" title="L’Ombre s’ajuste à vos victoires">Adaptatif</button>
+              </div>
+              <label class="petit"><input type="checkbox" id="apprenti"> Mode apprenti : l’Ombre explique ses coups</label>
+            </section>
+            <section class="mode">
+              <h3>Les Sept Gardiens</h3>
+              <p>Une campagne, planète après planète. Chaque Gardien vaincu vous enseigne ses règles de Belline, et donc ses figures d’accord.</p>
+              <ol id="liste-gardiens" class="liste-gardiens"></ol>
+            </section>
+          </div>
+          <div class="boutons">
+            <button id="bouton-deck" class="discret-clair">Votre deck et votre réserve</button>
+            <button id="bouton-regles" class="discret-clair">Les règles</button>
+          </div>
+          <div id="regles-duel" class="regles-texte" hidden>
+            <ul class="regles-duel">
+              <li><b>8000 points de vie</b>, six cartes en main ; pile ou face pour commencer. Le premier joueur ne pioche pas et n’attaque pas au premier tour.</li>
+              <li><b>Apparitions</b> (cadre ambré, doré pour les cartes fortes) : niveau, ATK, DEF. Une invocation normale par tour, en attaque, ou posée face cachée en défense. Niveau 5 et 6 : un sacrifice ; niveau 7 et 8 : deux.</li>
+              <li><b>Influences</b> (cadre vert) : jouées depuis la main, ou <b>posées face cachée</b> dans une zone de présage pour être révélées plus tard (à partir de votre tour suivant) : l’adversaire ne sait pas si c’est un présage. Les équipements (⚒) restent attachés à une apparition ; les continues (∞) agissent plusieurs tours.</li>
+              <li><b>Présages</b> (cadre violet) : posés face cachée, ils se déclenchent pendant le tour adverse : à une attaque, à une invocation, ou en réponse à une influence (une chaîne).</li>
+              <li><b>Combat</b> : ATK contre ATK, ou ATK contre DEF. La plus faible est détruite ; la différence est infligée en dégâts. Les gardiens doivent être attaqués d’abord. Plus d’apparition adverse : attaque directe.</li>
+              <li><b>Affinité</b> : chaque apparition gagne 200 ATK par autre apparition de sa planète à vos côtés. <b>Ciel du duel</b> : les apparitions de la planète du duel gagnent 300 ATK et DEF.</li>
+              <li><b>Pioche</b> : 2 cartes à chaque tour, sans dépasser 7 en main. <b>Terrains</b> (Campagne-Santé, Pénates, Table, Cloître) : un lieu de la notice qui se pose de votre côté du tapis, le change et agit tant qu’il demeure (5 tours, le Cloître 3). Un seul par joueur : un nouveau terrain casse l’ancien. L’Accident casse le terrain adverse, la lunaison (Changement) rend tous les terrains à la main.</li>
+              <li><b>Accords</b> : deux cartes associées s’accomplissent quand vous les révélez l’une après l’autre, ou quand elles sont toutes deux face visible sur votre terrain (bouton « Accords », un par tour, une fois par paire). Quatre sortes : les <b>règles de Belline</b> (la notice : 1000 points, une carte, et leur <b>sort</b>, un effet tiré de leurs mots), les <b>échos de la notice</b> (le même mot dans les deux notices, 500), l’<b>accompagnement</b> (la Renommée prend le sens de sa voisine, la Trahison gâte les meilleures cartes, 500) et les <b>lectures modernes</b> (ajout du jeu, 200). Favorable : vous gagnez les points ; néfaste : l’adversaire les perd. <b>Combo</b> : chaque accord de plus dans le même tour rapporte 200 points de plus. Les badges ✦ sur vos cartes en main montrent celles qui s’associent (doré : une règle de Belline). <b>Figures d’accord</b> (cadre pourpre) : une fois par tour, envoyez au cimetière les deux cartes d’une règle de Belline (main ou terrain) pour invoquer sa figure. Votre réserve contient quatre figures de départ et celles des règles que vous connaissez ; une règle accomplie en duel y fait entrer sa figure.</li>
+              <li><b>Évolution</b> (comme dans Digimon et Pokémon) : une apparition en jeu depuis un tour évolue en une apparition de votre main de la même planète et de niveau plus haut (au plus trois de plus), sans sacrifice : elle garde ses équipements et gagne 300 ATK d’élan. Une par tour ; le badge ⇧ et l’aura verte la signalent.</li>
+              <li><b>États</b> : malade (la Maladie, l’épidémie : −300 ATK à chaque tour), brûlée (le Feu : −500 ATK, 200 points perdus par tour), endormie (l’Eau, la passivité : n’attaque pas), confuse (l’Inconstance : une attaque sur deux échoue). La Grâce, la Campagne et certaines règles les guérissent.</li>
+              <li><b>Planètes</b> : chacune domine la suivante dans l’ordre d’Edmond (Soleil, Lune, Mercure, Vénus, Mars, Jupiter, Saturne, puis le Soleil) : +500 ATK contre elle. <b>La Fatalité</b> : au-delà du 40e tour (20 chacun), celui qui a le plus de points de vie l’emporte.</li>
+              <li><b>Techniques</b> (ajouts de jeu), une par tour. <b>Alignement</b> : trois apparitions face recto d’une même planète changent le terrain en cette planète, qui agit selon sa région (le Soleil révèle les cartes cachées, la Lune met l’adversaire en défense, Saturne le ralentit…). <b>Associations</b> : révélez pendant le duel les cartes d’un groupe (la Destinée et les deux Étoiles ; Stérilité, Retard et Cloître ; trois cartes fortes ; les messagers ; les cœurs ; la fortune ; une carte de chaque planète) pour une technique spéciale, une fois par duel.</li>
+            </ul>
+            <p class="petit">Touches : C combat, A accord, T techniques, E fin du tour, Échap annuler.</p>
+          </div>
+        </div>
+      </div>
+
+      <div id="atelier" class="ecran">
+        <div class="ecran-corps large">
+          <h2>Votre deck</h2>
+          <p id="atelier-compte" class="petit"></p>
+          <div class="boutons">
+            <button id="atelier-tout" class="discret-clair">Tout prendre</button>
+            <button id="atelier-rien" class="discret-clair">Tout retirer</button>
+            <button id="atelier-fermer">Valider</button>
+          </div>
+          <div id="atelier-cartes" class="atelier-cartes"></div>
+          <h3>Votre réserve de figures d’accord</h3>
+          <p class="petit">Toutes les figures sont dans votre réserve. Pour en invoquer une, réunissez ses deux cartes (en main ou sur le terrain) et touchez « Accords ».</p>
+          <div id="atelier-reserve" class="atelier-cartes"></div>
+        </div>
+      </div>
+
+      <div id="fin-duel" class="ecran">
+        <div class="ecran-corps">
+          <h2 id="fin-duel-titre"></h2>
+          <p id="fin-duel-texte"></p>
+          <div id="fin-duel-lecons" class="lecture"></div>
+          <div class="boutons">
+            <button id="bouton-revanche">Revanche</button>
+            <button id="bouton-retour-accueil">Choisir un autre duel</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="cote-duel">
+      <section id="detail" class="detail vide" aria-live="polite">
+        <button id="detail-fermer" class="detail-fermer" aria-label="Fermer le détail">×</button>
+        <canvas id="detail-carte" class="detail-carte"></canvas>
+        <div class="detail-texte">
+          <p id="detail-etat" class="detail-etat"></p>
+          <p id="detail-notice" class="notice"></p>
+          <p id="detail-mot" class="petit"></p>
+        </div>
+        <div id="actions" class="boutons actions"></div>
+      </section>
+      <section class="journal-bloc parchemin">
+        <h3>Journal du duel</h3>
+        <ol id="journal" class="journal"></ol>
+      </section>
+    </aside>
+  </main>
+
+  <p id="annonce" class="lecteur" aria-live="polite"></p>
+  <script src="js/jeu-duel.js"></script>
+  <script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("../sw.js").catch(() => {});</script>
+</body>
+</html>

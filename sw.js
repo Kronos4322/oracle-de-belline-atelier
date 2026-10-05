@@ -2,32 +2,33 @@
  * Mise en cache de l'app (code + images de cartes) pour un lancement
  * hors-ligne. Stratégie : cache d'abord pour les fichiers de l'app,
  * réseau d'abord (avec repli sur le cache) pour tout le reste. */
-var CACHE = 'belline-v63';
+var CACHE = 'belline-v64';
 var PRECACHE = [
   "./",
   "index.html",
   "manifest.webmanifest",
-  "css/styles.css?v=63",
-  "js/app.js?v=63",
-  "js/data/card-dossier.js?v=63",
-  "js/data/card-images.js?v=63",
-  "js/data/card-planche.js?v=63",
-  "js/data/card-reference.js?v=63",
-  "js/data/cards.js?v=63",
-  "js/data/combos.js?v=63",
-  "js/data/pair-dictionary.js?v=63",
-  "js/data/planet-dossier.js?v=63",
-  "js/data/spreads.js?v=63",
-  "js/storage.js?v=63",
-  "js/views/associations.js?v=63",
-  "js/views/astrologie.js?v=63",
-  "js/views/entrainement.js?v=63",
-  "js/views/grimoire.js?v=63",
-  "js/views/journal.js?v=63",
-  "js/views/journalier.js?v=63",
-  "js/views/methode.js?v=63",
-  "js/views/progression.js?v=63",
-  "js/views/tirages.js?v=63",
+  "css/styles.css?v=64",
+  "js/app.js?v=64",
+  "js/data/card-dossier.js?v=64",
+  "js/data/card-images.js?v=64",
+  "js/data/card-planche.js?v=64",
+  "js/data/card-reference.js?v=64",
+  "js/data/cards.js?v=64",
+  "js/data/combos.js?v=64",
+  "js/data/pair-dictionary.js?v=64",
+  "js/data/planet-dossier.js?v=64",
+  "js/data/spreads.js?v=64",
+  "js/storage.js?v=64",
+  "js/views/associations.js?v=64",
+  "js/views/astrologie.js?v=64",
+  "js/views/entrainement.js?v=64",
+  "js/views/grimoire.js?v=64",
+  "js/views/jeux.js?v=64",
+  "js/views/journal.js?v=64",
+  "js/views/journalier.js?v=64",
+  "js/views/methode.js?v=64",
+  "js/views/progression.js?v=64",
+  "js/views/tirages.js?v=64",
   "assets/icons/icon-192.png",
   "assets/icons/icon-512-maskable.png",
   "assets/icons/icon-512.png",
@@ -90,7 +91,14 @@ var PRECACHE = [
   "assets/cartes/MERCURE.jpg",
   "assets/cartes/SATURNE.jpg",
   "assets/cartes/SOLEIL.jpg",
-  "assets/cartes/VENUS.jpg"
+  "assets/cartes/VENUS.jpg",
+  "jeu/index.html",
+  "jeu/chemin.html",
+  "jeu/duel.html",
+  "jeu/css/style.css",
+  "jeu/css/duel.css",
+  "jeu/js/jeu.js",
+  "jeu/js/jeu-duel.js"
 ];
 
 self.addEventListener('install', function (event) {
@@ -117,6 +125,14 @@ self.addEventListener('fetch', function (event) {
   if (req.method !== 'GET') return;
   var url = new URL(req.url);
   if (url.origin !== location.origin) return; // polices Google : laissées au réseau/cache du navigateur
+  // les jeux (jeu/) ne portent pas de numéro de version : réseau d'abord, le cache sert hors-ligne
+  if (url.pathname.indexOf('/jeu/') !== -1) {
+    event.respondWith(fetch(req).then(function (res) {
+      if (res && res.ok) { var copie = res.clone(); caches.open(CACHE).then(function (c) { c.put(req, copie); }); }
+      return res;
+    }).catch(function () { return caches.match(req); }));
+    return;
+  }
   event.respondWith(
     caches.match(req, { ignoreSearch: false }).then(function (cached) {
       var network = fetch(req).then(function (res) {
